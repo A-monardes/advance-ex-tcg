@@ -11,9 +11,10 @@ const MANIFEST := "res://data/pmd_web.json"
 
 var _files := {}           # especie -> [archivos]
 var _queue: Array = []     # [especie, archivo]
-var _busy := []
-var _http: HTTPRequest
+var _busy := {}            # HTTPRequest -> [especie, archivo]
+var _pool: Array[HTTPRequest] = []
 var _base := ""
+const PARALLEL := 6
 
 
 func _ready() -> void:
@@ -22,10 +23,12 @@ func _ready() -> void:
 		_files = j
 	if OS.has_feature("web"):
 		_base = str(JavaScriptBridge.eval("new URL('pmd/', window.location.href).href"))
-	_http = HTTPRequest.new()
-	_http.timeout = 30.0
-	add_child(_http)
-	_http.request_completed.connect(_done)
+	for i in PARALLEL:
+		var h := HTTPRequest.new()
+		h.timeout = 30.0
+		add_child(h)
+		h.request_completed.connect(_done.bind(h))
+		_pool.append(h)
 
 
 func enabled() -> bool:
@@ -52,30 +55,37 @@ func want_cards(ids: Array) -> void:
 func want(sp: String) -> void:
 	for f in _files.get(sp, []):
 		var item := [sp, str(f)]
-		if not FileAccess.file_exists("%s/%s/%s" % [MiniBattle.USER_DIR, sp, f]) and not item in _queue and item != _busy:
+		if not FileAccess.file_exists("%s/%s/%s" % [MiniBattle.USER_DIR, sp, f]) and not item in _queue \
+				and not item in _busy.values():
 			_queue.append(item)
 	_next()
 
 
 func _next() -> void:
-	if not _busy.is_empty() or _queue.is_empty():
+	for h in _pool:
+		if _queue.is_empty():
+			return
+		if _busy.has(h):
+			continue
+		var item: Array = _queue.pop_front()
+		_busy[h] = item
+		if h.request(_base + "%s/%s" % [item[0], item[1]]) != OK:
+			_busy.erase(h)
+
+
+func _done(result: int, code: int, _h: PackedStringArray, body: PackedByteArray, h: HTTPRequest) -> void:
+	var item: Array = _busy.get(h, [])
+	_busy.erase(h)
+	if item.is_empty():
 		return
-	_busy = _queue.pop_front()
-	if _http.request(_base + "%s/%s" % [_busy[0], _busy[1]]) != OK:
-		_busy = []
-		_next()
-
-
-func _done(result: int, code: int, _h: PackedStringArray, body: PackedByteArray) -> void:
-	var sp: String = _busy[0]
+	var sp: String = item[0]
 	if result == HTTPRequest.RESULT_SUCCESS and code == 200:
 		DirAccess.make_dir_recursive_absolute("%s/%s" % [MiniBattle.USER_DIR, sp])
-		var f := FileAccess.open("%s/%s/%s" % [MiniBattle.USER_DIR, sp, _busy[1]], FileAccess.WRITE)
+		var f := FileAccess.open("%s/%s/%s" % [MiniBattle.USER_DIR, sp, item[1]], FileAccess.WRITE)
 		if f != null:
 			f.store_buffer(body)
 			f.close()
-	_busy = []
-	if not _queue.any(func(it): return it[0] == sp):
+	if not _queue.any(func(it): return it[0] == sp) and not _busy.values().any(func(it): return it[0] == sp):
 		MiniBattle.forget(sp)
 		listo.emit(sp)
 	_next()
