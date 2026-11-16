@@ -15,7 +15,7 @@ extends Node
 
 signal listo(id: String)
 
-const DIR := "user://arte"
+const DIR := "user://arte2"      # arte2: el recorte e-card cambió (versión con la curva)
 const OWN_DIR := "res://mundo/propios/arte"
 const OWN_CARDS := "res://mundo/propios/cartas"
 const SOURCES := [
@@ -231,7 +231,58 @@ func crop(card: Image, id: String) -> Image:
 	var rect := Rect2i(int(g[0]), int(g[1]), int(g[2] - g[0]), int(g[3] - g[1]))
 	if kind != "Energy" and not ecard:       # e-card: sin marco plateado, va la medida tal cual
 		rect = _detect(card, g)
-	return card.get_region(rect)
+	var out := card.get_region(rect)
+	if ecard:
+		_mask_curve(out)
+	return out
+
+
+## e-card: el recuadro del arte tiene el lado izquierdo curvo, con el amarillo del marco
+## metido en las esquinas. Ese amarillo (unido al borde izquierdo) se vuelve transparente,
+## y la curva se empareja de la mitad hacia arriba y hacia abajo para que no queden
+## puntitos de color sueltos en las esquinas.
+func _mask_curve(img: Image) -> void:
+	var w := img.get_width()
+	var h := img.get_height()
+	var lim := int(w * 0.2)
+	var seen := PackedByteArray()
+	seen.resize(lim * h)
+	var stack: Array[Vector2i] = []
+	for y in h:
+		stack.append(Vector2i(0, y))
+	for x in lim:
+		stack.append(Vector2i(x, 0))
+		stack.append(Vector2i(x, h - 1))
+	while not stack.is_empty():
+		var p: Vector2i = stack.pop_back()
+		if p.x < 0 or p.y < 0 or p.x >= lim or p.y >= h:
+			continue
+		var k := p.y * lim + p.x
+		if seen[k] == 1:
+			continue
+		seen[k] = 1
+		var c := img.get_pixel(p.x, p.y)
+		if not (c.r > 0.843 and c.g > 0.588 and c.b < 0.353 and c.g < c.r * 1.02 and c.g > c.r * 0.62):
+			continue
+		img.set_pixel(p.x, p.y, Color(0, 0, 0, 0))
+		stack.append(Vector2i(p.x + 1, p.y))
+		stack.append(Vector2i(p.x - 1, p.y))
+		stack.append(Vector2i(p.x, p.y + 1))
+		stack.append(Vector2i(p.x, p.y - 1))
+	var pre := PackedInt32Array()
+	pre.resize(h)
+	for y in h:
+		for x in lim:
+			if img.get_pixel(x, y).a == 0.0:
+				pre[y] = x + 1
+	var mid := h / 2
+	for y in range(mid - 1, -1, -1):
+		pre[y] = maxi(pre[y], pre[y + 1])
+	for y in range(mid + 1, h):
+		pre[y] = maxi(pre[y], pre[y - 1])
+	for y in h:
+		for x in pre[y]:
+			img.set_pixel(x, y, Color(0, 0, 0, 0))
 
 
 const FRAME := 0.85        # fracción de píxeles plateados para considerar que una fila es el marco

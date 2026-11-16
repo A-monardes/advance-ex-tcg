@@ -42,6 +42,7 @@ func _run() -> void:
 	await process_frame
 	scene.anim_speed = 2
 	scene.title_attract = false      # sin la pantalla de "PRESS START"
+	scene.CAMPAIGN_ON = true      # la prueba entra a la campaña aunque esté oculta
 	scene.title_row = 0
 	await snap("01_titulo")
 	key(KEY_Z)

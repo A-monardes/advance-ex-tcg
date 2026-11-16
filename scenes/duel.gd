@@ -122,8 +122,11 @@ var music_level := 2         # volumen de la música
 var over_sound_done := false
 var editor                   # editor de mazos (scenes/deck_editor.gd)
 var title_msg := ""
-var title_row := 0           # fila elegida en el título (ver _draw_title)
+var title_row := 0           # fila elegida en el título (ver _draw_title); sin campaña arranca en "Start a free duel!"
 const TITLE_ROWS := 9
+## La campaña está en desarrollo: en el juego publicado aparece como "coming soon" y no se
+## puede entrar. Desde el editor de Godot sí, para seguir trabajándola.
+var CAMPAIGN_ON := OS.has_feature("editor")
 var title_view := ""          # "" | "options" (submenú de opciones del título)
 var opt_cursor := 0
 var my_deck := 0
@@ -224,6 +227,8 @@ func _ready() -> void:
 	randomize()
 	title_scene.pick()          # sin escenas propias (como en la web) queda solo el fondo y el logo
 	title_attract = true        # siempre: ahí va el aviso de proyecto de fans
+	if not CAMPAIGN_ON:
+		title_row = TITLE_ROWS - 1
 	font = _load_pixel_font()
 	_load_settings()
 	CardDB.load_db()
@@ -939,6 +944,9 @@ func _title_input(k: int, accept: bool) -> void:
 		return
 	match title_row:
 		0:
+			if not CAMPAIGN_ON:
+				snd.play("error")
+				return
 			snd.play("ok")
 			_go(func():
 				mode = "campaign"
@@ -2398,7 +2406,7 @@ func _draw_title() -> void:
 	my_deck = clampi(my_deck, 0, names.size() - 1)
 	opp_deck = clampi(opp_deck, 0, names.size() - 1)
 	var star := func(n: String) -> String: return ("★ " if Decks.is_user(n) else "") + n
-	var rows := [["", "Campaign"], ["Your deck", star.call(names[my_deck])], ["Opponent", star.call(names[opp_deck])],
+	var rows := [["", "Campaign" if CAMPAIGN_ON else "Campaign (coming soon)"], ["Your deck", star.call(names[my_deck])], ["Opponent", star.call(names[opp_deck])],
 			["Difficulty", "%d · %s" % [ai_level, SimpleAI.LEVEL_NAMES[ai_level - 1]]], ["Format", fmt],
 			["Battle", "Doubles (2 vs 2)" if doubles_mode else "Singles"],
 			["", "Options"], ["", "Edit decks"], ["", "Start a free duel!"]]
@@ -2418,7 +2426,10 @@ func _draw_title() -> void:
 			else:
 				_text_fit(Vector2(72, y), val, C_TEXT, 158)
 		else:
-			_text(Vector2(17, y), rows[i][1], Color("#c03028") if sel else C_TEXT)
+			var col: Color = Color("#c03028") if sel else C_TEXT
+			if i == 0 and not CAMPAIGN_ON:
+				col = C_DIM
+			_text(Vector2(17, y), rows[i][1], col)
 	if title_view == "options":
 		var o := Rect2(40, 40, 160, 84)
 		_frame(o)
@@ -5682,17 +5693,14 @@ func _cover(src: Image, w: int, h: int) -> Image:
 	return img
 
 
-## La galería se ve con la nitidez real de la pantalla: mientras está abierta, el juego
-## dibuja a la resolución de la ventana (y no a 240x160 agrandado).
+## La galería: el arte grande, en píxeles de GBA como el resto del juego.
 func _open_gallery(id: String) -> void:
 	gallery_id = id
 	arte.want(id)
-	get_window().content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 
 
 func _close_gallery() -> void:
 	gallery_id = ""
-	get_window().content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 
 
 ## Cuántos píxeles de pantalla mide cada píxel del juego (escala entera).
@@ -5704,33 +5712,21 @@ func _screen_scale() -> int:
 ## Dónde va el arte en la galería y a qué tamaño (en píxeles del juego). Se agranda en
 ## múltiplos enteros de píxeles de pantalla, para que se vea nítido y nunca borroso.
 func _gallery_rect(img: Image) -> Rect2:
-	var sc := _screen_scale()
-	var maxw := 224.0 * sc
-	var maxh := 126.0 * sc
-	var k := floorf(minf(maxw / img.get_width(), maxh / img.get_height()))
-	var px := Vector2(img.get_width(), img.get_height())
-	if k >= 1.0:
-		px *= k
-	else:                      # imagen propia muy grande: se achica a lo que entra
-		var f := minf(maxw / img.get_width(), maxh / img.get_height())
-		px = (px * f).floor()
-	var sz := px / sc
+	# Estilo GBA: el arte se reduce a píxeles de la pantalla del juego (240x160), que
+	# después se agrandan como todo lo demás. Una imagen chica no se estira de más.
+	var f := minf(1.0, minf(224.0 / img.get_width(), 126.0 / img.get_height()))
+	var sz := (Vector2(img.get_width(), img.get_height()) * f).floor()
 	return Rect2(Vector2(round((W - sz.x) / 2.0), round(4 + (126.0 - sz.y) / 2.0)), sz)
 
 
 ## El arte a la resolución de la pantalla (cada píxel de la imagen, un cuadrado entero de
 ## píxeles reales).
 func _gallery_tex(id: String, img: Image, r: Rect2) -> Texture2D:
-	var sc := _screen_scale()
-	var key := "%s|gal%d" % [id, sc]
+	var key := "%s|gal" % id
 	if not _hd_tex.has(key):
-		var big := img.duplicate() as Image
-		var tw := int(round(r.size.x * sc))
-		var th := int(round(r.size.y * sc))
-		big.resize(tw, th, Image.INTERPOLATE_NEAREST if tw >= img.get_width() else Image.INTERPOLATE_LANCZOS)
-		var tex := ImageTexture.create_from_image(big)
-		tex.set_size_override(Vector2i(int(r.size.x), int(r.size.y)))
-		_hd_tex[key] = tex
+		var small := img.duplicate() as Image
+		small.resize(int(r.size.x), int(r.size.y), Image.INTERPOLATE_LANCZOS)
+		_hd_tex[key] = ImageTexture.create_from_image(small)
 	return _hd_tex[key]
 
 
