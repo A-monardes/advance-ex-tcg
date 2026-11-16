@@ -222,7 +222,8 @@ var _attract_t := 0.0
 
 func _ready() -> void:
 	randomize()
-	title_attract = title_scene.pick()
+	title_scene.pick()          # sin escenas propias (como en la web) queda solo el fondo y el logo
+	title_attract = true        # siempre: ahí va el aviso de proyecto de fans
 	font = _load_pixel_font()
 	_load_settings()
 	CardDB.load_db()
