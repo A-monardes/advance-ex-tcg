@@ -231,6 +231,10 @@ func _ready() -> void:
 	snd = SoundScript.new()
 	add_child(snd)
 	snd.set_levels(sfx_level, music_level)
+	if OS.has_feature("web"):
+		# En el navegador la ventana es la página: escala libre (no solo enteros), centrada
+		get_window().content_scale_stretch = Window.CONTENT_SCALE_STRETCH_FRACTIONAL
+		get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	arte = ArteHD.new()
 	add_child(arte)
 	arte.listo.connect(_on_arte_listo)
