@@ -5,10 +5,10 @@ class_name ImgLoad
 
 static func load(path: String) -> Image:
 	if not FileAccess.file_exists(path):
-		return null
+		return _imported(path)
 	var bytes := FileAccess.get_file_as_bytes(path)
 	if bytes.is_empty():
-		return null
+		return _imported(path)
 	var img := Image.new()
 	var err := ERR_FILE_UNRECOGNIZED
 	match path.get_extension().to_lower():
@@ -20,3 +20,18 @@ static func load(path: String) -> Image:
 	if err != OK:
 		return null
 	return img
+
+
+## En el juego exportado las imágenes del proyecto no quedan como archivo suelto: Godot
+## guarda la versión importada. Se carga esa y se le saca la imagen.
+static func _imported(path: String) -> Image:
+	if not path.begins_with("res://") or not ResourceLoader.exists(path):
+		return null
+	var tex = ResourceLoader.load(path)
+	if tex is Texture2D:
+		var img: Image = tex.get_image()
+		if img != null and not img.is_empty():
+			if img.is_compressed():
+				img.decompress()
+			return img
+	return null
