@@ -1,0 +1,62 @@
+EFECTOS DE SONIDO PROPIOS
+=========================
+Cualquier efecto se puede reemplazar poniendo acá un archivo con su nombre
+(.ogg, .mp3 o .wav). Los que no estén se generan por código.
+
+  move      mover el cursor            ok        aceptar
+  back      volver / cancelar          error     algo no se puede
+  coin      moneda en el aire          heads     salió cara
+  tails     salió cruz                 draw      robar cartas
+  shuffle   barajar                    trainer   jugar un Entrenador
+  energy    unir una Energía           evolve    evolución (subida)
+  evolved   evolución (final)          ko        Pokémon fuera de combate
+  prize     tomar un Premio            turn      cambio de turno
+  win       ganaste                    lose      perdiste
+  special   ataque especial (Kyogre…)  vs        cara a cara de rivales
+
+  Golpes según el tipo del ataque:
+  hit_Fire  hit_Water  hit_Grass  hit_Lightning  hit_Psychic
+  hit_Fighting  hit_Darkness  hit_Metal  hit_Colorless
+
+Ejemplo: sonidos/hit_Fire.ogg reemplaza el golpe de los ataques de Fuego.
+
+GOLPES DE LA MINI PELEA (sonidos/golpes/)
+=========================================
+Un sonido por familia de ataque, según el tipo del Pokémon en los juegos (el mismo que
+elige el efecto de Mystery Dungeon), si el ataque es de cerca o a distancia, y si es
+débil o fuerte (fuerte = 50 de daño o más):
+
+  <familia>_<fisico|distancia>_<debil|fuerte>.ogg
+
+  familias: fuego agua hielo planta bicho veneno electrico psiquico fantasma
+            lucha roca tierra siniestro acero normal volador dragon
+
+  Ejemplo: tierra_fisico_fuerte.ogg, volador_distancia_debil.ogg
+
+Si falta la combinación exacta se usa la más parecida de la misma familia (otra fuerza,
+después el otro alcance). Un Pokémon con dos tipos prueba los dos (Swellow, Normal/
+Volador, usa los de volador antes que los de normal). Si la familia no tiene ninguno,
+suena el golpe generado del tipo de la carta (hit_Fire, hit_Water...).
+
+  super_efectivo.ogg   golpe a la Debilidad (reemplaza a "weak" y al golpe normal)
+  wrap.ogg             Wrap, Bind, Constrict... (ver "sonido" en data/familias_pmd.json)
+
+Para preparar archivos nuevos (mono, sin silencios, volumen parejo, .ogg):
+  python3 tools/armar_sonidos.py archivo1.wav archivo2.wav ...
+
+EFECTOS CON NOMBRE EN CASTELLANO (sonidos/)
+===========================================
+  atras, confirmar, unir_energia, cambio_turno, faint   = back, ok, energy, turn, ko
+  mezclar = shuffle · coin-flip = coin (moneda al aire) · coin-land = heads y tails (cae)
+  comenzar_partida     al empezar un duelo
+  comprar              al comprar un sobre en la tienda
+  usar_objeto          jugar un Entrenador (objeto o Estadio)
+  usar_soporte         jugar un Supporter
+  cura_con_objeto      Entrenador que cura (Potion, Super Potion...)
+  cura_en_batalla      ataque que cura al atacante
+  contador_dano        ataque que solo pone contadores de daño (Haunt, Damage Curse...)
+  envenenar, paralizar, quemar, confundir   cuando el ataque deja ese estado
+  Hypnosis, Yawn, canto                     dormir (canto: Sing, Sleepy Song, Chime...;
+                                            Hypnosis para el resto)
+  power_unir_energia, power_curar, power_buscar_mazo, power_cambio_pokemon, power_otros
+                       Poké-Powers según lo que hacen

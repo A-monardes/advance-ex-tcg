@@ -1,0 +1,26 @@
+IDEAS GUARDADAS
+===============
+
+Implementadas (noviembre 2026):
+
+1. Escena de batalla al estilo Rubí/Zafiro al atacar  (scenes/battle_scene.gd)
+   - Options/Pausa > "Battles: On/Off". No se usa en dobles. Z la saltea.
+   - Fondos y sprites en mundo/propios/batalla/ (ver su LEEME). Falta conseguir los
+     sprites de batalla: python tools/sprites_batalla_faltantes.py dice cuáles.
+   - Sin sprite, se ve el arte de la carta enmarcado.
+
+2. Arte completo de las cartas  (scenes/arte_hd.gd)
+   - La primera vez que se abre la ficha de una carta, el juego baja la carta de la base
+     oficial (pokemon.com: el arte sin el brillo holo) o, si no está, de pokemontcg.io;
+     detecta el marco del arte, lo recorta y lo guarda en user://arte/. Sin conexión
+     sigue el recorte cuadrado de siempre.
+   - Galería: el arte se agranda en múltiplos enteros de píxeles (nítido, nunca borroso).
+   - Jugando desde el editor de Godot, lo bajado se guarda en mundo/propios/arte/ y viaja
+     en cada exportación. Options > "Card art: Get all" baja el de todas las cartas.
+   - El recorte usa las proporciones de data/arte_recorte.json (calibrar si sale corrido).
+   - Imagen propia opcional: mundo/propios/arte/<id>.png (solo el arte, ya recortado).
+   - Ficha: el arte apaisado arriba. C otra vez: vista de galería nítida con nombre,
+     expansión y artista. X vuelve.
+
+Pendiente de charlar:
+   - Íconos chicos tipo Mystery Dungeon en la mesa (combinado con la escena de batalla).

@@ -1,0 +1,35 @@
+MUNDO CAMINABLE (mapas de la campaña)
+=====================================
+baldosas.png          fila de baldosas de 16x16, en este orden:
+                      0 piso · 1 piso con dibujo · 2 alfombra · 3 techo de pared · 4 pared
+                      5 emblema · 6-7 lava (2 cuadros) · 8-9 brasero (2 cuadros) · 10 baranda
+                      11 mesa de duelo · 12 biblioteca · 13 planta · 14 PC · 15 salida
+                      16-17 piso con piedras gastadas (se mezclan solas con el piso)
+personajes/<id>.png   48x128: 3 columnas (quieto, paso 1, paso 2) x 4 filas
+                      (abajo, arriba, izquierda, derecha), cada cuadro de 16x32 como en
+                      Ruby/Sapphire, fondo transparente. Los pies van en la fila 29 del cuadro.
+                      (Un PNG de 48x64 con cuadros de 16x16 también funciona.)
+                      "jugador" sos vos; los demás tienen el id que usa el mapa ("sprite").
+
+Las baldosas las genera tools/make_world.py y los personajes tools/make_characters.py (el protagonista, dibujado a mano, tools/make_player.py); podés reemplazar cualquier PNG por uno tuyo del mismo tamaño.
+
+Los mapas están en data/mapas/<id>.json. Cada letra de "baldosas" es una casilla:
+  .  piso            ,  piso con dibujo    =  alfombra       D  salida
+  #  pared           E  emblema            L  lava           B  brasero
+  r  baranda         T  mesa / pupitre     b  biblioteca     P  planta      C  PC
+  M  escritorio
+Las letras de "objetos" dicen qué pasa al mirar esa casilla con Z ("accion": "mazo" abre
+el editor, como una PC).
+
+Otras claves del mapa:
+  "fondo": "nombre"   dibuja mundo/propios/nombre.png (el mapa entero, del tamaño exacto:
+                      ancho = columnas x 16, alto = filas x 16) en lugar de las baldosas.
+                      Las letras siguen diciendo dónde se puede caminar.
+  "salidas": [{"x": 5, "y": 10, "mapa": "otro", "a": [x, y, "up"]}]
+                      pisar esa casilla D lleva al otro mapa (y a esa casilla).
+  "puerta": [frases]  lo que se dice al chocar con una D que todavía no lleva a ningún lado.
+  personajes: "sprite" (PNG), "dir", "frases", "rival" (id de data/campana.json),
+              "vista" (casillas que ven: te desafían al pasar por delante), "pasea", "regalo".
+
+TUS PROPIOS SPRITES: mundo/propios/<id>.png tiene prioridad sobre mundo/personajes/
+(ver mundo/propios/LEEME.txt). Los scripts de tools/ no escriben ahí.

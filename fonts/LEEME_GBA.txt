@@ -1,0 +1,11 @@
+gba.fnt / gba.png: letra pixel original del proyecto (estilo GBA), dibujada a mano
+en tools/gba_font.py. Para cambiar un glifo, editá ese archivo y corré
+    python3 tools/make_font.py
+Es parte del proyecto: no tiene licencia de terceros.
+
+LETRA PROPIA
+Si ponés acá propia.fnt y propia.png, el juego usa esa letra en lugar de la original
+(lo que no tenga, como ★ o ✓, sale de la original). Se arma desde una imagen con
+filas de letras usando tools/hoja_a_fuente.py y un archivo que describe la hoja
+(ver las instrucciones al principio de ese script). Esos dos archivos no se
+reparten con el código del proyecto.

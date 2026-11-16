@@ -1,0 +1,400 @@
+{
+  "_ayuda": "Campaña (en armado). 'inicio' dice en qué mapa y casilla empezás. 'starters' son los mazos que podés elegir al empezar (nombres de data/decks.json). 'rivales': personajes con los que se puede jugar un duelo; cada uno tiene nombre, mazo, nivel de la IA (1 a 5), 'sobre' (de qué expansión son los sobres que da: ex1..ex5), 'sobres' (cuántos da la primera vez) y frases: 'hola' antes del duelo, 'gane' si te ganó, 'perdi' si le ganaste. 'requiere' (opcional) bloquea a un rival hasta que se cumpla, por ejemplo {\"vencer\": \"alumno\"}. Los mapas están en data/mapas/. Dinero y tienda: ver data/LEEME_CAMPANA.txt.",
+  "inicio": {
+    "mapa": "escuela",
+    "x": 8,
+    "y": 14,
+    "dir": "up"
+  },
+  "dinero_inicial": 500,
+  "starters": [
+    {
+      "deck": "Blaze",
+      "titulo": "Fire",
+      "carta": "ex1-73",
+      "texto": "Torchic and Blaziken: fast, fiery attacks."
+    },
+    {
+      "deck": "Torrent",
+      "titulo": "Water",
+      "carta": "ex1-60",
+      "texto": "Mudkip and Swampert: tough and steady."
+    },
+    {
+      "deck": "Overgrow",
+      "titulo": "Grass",
+      "carta": "ex1-76",
+      "texto": "Treecko and Sceptile: quick and clever."
+    }
+  ],
+  "recompensas": {
+    "revancha": 1
+  },
+  "revanchas_requieren": {
+    "vencer": "jefe"
+  },
+  "rivales": {
+    "alumno": {
+      "nombre": "Student",
+      "titulo": "Trainer's School",
+      "mazo": "Oasis",
+      "nivel": 1,
+      "sobre": "ex1",
+      "sobres": 1,
+      "dinero": 200,
+      "dinero_revancha": 50,
+      "hola": [
+        "Want to practice? I just learned the rules!"
+      ],
+      "otra_vez": [
+        "Back for more? Let's go!"
+      ],
+      "gane": [
+        "Yes! I won! Practice makes perfect."
+      ],
+      "perdi": [
+        "Wow, you're good at this!"
+      ],
+      "vencido": [
+        "You beat me fair and square.",
+        "Beat the Headmaster and I'll want a rematch!"
+      ],
+      "revancha_pregunta": [
+        "I've been practicing!",
+        "Want a rematch?"
+      ],
+      "revancha_si": [
+        "Alright, here I come!"
+      ],
+      "revancha_no": [
+        "Okay... maybe later."
+      ],
+      "variantes": [
+        {
+          "si": {
+            "vencer": "jefe",
+            "ganadas": 2
+          },
+          "mazo": "FireFang",
+          "nivel": 3,
+          "revancha_pregunta": [
+            "I switched to a Fire deck. It burns, right?",
+            "One more time?"
+          ],
+          "perdi": [
+            "Even my new deck couldn't stop you..."
+          ]
+        },
+        {
+          "si": {
+            "vencer": "jefe"
+          },
+          "nivel": 2,
+          "revancha_pregunta": [
+            "Since you beat the Headmaster, I've been practicing every day!",
+            "Want a rematch?"
+          ]
+        }
+      ]
+    },
+    "alumna": {
+      "nombre": "Student",
+      "titulo": "Trainer's School",
+      "mazo": "Caravan",
+      "nivel": 1,
+      "sobre": "ex1",
+      "sobres": 1,
+      "dinero": 250,
+      "dinero_revancha": 50,
+      "hola": [
+        "I'm the best in class. Let's see what you've got!"
+      ],
+      "otra_vez": [
+        "Didn't learn your lesson? Fine!"
+      ],
+      "gane": [
+        "Hehe, top of the class!"
+      ],
+      "perdi": [
+        "Hmph... Not bad. Not bad at all."
+      ],
+      "vencido": [
+        "Hmph. I'm still the best in class, you know.",
+        "Go take on the Headmaster first."
+      ],
+      "revancha_pregunta": [
+        "Ready to lose this time?",
+        "Rematch?"
+      ],
+      "revancha_si": [
+        "That's the spirit!"
+      ],
+      "revancha_no": [
+        "Scared? Hehe."
+      ],
+      "variantes": [
+        {
+          "si": {
+            "perdidas": 2,
+            "ganadas": 0
+          },
+          "otra_vez": [
+            "You again? Here's a tip, since you keep losing:",
+            "Attach an Energy every turn. Every. Single. Turn.",
+            "Now let's duel!"
+          ]
+        }
+      ]
+    },
+    "jefe": {
+      "nombre": "Headmaster",
+      "titulo": "Trainer's School",
+      "mazo": "Wish Maker",
+      "nivel": 3,
+      "sobre": "ex1",
+      "sobres": 2,
+      "dinero": 500,
+      "dinero_revancha": 100,
+      "hola": [
+        "So, you found your way to my office.",
+        "Let me see what you've learned!"
+      ],
+      "gane": [
+        "Not bad, but you still have much to learn."
+      ],
+      "perdi": [
+        "Splendid! You've learned well."
+      ],
+      "revancha_pregunta": [
+        "Back for another lesson?"
+      ],
+      "revancha_si": [
+        "Very well. Show me!"
+      ],
+      "revancha_no": [
+        "Come back whenever you're ready."
+      ],
+      "variantes": [
+        {
+          "si": {
+            "inicial": "Fire"
+          },
+          "cartas": [
+            "ex4-89"
+          ],
+          "perdi": [
+            "Splendid! You've learned well.",
+            "You and your Fire deck make a fine team. This Blaziken ex is yours."
+          ]
+        },
+        {
+          "si": {
+            "inicial": "Water"
+          },
+          "cartas": [
+            "ex4-95"
+          ],
+          "perdi": [
+            "Splendid! You've learned well.",
+            "You and your Water deck make a fine team. This Swampert ex is yours."
+          ]
+        },
+        {
+          "si": {
+            "inicial": "Grass"
+          },
+          "cartas": [
+            "ex4-93"
+          ],
+          "perdi": [
+            "Splendid! You've learned well.",
+            "You and your Grass deck make a fine team. This Sceptile ex is yours."
+          ]
+        }
+      ]
+    },
+    "patio_gorra": {
+      "nombre": "Student",
+      "titulo": "Trainer's School",
+      "mazo": "Forest Guardian",
+      "nivel": 2,
+      "sobre": "ex2",
+      "sobres": 1,
+      "dinero": 300,
+      "dinero_revancha": 75,
+      "requiere": {
+        "vencer": "jefe"
+      },
+      "hola": [
+        "We just finished our duel. Your turn!",
+        "My Bellossom can heal my whole team. Ready?"
+      ],
+      "gane": [
+        "See? Patience wins duels."
+      ],
+      "perdi": [
+        "Wow... Even Bellossom couldn't keep up."
+      ],
+      "revancha_pregunta": [
+        "Want to try my forest again?"
+      ],
+      "revancha_si": [
+        "Here we go!"
+      ],
+      "revancha_no": [
+        "Okay, I'll keep practicing."
+      ]
+    },
+    "patio_gorra2": {
+      "nombre": "Student",
+      "titulo": "Trainer's School",
+      "mazo": "WindBlast",
+      "nivel": 2,
+      "sobre": "ex2",
+      "sobres": 1,
+      "dinero": 300,
+      "dinero_revancha": 75,
+      "requiere": {
+        "vencer": "jefe"
+      },
+      "hola": [
+        "You beat the Headmaster? Then show me!",
+        "My Flygon flies faster than the wind!"
+      ],
+      "gane": [
+        "Blown away! Hehe."
+      ],
+      "perdi": [
+        "You weathered the storm..."
+      ],
+      "revancha_pregunta": [
+        "Ready for another gust?"
+      ],
+      "revancha_si": [
+        "Here we go!"
+      ],
+      "revancha_no": [
+        "Okay, I'll keep practicing."
+      ]
+    },
+    "patio_rubio": {
+      "nombre": "Student",
+      "titulo": "Trainer's School",
+      "mazo": "Ruby",
+      "nivel": 2,
+      "sobre": "ex2",
+      "sobres": 1,
+      "dinero": 300,
+      "dinero_revancha": 75,
+      "requiere": {
+        "vencer": "jefe"
+      },
+      "hola": [
+        "Ruby vs. Sapphire is getting boring. Let's duel!"
+      ],
+      "gane": [
+        "Blaziken never lets me down!"
+      ],
+      "perdi": [
+        "Huh. I need a better plan than just attacking."
+      ],
+      "revancha_pregunta": [
+        "Rematch? My Blaziken is fired up!"
+      ],
+      "revancha_si": [
+        "Here we go!"
+      ],
+      "revancha_no": [
+        "Okay, I'll keep practicing."
+      ]
+    },
+    "patio_morena": {
+      "nombre": "Student",
+      "titulo": "Trainer's School",
+      "mazo": "Sapphire",
+      "nivel": 2,
+      "sobre": "ex2",
+      "sobres": 1,
+      "dinero": 300,
+      "dinero_revancha": 75,
+      "requiere": {
+        "vencer": "jefe"
+      },
+      "hola": [
+        "He always plays Ruby. You'll be a nice change!"
+      ],
+      "gane": [
+        "Swampert wins again!"
+      ],
+      "perdi": [
+        "You're even better than he is!"
+      ],
+      "revancha_pregunta": [
+        "Up for another round?"
+      ],
+      "revancha_si": [
+        "Here we go!"
+      ],
+      "revancha_no": [
+        "Okay, I'll keep practicing."
+      ]
+    }
+  },
+  "tiendas": {
+    "bridgette": {
+      "_ayuda": "La tienda de cartas, fuera de la escuela (se entra por la puerta principal). Ver data/LEEME_CAMPANA.txt, punto 5.",
+      "nombre": "Card Shop",
+      "vendedora": "Bridgette",
+      "fondo": "tienda_fondo",
+      "retrato": "bridgette",
+      "primera_vez": [
+        "Oh! A new face! Hi, I'm Bridgette.",
+        "You must be {nombre}, the new student at the Trainer's School.",
+        "This is my Card Shop. I sell booster packs from every expansion.",
+        "Win duels, earn some money and come back to build your collection!"
+      ],
+      "hola": [
+        "Hi there! Welcome to my Card Shop!",
+        "I've got booster packs from every expansion."
+      ],
+      "pregunta": "What would you like?",
+      "otra_cosa": "Anything else I can do for you?",
+      "charla": [
+        "Want a tip? Open lots of packs!",
+        "Every pack has at least one rare card in it."
+      ],
+      "confirmar": "{sobre}? That will be ₽{precio}. OK?",
+      "gracias": [
+        "Here you go! Thank you!"
+      ],
+      "sin_dinero": [
+        "Oh, sorry! You don't have enough money for that."
+      ],
+      "adios": [
+        "Thanks for stopping by! Come again!"
+      ],
+      "sobres": [
+        {
+          "sobre": "ex1",
+          "precio": 300
+        },
+        {
+          "sobre": "ex2",
+          "precio": 300
+        },
+        {
+          "sobre": "ex3",
+          "precio": 350
+        },
+        {
+          "sobre": "ex4",
+          "precio": 350
+        },
+        {
+          "sobre": "ex5",
+          "precio": 400
+        }
+      ]
+    }
+  }
+}

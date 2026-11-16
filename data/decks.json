@@ -1,0 +1,213 @@
+{
+  "Blaze": {
+    "description": "Starter deck. Torchic grows into Blaziken, with Camerupt and Arcanine backing it up. Simple and hard-hitting.",
+    "cards": [
+      ["ex1-73", 2], ["ex3-77", 2], ["ex1-27", 2], ["ex3-25", 1], ["ex1-15", 2],
+      ["ex1-61", 2], ["ex3-69", 2], ["ex1-4", 1], ["ex3-24", 1], ["ex2-65", 3],
+      ["ex2-15", 2], ["ex1-89", 3], ["ex1-86", 3], ["ex1-88", 2], ["ex1-90", 2],
+      ["ex1-91", 3], ["ex1-92", 2], ["ex1-85", 1], ["ex1-108", 24]
+    ]
+  },
+  "Torrent": {
+    "description": "Starter deck. Mudkip grows into Swampert, which heals itself with Water Energy. Wailord is a big wall and Pelipper helps out.",
+    "cards": [
+      ["ex1-60", 2], ["ex3-65", 2], ["ex1-40", 2], ["ex1-41", 1], ["ex1-23", 2],
+      ["ex1-77", 3], ["ex2-84", 1], ["ex2-50", 1], ["ex1-19", 1], ["ex1-48", 2],
+      ["ex2-83", 1], ["ex1-14", 2], ["ex1-89", 3], ["ex1-86", 3], ["ex1-88", 2],
+      ["ex1-90", 2], ["ex1-91", 3], ["ex1-92", 2], ["ex1-85", 1], ["ex1-106", 24]
+    ]
+  },
+  "Overgrow": {
+    "description": "Starter deck. Treecko grows into Sceptile, which moves Grass Energy around. Nuzleaf and the fast Ninjask keep up the pressure.",
+    "cards": [
+      ["ex1-76", 2], ["ex3-80", 2], ["ex1-31", 1], ["ex3-31", 2], ["ex1-20", 2],
+      ["ex2-77", 2], ["ex5-71", 2], ["ex2-48", 2], ["ex3-67", 2], ["ex3-68", 1],
+      ["ex3-38", 2], ["ex1-89", 3], ["ex1-86", 3], ["ex1-88", 2], ["ex1-90", 2],
+      ["ex1-91", 3], ["ex1-92", 2], ["ex1-85", 1], ["ex1-104", 24]
+    ]
+  },
+  "Ruby": {
+    "description": "EX Ruby & Sapphire theme deck: Blaziken, Hariyama and Delcatty (Fire and Fighting).",
+    "cards": [
+      ["ex1-15", 2], ["ex1-27", 2], ["ex1-29", 2], ["ex1-33", 2], ["ex1-46", 1],
+      ["ex1-56", 4], ["ex1-63", 2], ["ex1-70", 4], ["ex1-72", 3], ["ex1-73", 4],
+      ["ex1-84", 1], ["ex1-86", 2], ["ex1-89", 1], ["ex1-90", 2], ["ex1-91", 3],
+      ["ex1-95", 1], ["ex1-105", 12], ["ex1-108", 12]
+    ]
+  },
+  "Sapphire": {
+    "description": "EX Ruby & Sapphire theme deck: Swampert, Grovyle and Weezing (Water and Grass).",
+    "cards": [
+      ["ex1-19", 1], ["ex1-23", 1], ["ex1-24", 1], ["ex1-31", 2], ["ex1-40", 2],
+      ["ex1-48", 2], ["ex1-54", 3], ["ex1-60", 4], ["ex1-69", 2], ["ex1-75", 4],
+      ["ex1-77", 3], ["ex1-80", 2], ["ex1-88", 2], ["ex1-89", 1], ["ex1-90", 3],
+      ["ex1-91", 3], ["ex1-104", 12], ["ex1-106", 12]
+    ]
+  },
+  "Oasis": {
+    "description": "EX Sandstorm theme deck: Armaldo, Sandslash and Azumarill (Fighting and Water), with Claw Fossil.",
+    "cards": [
+      ["ex2-1", 1], ["ex2-21", 1], ["ex2-27", 2], ["ex2-30", 1], ["ex2-31", 3],
+      ["ex2-45", 2], ["ex2-66", 4], ["ex2-68", 3], ["ex2-75", 4], ["ex2-85", 2],
+      ["ex1-90", 3], ["ex1-92", 2], ["ex2-86", 1], ["ex2-89", 2], ["ex2-90", 4],
+      ["ex2-93", 1], ["ex1-105", 12], ["ex1-106", 12]
+    ]
+  },
+  "Caravan": {
+    "description": "EX Sandstorm theme deck: Cradily, Arcanine and Nuzleaf (Grass and Fire), with Root Fossil.",
+    "cards": [
+      ["ex2-3", 1], ["ex2-15", 2], ["ex2-42", 2], ["ex2-48", 2], ["ex2-51", 1],
+      ["ex2-57", 2], ["ex2-59", 3], ["ex2-64", 2], ["ex2-65", 4], ["ex2-76", 4],
+      ["ex1-81", 2], ["ex1-91", 3], ["ex2-86", 2], ["ex2-87", 2], ["ex2-92", 4],
+      ["ex1-104", 13], ["ex1-108", 11]
+    ]
+  },
+  "WindBlast": {
+    "description": "EX Dragon theme deck: Flygon, Ninjask and Magneton (Grass and Lightning).",
+    "cards": [
+      ["ex3-9", 1], ["ex3-15", 2], ["ex3-35", 2], ["ex3-38", 2], ["ex3-47", 2],
+      ["ex3-57", 3], ["ex3-61", 4], ["ex3-66", 4], ["ex3-73", 4], ["ex3-78", 4],
+      ["ex1-90", 3], ["ex3-82", 2], ["ex3-86", 1], ["ex3-88", 2], ["ex1-104", 13],
+      ["ex1-109", 11]
+    ]
+  },
+  "FireFang": {
+    "description": "EX Dragon theme deck: Salamence, Camerupt and Crawdaunt (Fire and Water).",
+    "cards": [
+      ["ex3-3", 1], ["ex3-19", 2], ["ex3-24", 2], ["ex3-40", 2], ["ex3-41", 2],
+      ["ex3-49", 4], ["ex3-52", 4], ["ex3-58", 4], ["ex3-69", 4], ["ex3-72", 3],
+      ["ex1-91", 3], ["ex3-84", 2], ["ex3-85", 1], ["ex3-88", 2], ["ex1-106", 12],
+      ["ex1-108", 12]
+    ]
+  },
+  "Team Magma": {
+    "description": "EX Team Magma vs Team Aqua theme deck: Team Magma's Groudon, Aggron, Claydol and Houndoom.",
+    "cards": [
+      ["ex4-7", 1], ["ex4-9", 2], ["ex4-33", 2], ["ex4-34", 2], ["ex4-36", 2],
+      ["ex4-58", 4], ["ex4-60", 4], ["ex4-62", 4], ["ex4-68", 4], ["ex1-90", 2],
+      ["ex1-91", 2], ["ex4-70", 2], ["ex4-80", 2], ["ex4-82", 2], ["ex4-83", 1],
+      ["ex1-105", 16], ["ex1-108", 8]
+    ]
+  },
+  "Team Aqua": {
+    "description": "EX Team Magma vs Team Aqua theme deck: Team Aqua's Kyogre, Walrein, Lanturn and Mightyena.",
+    "cards": [
+      ["ex4-6", 1], ["ex4-3", 2], ["ex4-28", 2], ["ex4-30", 2], ["ex4-31", 2],
+      ["ex4-48", 4], ["ex4-49", 4], ["ex4-54", 4], ["ex4-56", 4], ["ex1-90", 2],
+      ["ex1-91", 2], ["ex4-69", 2], ["ex4-75", 2], ["ex4-77", 2], ["ex4-78", 1],
+      ["ex1-106", 16], ["ex1-109", 8]
+    ]
+  },
+  "Wish Maker": {
+    "description": "EX Hidden Legends theme deck: Jirachi, Metagross, Starmie and Tentacruel (Psychic and Water).",
+    "cards": [
+      ["ex5-79", 3], ["ex5-51", 1], ["ex5-77", 4], ["ex5-49", 2], ["ex5-75", 3],
+      ["ex5-65", 3], ["ex5-58", 3], ["ex5-19", 1], ["ex5-54", 4], ["ex5-43", 2],
+      ["ex5-11", 1], ["ex5-8", 1], ["ex5-90", 2], ["ex5-92", 2], ["ex1-88", 2],
+      ["ex1-90", 2], ["ex1-94", 2], ["ex1-106", 11], ["ex1-107", 11]
+    ]
+  },
+  "Forest Guardian": {
+    "description": "EX Hidden Legends theme deck: Dark Celebi, Bellossom, Dodrio and Loudred (Grass and Colorless).",
+    "cards": [
+      ["ex5-68", 4], ["ex5-35", 2], ["ex5-16", 2], ["ex5-60", 4], ["ex5-33", 2],
+      ["ex5-4", 1], ["ex5-71", 3], ["ex5-76", 3], ["ex5-82", 4], ["ex5-39", 2],
+      ["ex5-90", 3], ["ex5-92", 2], ["ex1-91", 2], ["ex1-92", 2], ["ex1-93", 2],
+      ["ex1-104", 22]
+    ]
+  },
+  "Magma Spirit (Worlds 2004)": {
+    "description": "2004 World Champion, 15-and-over division: Tsuguyoshi Yamato (Japan), undefeated. Team Magma's Groudon and Zangoose with Magma Energy.",
+    "cards": [
+      ["ex4-9", 4], ["ex4-19", 2], ["ex4-8", 2], ["ex4-23", 4], ["ex4-60", 2],
+      ["ex4-64", 1], ["ecard1-138", 2], ["ex5-88", 3], ["ex4-73", 2], ["ex3-87", 2],
+      ["ex1-87", 3], ["ex5-92", 3], ["ex1-92", 1], ["ex4-80", 2], ["ex4-82", 4],
+      ["ex3-88", 3], ["ecard3-140", 3], ["ex1-93", 4], ["ex1-105", 6], ["ex4-87", 4],
+      ["ex1-107", 1], ["ex1-95", 2]
+    ]
+  },
+  "Blaziken Tech (Worlds 2004)": {
+    "description": "2004 World Championship runner-up, 15-and-over division: Chris Fulop (USA). Blaziken and Blaziken ex with Delcatty, Rayquaza ex and Rare Candy.",
+    "cards": [
+      ["ex2-60", 4], ["ex5-16", 1], ["ex5-68", 1], ["ex3-97", 1], ["ex1-44", 2],
+      ["ex1-5", 2], ["ex4-53", 1], ["ex4-4", 1], ["ex1-74", 4], ["ex1-28", 2],
+      ["ex1-3", 3], ["ex4-89", 2], ["ex2-88", 4], ["ecard1-138", 4], ["ecard3-138", 3],
+      ["ecard1-145", 1], ["ecard1-148", 1], ["ex5-92", 4], ["ecard2-136", 1], ["ecard3-126", 1],
+      ["ex1-92", 1], ["ex1-108", 10], ["ex1-109", 2], ["ex2-93", 3], ["ecard2-147", 1]
+    ]
+  },
+  "Team Rushdown (Worlds 2004)": {
+    "description": "2004 World Championship runner-up, 11-14 division: Kevin Nguyen (USA). Gardevoir and Gardevoir ex with Boost Energy and Magneton.",
+    "cards": [
+      ["ex1-7", 2], ["ex2-96", 2], ["ex2-79", 2], ["ex2-74", 4], ["ex3-62", 2],
+      ["ex2-60", 4], ["ex1-34", 3], ["ex3-17", 2], ["ex1-5", 2], ["ex2-88", 2],
+      ["ex5-87", 1], ["ex1-87", 3], ["ex4-85", 1], ["ex5-91", 1], ["ex1-92", 1],
+      ["ex5-92", 1], ["ecard3-123", 2], ["ecard2-136", 1], ["ecard3-138", 4], ["ecard2-141", 1],
+      ["ecard1-148", 3], ["ecard2-145", 4], ["ex1-107", 10], ["ex1-109", 2]
+    ]
+  },
+  "Rocky Beach (Worlds 2004)": {
+    "description": "2004 World Championship runner-up, 10-and-under division: Reed Weichler (USA). Swampert, Swampert ex and Suicune ex.",
+    "cards": [
+      ["ex1-59", 4], ["ex1-40", 3], ["ex1-13", 3], ["ex4-95", 2], ["ex4-94", 1],
+      ["ex2-60", 2], ["ex1-44", 2], ["ex1-5", 2], ["ex3-62", 2], ["ex3-17", 2],
+      ["ex2-26", 1], ["ex5-85", 1], ["ecard1-138", 2], ["ecard3-138", 3], ["ecard2-130", 1],
+      ["ex1-91", 1], ["ecard1-148", 2], ["ecard1-149", 1], ["ex2-88", 2], ["ex5-92", 2],
+      ["ex1-92", 1], ["ecard3-140", 2], ["ex2-89", 1], ["ex2-93", 4], ["ex1-106", 13]
+    ]
+  },
+  "Echo": {
+    "description": "Expedition theme deck: Alakazam copies the opponent's attacks, backed by Haunter, Clefable and Chansey (Psychic and Colorless).",
+    "cards": [
+      ["ecard1-93", 4], ["ecard1-84", 2], ["ecard1-33", 2], ["ecard1-109", 4], ["ecard1-80", 2],
+      ["ecard1-72", 2], ["ecard1-101", 3], ["ecard1-41", 1], ["ecard1-121", 2], ["ecard1-138", 2],
+      ["ecard1-148", 3], ["ecard1-154", 2], ["ecard1-153", 2], ["ecard1-155", 3], ["ecard1-164", 16],
+      ["ecard1-161", 2], ["ecard1-165", 2], ["ecard1-162", 2], ["ecard1-160", 2], ["ecard1-163", 2]
+    ]
+  },
+  "Electric Garden": {
+    "description": "Expedition theme deck: Vileplume, Weezing, Raichu and Flaaffy (Grass and Lightning).",
+    "cards": [
+      ["ecard1-122", 4], ["ecard1-78", 2], ["ecard1-69", 1], ["ecard1-112", 2], ["ecard1-114", 3],
+      ["ecard1-70", 1], ["ecard1-124", 3], ["ecard1-61", 1], ["ecard1-119", 4], ["ecard1-77", 2],
+      ["ecard1-76", 2], ["ecard1-137", 2], ["ecard1-138", 2], ["ecard1-153", 1], ["ecard1-156", 3],
+      ["ecard1-147", 1], ["ecard1-157", 2], ["ecard1-162", 12], ["ecard1-163", 12]
+    ]
+  },
+  "Rock Garden": {
+    "description": "Aquapolis theme deck: Nidoking, Exeggutor, Marowak and Blissey (Grass and Fighting).",
+    "cards": [
+      ["ecard2-96", 4], ["ecard2-55", 2], ["ecard2-24", 1], ["ecard2-76", 3], ["ecard2-12", 1],
+      ["ecard2-69", 3], ["ecard2-6", 1], ["ecard2-72", 3], ["ecard2-54", 1], ["ecard2-98", 2],
+      ["ecard2-111", 2], ["ecard1-156", 4], ["ecard1-137", 3], ["ecard2-123", 2], ["ecard2-130", 2],
+      ["ecard2-136", 1], ["ecard1-162", 13], ["ecard1-160", 12]
+    ]
+  },
+  "Abyss": {
+    "description": "Aquapolis theme deck: Kingdra, Ninetales, Porygon2 and Miltank (Fire and Water).",
+    "cards": [
+      ["ecard2-116", 3], ["ecard2-25", 1], ["ecard2-86", 2], ["ecard2-103", 3], ["ecard2-28", 1],
+      ["ecard2-85", 4], ["ecard2-58", 2], ["ecard2-19", 1], ["ecard2-113", 2], ["ecard2-94", 2],
+      ["ecard2-126", 2], ["ecard1-155", 4], ["ecard2-123", 3], ["ecard1-149", 3], ["ecard2-136", 1],
+      ["ecard1-161", 12], ["ecard1-165", 14]
+    ]
+  },
+  "Eeveelution": {
+    "description": "Skyridge theme deck: Eevee evolves into Vaporeon, Flareon or Jolteon, backed by Electrode, Lapras and Ursaring (Fire, Water and Lightning).",
+    "cards": [
+      ["ecard3-54", 4], ["ecard3-33", 1], ["ecard3-8", 1], ["ecard3-13", 1], ["ecard3-113", 3],
+      ["ecard3-36", 2], ["ecard3-62", 3], ["ecard3-71", 3], ["ecard3-109", 2], ["ecard3-110", 1],
+      ["ecard1-137", 3], ["ecard1-156", 4], ["ecard3-124", 2], ["ecard2-136", 2], ["ecard3-125", 2],
+      ["ecard1-165", 9], ["ecard1-163", 9], ["ecard1-161", 8]
+    ]
+  },
+  "Mind Machine": {
+    "description": "Skyridge theme deck: Xatu takes any Technical Machine, with the three Miracle Spheres, Ditto, Snorlax and Raticate (Psychic and every basic Energy).",
+    "cards": [
+      ["ecard3-80", 4], ["ecard3-35", 3], ["ecard3-100", 2], ["ecard3-90", 4], ["ecard3-89", 2],
+      ["ecard3-51", 4], ["ecard3-129", 2], ["ecard3-130", 2], ["ecard3-131", 2], ["ecard3-138", 2],
+      ["ecard2-136", 1], ["ecard1-149", 2], ["ecard1-155", 4], ["ecard1-164", 11], ["ecard1-161", 3],
+      ["ecard1-163", 3], ["ecard1-162", 3], ["ecard1-165", 3], ["ecard1-160", 3]
+    ]
+  }
+}

@@ -1,0 +1,472 @@
+{
+	"_ayuda": "Escuela de Entrenadores (Ciudad Férrica), el doble de grande que la del juego. Ver data/LEEME_CAMPANA.txt para cambiar diálogos, duelos y premios. Letras de 'baldosas' (casillas de 16x16): '.' piso, '#' pared, 'E' pizarrón, 'M' escritorio, 'T' pupitre, 'P' maceta, 'D' puerta (la alfombra de abajo a la izquierda va a la biblioteca; la del medio, a la tienda). 'fondo' es la imagen del mapa entero (mundo/propios/escuela_rustboro.png, la arma tools/armar_escuela.py).",
+	"nombre": "Trainer's School",
+	"fondo": "escuela_rustboro",
+	"baldosas": [
+		"##################",
+		"#######EEEE#######",
+		"#DD####EEEE####DD#",
+		"..................",
+		".....P..MM..P.....",
+		"..T.T.T....T.T.T..",
+		"..T.T.T....T.T.T..",
+		"..................",
+		"..T.T.T....T.T.T..",
+		"..T.T.T....T.T.T..",
+		"..................",
+		"..T.T.T....T.T.T..",
+		"..T.T.T....T.T.T..",
+		"..................",
+		"..................",
+		".P.DD...DD......P."
+	],
+	"inicio": [
+		8,
+		14,
+		"up"
+	],
+	"salidas": [
+		{
+			"x": 1,
+			"y": 2,
+			"mapa": "patio",
+			"a": [
+				4,
+				11,
+				"up"
+			]
+		},
+		{
+			"x": 2,
+			"y": 2,
+			"mapa": "patio",
+			"a": [
+				5,
+				11,
+				"up"
+			]
+		},
+		{
+			"x": 15,
+			"y": 2,
+			"mapa": "patio",
+			"a": [
+				14,
+				11,
+				"up"
+			]
+		},
+		{
+			"x": 16,
+			"y": 2,
+			"mapa": "patio",
+			"a": [
+				15,
+				11,
+				"up"
+			]
+		},
+		{
+			"x": 3,
+			"y": 15,
+			"mapa": "biblioteca",
+			"a": [
+				9,
+				10,
+				"up"
+			]
+		},
+		{
+			"x": 4,
+			"y": 15,
+			"mapa": "biblioteca",
+			"a": [
+				10,
+				10,
+				"up"
+			]
+		}
+	],
+	"puerta_tienda": "bridgette",
+	"puerta": [
+		"Outside the classroom is Bridgette's Card Shop.",
+		"Go to the Card Shop?"
+	],
+	"personajes": [
+		{
+			"id": "maestro",
+			"x": 9,
+			"y": 3,
+			"dir": "down",
+			"sprite": "maestro",
+			"nombre": "Teacher",
+			"regalo": {
+				"id": "regalo_profe",
+				"cartas": [
+					"ex1-84",
+					"ex2-86",
+					"ex5-90",
+					"ex2-89"
+				],
+				"dar": [
+					"Welcome to the Trainer's School!",
+					"Today's lesson is about Special Conditions. Your Pokémon can be Burned, Paralyzed, Asleep, Confused or Poisoned.",
+					"If Special Conditions give you trouble, try these cards."
+				],
+				"despues": [
+					"A Pokémon recovers from Special Conditions when it evolves or when it moves to the Bench.",
+					"Some cards can help you out too!"
+				]
+			},
+			"variantes": [
+				{
+					"si": {
+						"vencer": "jefe",
+						"regalo": "regalo_profe"
+					},
+					"regalo": {
+						"id": "regalo_profe_1",
+						"cartas": [
+							"ex3-98"
+						],
+						"dar": [
+							"You beat our Headmaster? You learn fast! I think your skills can take you far.",
+							"I hope you keep growing as a Card Trainer.",
+							"Take this card as proof of that wish."
+						],
+						"despues": [
+							"The real challenges are out there, but you can still duel the other students as much as you like."
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "maestra",
+			"x": 10,
+			"y": 14,
+			"dir": "left",
+			"sprite": "maestra",
+			"nombre": "Teacher",
+			"frases": [
+				"Good morning! Come in, come in.",
+				"It's always nice to have more people who want to learn how to play."
+			]
+		},
+		{
+			"id": "castano",
+			"x": 2,
+			"y": 6,
+			"dir": "up",
+			"sprite": "nino_castano",
+			"nombre": "Student",
+			"sentado": true,
+			"frases": [
+				"I'm reading this book called 'Calendar', and it looks like next year's dates have been leaked!",
+				"Don't tell anyone, but New Year's Day is going to be on January 1st!"
+			]
+		},
+		{
+			"id": "roja",
+			"x": 6,
+			"y": 9,
+			"dir": "up",
+			"sprite": "nina_roja",
+			"nombre": "Student",
+			"sentado": true,
+			"frases": [
+				"'How to take care of your Magcargo in winter'... now this is a good read."
+			]
+		},
+		{
+			"id": "verde",
+			"x": 11,
+			"y": 9,
+			"dir": "up",
+			"sprite": "nino_verde",
+			"nombre": "Student",
+			"sentado": true,
+			"frases": [
+				"According to this guide, your Pokémon takes double damage if it's weak to the opponent's attack!",
+				"Sounds like a good idea to have decks of different types..."
+			]
+		},
+		{
+			"id": "lazo",
+			"x": 15,
+			"y": 12,
+			"dir": "up",
+			"sprite": "nina_lazo",
+			"nombre": "Student",
+			"sentado": true,
+			"frases": [
+				"Sorry, not right now. I'm imagining duel scenarios and worrying about them."
+			]
+		},
+		{
+			"id": "grandote",
+			"x": 4,
+			"y": 12,
+			"dir": "up",
+			"sprite": "nino_grandote",
+			"nombre": "Student",
+			"sentado": true,
+			"frases": [
+				"Hmm, according to this, there are 3 things you can only do once per turn: retreat your Active Pokémon, play a Supporter and attach an Energy from your hand.",
+				"I need to remember this..."
+			]
+		},
+		{
+			"id": "trenzas",
+			"x": 7,
+			"y": 3,
+			"dir": "up",
+			"sprite": "nina_trenzas",
+			"nombre": "Student",
+			"regalo": {
+				"id": "regalo_trenzas",
+				"cartas": [
+					"ex1-85",
+					"ex1-91",
+					"ex5-88"
+				],
+				"dar": [
+					"What? Of course I know what a damage counter is!",
+					"It's... uhmm... well, just think of what it equals. 1 damage counter is 10 damage, 2 damage counters are 20 damage, and so on. Simple!",
+					"Here, you can have these."
+				],
+				"despues": [
+					"Oran Berry is a Pokémon Tool: it stays attached to your Pokémon until it's used.",
+					"What? You know what a Pokémon Tool is, right?"
+				]
+			}
+		},
+		{
+			"id": "moreno",
+			"x": 8,
+			"y": 9,
+			"dir": "right",
+			"quieto": true,
+			"sprite": "nino_moreno",
+			"nombre": "Student",
+			"regalo": {
+				"id": "regalo_moreno",
+				"cartas": [
+					"ex1-95",
+					"ex1-95"
+				],
+				"dar": [
+					"Special Energy cards are like Basic Energy, but with an extra effect. Try this one out!"
+				],
+				"despues": [
+					"Rainbow Energy counts as every type of Energy! There are other kinds of Special Energy too. You should check them out!"
+				]
+			}
+		},
+		{
+			"id": "rubia",
+			"x": 9,
+			"y": 9,
+			"dir": "left",
+			"quieto": true,
+			"sprite": "nina_rubia",
+			"nombre": "Student",
+			"frases": [
+				"Did you know? You can put as many Basic Energy cards in your deck as you want! But don't put in too many, you need other cards too!"
+			]
+		},
+		{
+			"id": "pelirrojo",
+			"x": 2,
+			"y": 13,
+			"dir": "down",
+			"sprite": "nino_pelirrojo",
+			"nombre": "Student",
+			"frases": [
+				"Pokémon-ex cards are strong, but you give up 2 Prize cards when they're Knocked Out. Be careful!"
+			],
+			"regalo": {
+				"id": "regalo_inicial",
+				"dar": [
+					"A friend told me Pokémon-ex cards are super strong, but... giving up 2 Prize cards for one is rough.",
+					"You know what, you can have my card. I don't think I'll use it.",
+					"It should fit your {inicial} deck."
+				]
+			},
+			"variantes": [
+				{
+					"si": {
+						"inicial": "Fire"
+					},
+					"regalo": {
+						"cartas": [
+							"ex1-100"
+						]
+					}
+				},
+				{
+					"si": {
+						"inicial": "Water"
+					},
+					"regalo": {
+						"cartas": [
+							"ex1-99"
+						]
+					}
+				},
+				{
+					"si": {
+						"inicial": "Grass"
+					},
+					"regalo": {
+						"cartas": [
+							"ex1-102"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "alumno",
+			"x": 12,
+			"y": 13,
+			"dir": "down",
+			"sprite": "alumno",
+			"rival": "alumno",
+			"pasea": true
+		},
+		{
+			"id": "alumna",
+			"x": 16,
+			"y": 3,
+			"dir": "up",
+			"sprite": "alumna",
+			"rival": "alumna"
+		},
+		{
+			"id": "skitty",
+			"x": 5,
+			"y": 13,
+			"dir": "left",
+			"sprite": "pkmn_skitty",
+			"nombre": "Skitty",
+			"pokemon": true,
+			"pasea": true,
+			"frases": [
+				"Nyaa!",
+				"(It's chasing its own tail.)"
+			]
+		}
+	],
+	"objetos": {
+		"E": {
+			"frases": [
+				"The blackboard is empty."
+			],
+			"variantes": [
+				{
+					"si": {
+						"vencer": "jefe"
+					},
+					"frases": [
+						"Someone wrote on the blackboard:",
+						"\"{nombre} beat the Headmaster!\"",
+						"There's a little drawing of a trophy next to it."
+					]
+				},
+				{
+					"si": {
+						"vencer": "alumno"
+					},
+					"frases": [
+						"Important! \"Weakness doubles the damage.\"",
+						"Someone underlined it three times."
+					]
+				}
+			]
+		},
+		"M": {
+			"frases": [
+				"The teacher's desk. There's a stack of graded tests on it."
+			]
+		},
+		"T": {
+			"frases": [
+				"A student's desk."
+			],
+			"al_azar": [
+				[
+					"A student's desk.",
+					"Someone carved \"MUDKIP!!\" into the corner."
+				],
+				[
+					"A student's desk. There's a half-finished deck list on it."
+				],
+				[
+					"A student's desk. It's covered in eraser crumbs."
+				],
+				[
+					"A student's desk.",
+					"A Pokémon card is taped underneath... it's a Potion. Not worth stealing."
+				],
+				[
+					"A student's desk. Someone left a note: \"Rare Candy skips Stage 1!\""
+				]
+			]
+		},
+		"P": {
+			"frases": [
+				"A potted plant. Someone waters it every day."
+			],
+			"al_azar": [
+				[
+					"A potted plant. Someone waters it every day."
+				],
+				[
+					"A potted plant. A Wurmple-shaped leaf is missing."
+				],
+				[
+					"A potted plant. It smells like fresh soil."
+				]
+			]
+		}
+	},
+	"objetos_casilla": {
+		"13,5": {
+			"frases": [
+				"This desk has a Torchic sticker on it.",
+				"It must belong to a Fire-type fan."
+			],
+			"variantes": [
+				{
+					"si": {
+						"vencer": "jefe"
+					},
+					"frases": [
+						"This desk has a Torchic sticker on it.",
+						"Under it, someone wrote: \"Beat {nombre} someday!\""
+					]
+				}
+			]
+		},
+		"16,15": {
+			"frases": [
+				"A potted plant by the door."
+			],
+			"regalo": {
+				"id": "maceta_entrada",
+				"cartas": [
+					"ex2-72"
+				],
+				"dar": [
+					"Something shiny is poking out of the soil...",
+					"It's a Pokémon card!"
+				],
+				"despues": [
+					"A potted plant by the door.",
+					"The soil looks freshly dug."
+				]
+			}
+		}
+	}
+}

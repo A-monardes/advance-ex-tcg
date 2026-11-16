@@ -1,0 +1,598 @@
+GUÍA DE PERSONAJES, RIVALES Y EVENTOS
+====================================
+
+Esta guía explica cómo hacer que el mundo se sienta vivo: qué dice cada personaje, con qué
+mazo juega cada rival, qué premios da, cuándo acepta revancha y cómo todo eso cambia
+según lo que vaya pasando en la partida.
+
+  ÍNDICE
+   1. Dónde se edita cada cosa
+   2. Antes de empezar: el formato JSON
+   3. Personajes comunes (los que solo hablan)
+   4. Rivales (los que te desafían)
+   5. Lo que dice un rival en cada momento
+   6. Mazos
+   7. Premios
+   8. Revanchas
+   9. Regalos
+  10. CONDICIONES: preguntarle a la partida qué pasó
+  11. VARIANTES: que algo cambie después de un evento
+  12. MARCAS: tus propios eventos
+  13. Personajes que aparecen (o se van) después de un evento
+  14. Recetas listas para copiar
+  15. Cómo probar lo que cambiaste
+  16. Errores comunes
+  17. OBJETOS DEL MAPA: lo que se lee al mirar cosas con Z
+
+
+1. DÓNDE SE EDITA CADA COSA
+---------------------------
+  data/mapas/escuela.json    los personajes de la escuela: dónde están, hacia dónde miran,
+  data/mapas/patio.json      qué dicen, si regalan algo, si son rivales, si aparecen o no
+  data/campana.json          las fichas de los rivales: mazo, dificultad, premios,
+                             revanchas y todo lo que dicen alrededor de un duelo
+
+Los objetos del mapa (pupitres, macetas, pizarrón...) también están en el archivo de cada
+mapa, en "objetos" y "objetos_casilla": punto 17.
+
+Un personaje que solo habla se escribe entero en el mapa. Un rival tiene las dos partes:
+en el mapa dónde está (con "rival": "su_id") y en data/campana.json su ficha.
+
+Los textos del juego están en inglés; las claves (lo que va antes de los dos puntos) son
+en castellano y no se traducen.
+
+
+2. ANTES DE EMPEZAR: EL FORMATO JSON
+------------------------------------
+  - Los textos van entre comillas dobles: "Hello!"
+  - Las cosas se separan con comas. La ÚLTIMA cosa de una lista o de un bloque NO lleva
+    coma. Casi todos los errores son una coma de más o de menos.
+  - [ ] es una lista: ["página 1", "página 2"]
+  - { } es un bloque con claves: {"vencer": "jefe"}
+  - Si dentro de un texto querés comillas, escribí \" : "He said \"hi\"."
+  - Guardá en UTF-8. Un editor que marque errores (VS Code, Notepad++) ayuda mucho.
+  - Después de editar: cerrá el juego y volvé a abrirlo.
+
+Cada texto de una lista de frases es UNA PÁGINA del cuadro de diálogo (Z pasa a la
+siguiente). Entran unos 3 renglones por página. {nombre} se reemplaza por el nombre del
+jugador: "Nice to meet you, {nombre}!". {inicial} se reemplaza por el tipo del mazo
+inicial (Fire, Water o Grass): "That's a nice {inicial} deck!"
+
+
+3. PERSONAJES COMUNES (LOS QUE SOLO HABLAN)
+-------------------------------------------
+En el mapa, dentro de "personajes":
+
+  {
+    "id": "pelirrojo",            <- nombre interno, único en el mapa (no se ve)
+    "x": 3, "y": 14,              <- casilla (columna, fila; desde 0 arriba a la izquierda)
+    "dir": "down",                <- hacia dónde mira: "up", "down", "left", "right"
+    "sprite": "nino_pelirrojo",   <- el dibujo (mundo/propios/nino_pelirrojo.png)
+    "nombre": "Student",          <- el nombre arriba del cuadro de texto
+    "frases": ["Página 1.", "Página 2."]
+  }
+
+  Opcionales:
+    "sentado": true     sentado en un pupitre (no se da vuelta al hablarle)
+    "pasea": true       camina solo por ahí cerca
+    "quieto": true      no mira para los costados
+    "ajuste": [0, 7]    corre el dibujo unos píxeles sin cambiar su casilla
+    "tienda": "bridgette"   al hablarle dice sus frases y abre la tienda
+    "regalo": {...}     regala cartas una vez (punto 9)
+    "marcar": "id"      anota un evento cuando le hablás (punto 12)
+    "variantes": [...]  lo que dice cambia según lo que pasó (punto 11)
+    "solo_si": {...}    solo aparece si se cumple algo (punto 13)
+
+
+4. RIVALES (LOS QUE TE DESAFÍAN)
+--------------------------------
+a) En el mapa:
+
+  {"id": "roja", "x": 6, "y": 8, "dir": "up", "sprite": "nina_roja", "sentado": true,
+   "rival": "roja", "vista": 3,
+   "bloqueado": ["Lo que dice mientras todavía no acepta jugar con vos."]}
+
+   "rival"      el id de su ficha en data/campana.json
+   "vista"      (opcional) cuántas casillas ve hacia donde mira: si pasás por delante,
+                te ve, aparece el "!" y camina hacia vos para desafiarte
+   "bloqueado"  (opcional) lo que dice mientras no se cumpla su "requiere"
+
+b) En data/campana.json, dentro de "rivales":
+
+  "roja": {
+    "nombre": "Student",
+    "mazo": "Caravan",
+    "nivel": 2,
+    "sobre": "ex1", "sobres": 2, "dinero": 250,
+    "revancha": 1, "dinero_revancha": 50,
+    "requiere": {"vencer": "alumno"},
+    "hola": ["..."], "gane": ["..."], "perdi": ["..."]
+  }
+
+   "nivel"     dificultad de la IA: 1 muy fácil, 2 fácil, 3 normal, 4 difícil, 5 experta
+   "requiere"  (opcional) no juega con vos hasta que se cumpla (condiciones: punto 10)
+
+
+5. LO QUE DICE UN RIVAL EN CADA MOMENTO
+---------------------------------------
+Un rival tiene un "camino" fijo de textos, según cómo vaya con vos:
+
+  Todavía no se cumple "requiere" ............ "bloqueado"   (en el MAPA)
+  Primer desafío ............................. "hola"
+  Te ganó y lo volvés a desafiar ............. "otra_vez"    (si no está: "hola")
+  Termina el duelo y ganó él ................. "gane"
+  Termina el duelo y ganaste vos ............. "perdi"       (después vienen los premios)
+  Ya le ganaste, todavía no hay revancha ..... "vencido"
+  Ya hay revancha ............................ "revancha_pregunta"  (última página = Sí/No)
+                                               "revancha_si" / "revancha_no"
+
+Obligatorios: "hola", "gane" y "perdi". Los demás tienen un texto genérico si faltan.
+
+Para que alguno de estos textos CAMBIE después de un evento (por ejemplo, que
+"revancha_pregunta" sea otro después de ganarle al director), usá variantes (punto 11).
+
+
+6. MAZOS
+--------
+"mazo" es el nombre de un mazo, escrito exactamente igual que en el título del juego:
+
+  - Incluidos: Blaze, Torrent, Overgrow (los tres iniciales), Ruby, Sapphire, Oasis,
+    Caravan, WindBlast, FireFang, Team Magma, Team Aqua, Wish Maker, Forest Guardian,
+    Magma Spirit (Worlds 2004), Blaziken Tech (Worlds 2004), Team Rushdown (Worlds 2004), Rocky Beach (Worlds 2004).
+  - Propios: armalo en el juego (título > Edit decks > New deck), ponele un nombre, por
+    ejemplo "Roja - fuego", y escribí ese nombre en "mazo". Si después lo borrás o le
+    cambiás el nombre, el rival se queda sin mazo.
+
+Para que un rival CAMBIE DE MAZO después de un evento: variantes (punto 11, receta 14.C).
+
+
+7. PREMIOS
+----------
+  "sobres" + "sobre"   sobres de la primera victoria y de qué expansión:
+                       ex1 Ruby & Sapphire · ex2 Sandstorm · ex3 Dragon ·
+                       ex4 Team Magma vs Team Aqua · ex5 Hidden Legends
+  "cartas"             cartas puntuales de la primera victoria: ["ex1-73", "ex3-98"]
+                       (el id se ve en la ficha de cada carta). Repetida = varias copias.
+  "dinero"             plata (₽) de la primera victoria
+  "revancha"           sobres de cada revancha (si falta: "recompensas" > "revancha"
+                       de data/campana.json; 0 = ninguno)
+  "dinero_revancha"    plata de cada revancha (si falta: 0)
+
+Con variantes, un rival puede dar más (o distinto) después de un evento: receta 14.F.
+El premio de una victoria se calcula con la variante que valía ANTES de ese duelo: si una
+variante se abre con "ganadas": 1, se nota recién a partir de la revancha.
+
+
+8. REVANCHAS
+------------
+Después de ganarle a un rival, la revancha se habilita cuando se cumple:
+
+  - "revancha_requiere" en la ficha del rival, si la tiene, o si no
+  - "revanchas_requieren" de data/campana.json (hoy: {"vencer": "jefe"}).
+
+  "revancha_requiere": {}                         siempre hay revancha
+  "revancha_requiere": {"vencer": "maestra"}      después de ganarle a la maestra
+  "revancha_requiere": {"marca": "torneo"}        después de tu propio evento (punto 12)
+
+Mientras no se habilita, dice "vencido". Cuando se habilita, pregunta "revancha_pregunta".
+Cualquiera de esas claves también puede ir dentro de una variante.
+
+
+9. REGALOS
+----------
+Un personaje común puede regalar cartas UNA sola vez:
+
+  "regalo": {
+    "id": "regalo_roja",                  <- nombre que inventás, distinto para cada regalo
+    "cartas": ["ex3-98"],
+    "requiere": {"vencer": "alumna"},     <- (opcional) condiciones del punto 10
+    "dar": ["Lo que dice al darlo."],
+    "despues": ["Lo que dice las veces siguientes."]
+  }
+
+Mientras no se cumple "requiere", dice sus "frases" de siempre. Después de darlo, el
+regalo queda anotado con su "id": eso también sirve como condición ("regalo": "regalo_roja").
+
+Un mismo personaje puede dar VARIOS regalos, uno después de otro: el segundo va dentro de
+una variante (receta 14.M).
+
+
+10. CONDICIONES: PREGUNTARLE A LA PARTIDA QUÉ PASÓ
+--------------------------------------------------
+Una condición es un bloque { } con una o más preguntas. Se cumple si se cumplen TODAS.
+Se usa en "requiere", "revancha_requiere", "solo_si", el "requiere" de los regalos y el
+"si" de las variantes.
+
+  Clave           Se cumple si...                                  Ejemplo
+  -------------   ----------------------------------------------   -------------------------------
+  vencer          le ganaste (alguna vez) a ese rival o a todos     "vencer": "jefe"
+                  los de la lista                                   "vencer": ["alumno", "alumna"]
+  no_vencer       todavía NO le ganaste                             "no_vencer": "jefe"
+  vencidos        le ganaste a al menos N rivales distintos         "vencidos": 3
+  ganadas         le ganaste a ESTE rival al menos N veces          "ganadas": 2
+  perdidas        ESTE rival te ganó al menos N veces               "perdidas": 2
+  ganadas_a       como "ganadas", pero de otros rivales             "ganadas_a": {"roja": 2}
+  perdidas_a      como "perdidas", pero de otros rivales            "perdidas_a": {"jefe": 1}
+  regalo          recibiste ese regalo (su "id")                    "regalo": "regalo_roja"
+  sin_regalo      todavía no lo recibiste                           "sin_regalo": "regalo_roja"
+  marca           pasó ese evento tuyo (punto 12)                   "marca": "hablo_con_maestro"
+  sin_marca       todavía no pasó                                   "sin_marca": "hablo_con_maestro"
+  dinero          tenés al menos esa plata                          "dinero": 1000
+  visitaste       entraste alguna vez a esa tienda                  "visitaste": "bridgette"
+  inicial         empezaste la campaña con ese mazo: su nombre      "inicial": "Blaze"
+                  o su tipo (Fire, Water, Grass); con una lista,    "inicial": "Fire"
+                  cualquiera de ellos                               "inicial": ["Blaze", "Torrent"]
+
+"ganadas" y "perdidas" sin nombre hablan del rival dueño de la ficha (o del "rival" del
+personaje). En un personaje común usá "ganadas_a" / "perdidas_a".
+
+Para "al menos una vez": "ganadas": 1. Para "nunca": "ganadas": 0 no sirve (siempre se
+cumple); usá "no_vencer".
+
+Combinadas: {"vencer": "jefe", "ganadas": 2, "sin_marca": "aviso"} = le ganaste al director,
+le ganaste dos veces a este rival y todavía no pasó "aviso".
+
+
+11. VARIANTES: QUE ALGO CAMBIE DESPUÉS DE UN EVENTO
+---------------------------------------------------
+"variantes" es una lista de casos. Cada caso tiene un "si" (una condición del punto 10) y
+las claves que cambian. El juego las revisa DE ARRIBA HACIA ABAJO y usa LA PRIMERA que
+se cumple. Si no se cumple ninguna, vale la ficha de siempre.
+
+  "variantes": [
+    {"si": {...condición más difícil...}, ...lo que cambia...},
+    {"si": {...condición más fácil...},   ...lo que cambia...}
+  ]
+
+  REGLA DE ORO: lo más específico va ARRIBA. Si ponés primero {"vencer": "alumno"} y
+  después {"vencer": ["alumno", "alumna"]}, la segunda nunca se usa, porque la primera
+  ya se cumple.
+
+Lo que la variante NO trae queda como en la ficha base. Si una variante solo cambia
+"frases", el personaje sigue en el mismo lugar, con el mismo nombre, etc.
+
+  En un PERSONAJE (en el mapa) una variante puede cambiar:
+    frases, nombre, regalo, tienda, bloqueado, marcar
+
+  En un RIVAL (en data/campana.json) una variante puede cambiar CUALQUIER clave de la
+  ficha: mazo, nivel, nombre, premios (sobres, sobre, cartas, dinero, revancha,
+  dinero_revancha), textos (hola, otra_vez, gane, perdi, vencido, revancha_pregunta,
+  revancha_si, revancha_no), revancha_requiere, marcar_al_ganar, marcar_al_perder.
+
+  Y un rival que en el mapa tiene "variantes" puede cambiar su "bloqueado".
+
+No se puede cambiar con una variante: la posición, el dibujo ni hacia dónde mira. Para eso
+están las apariciones (punto 13).
+
+Cuándo se mira: cada vez que le hablás (y al empezar y terminar cada duelo, para el rival).
+
+
+12. MARCAS: TUS PROPIOS EVENTOS
+-------------------------------
+Las condiciones del punto 10 saben de duelos, regalos y plata. Para cualquier otra cosa
+("ya hablaste con el maestro", "te contaron el secreto"...) se usan MARCAS: un nombre que
+inventás y que queda anotado en la partida guardada para siempre.
+
+  Cómo se pone una marca:
+    "marcar": "id"                en un personaje o en una variante: al hablarle
+    "marcar": "id"                en la ficha de un rival (o su variante): al hablarle,
+                                  si ya acepta jugar
+    "marcar_al_ganar": "id"       en la ficha de un rival: cuando le ganás
+    "marcar_al_perder": "id"      en la ficha de un rival: cuando te gana
+    (cualquiera acepta una lista: "marcar": ["id1", "id2"])
+
+  Cómo se pregunta:  "marca": "id"   /   "sin_marca": "id"
+
+Con marcas se arman:
+  - Textos de una sola vez: una variante con {"sin_marca": "x"} que hace "marcar": "x".
+  - Cadenas: A te manda a hablar con B; B solo te dice el secreto si pasó la marca de A.
+  - Revanchas o regalos que se abren con algo que no es un duelo.
+
+Usá nombres claros y sin espacios: "conoce_pelirrojo", "pista_patio", "aviso_director".
+
+
+13. PERSONAJES QUE APARECEN (O SE VAN) DESPUÉS DE UN EVENTO
+-----------------------------------------------------------
+"solo_si" en un personaje del mapa: si no se cumple, no está.
+
+  {"id": "fan", "x": 8, "y": 11, "dir": "up", "sprite": "nina_rubia", "nombre": "Fan",
+   "solo_si": {"vencer": "jefe"},
+   "frases": ["You're the one who beat the Headmaster! Can I have your autograph?"]}
+
+Para que alguien "se mude" de lugar: escribilo dos veces en el mapa (o en dos mapas) con
+ids distintos y condiciones opuestas:
+
+  {"id": "moreno_aula",  ..., "solo_si": {"no_vencer": "jefe"}, ...}
+  {"id": "moreno_patio", ..., "solo_si": {"vencer": "jefe"},    ...}
+
+Esto se revisa AL ENTRAR AL MAPA: si el evento pasa mientras estás ahí, el cambio se ve
+la próxima vez que entres. Las casillas tienen que estar libres en el dibujo del mapa.
+
+
+14. RECETAS LISTAS PARA COPIAR
+------------------------------
+(Los ejemplos A, B y C ya están puestos en los datos del juego: el maestro y el alumno
+pelirrojo de la entrada en data/mapas/escuela.json, y los rivales "alumno" y "alumna" en
+data/campana.json. Abrilos para verlos en contexto.)
+
+A) Que un personaje diga otra cosa después de ganarle a alguien
+
+  "frases": ["Welcome to the Trainer's School!"],
+  "variantes": [
+    {"si": {"vencer": "jefe"},
+     "frases": ["You beat the Headmaster? I knew you had it in you!"]},
+    {"si": {"vencer": ["alumno", "alumna"]},
+     "frases": ["You've beaten both of my students!"]},
+    {"si": {"vencer": "alumno"},
+     "frases": ["I heard you beat one of my students."]}
+  ]
+
+B) Una presentación que se dice una sola vez
+
+  "frases": ["Did you know? The Card Shop is right through the main door."],
+  "variantes": [
+    {"si": {"sin_marca": "conoce_pelirrojo"}, "marcar": "conoce_pelirrojo",
+     "frases": ["Oh, a new student!", "Talk to me again later."]}
+  ]
+
+C) Un rival que sube de nivel y después cambia de mazo (data/campana.json)
+
+  "alumno": {
+    "mazo": "Oasis", "nivel": 1, ...,
+    "variantes": [
+      {"si": {"vencer": "jefe", "ganadas": 2},
+       "mazo": "FireFang", "nivel": 3,
+       "revancha_pregunta": ["I switched to a Fire deck. It burns, right?", "One more time?"]},
+      {"si": {"vencer": "jefe"},
+       "nivel": 2,
+       "revancha_pregunta": ["Since you beat the Headmaster, I've been practicing!", "Want a rematch?"]}
+    ]
+  }
+
+D) Revancha solo después de cierto evento
+
+  "revancha_requiere": {"vencer": "maestra"},
+  "vencido": ["Beat the teacher at the entrance, then come back."]
+
+E) Que el rival hable distinto en la revancha después de un evento
+
+  "variantes": [
+    {"si": {"marca": "torneo_anunciado"},
+     "revancha_pregunta": ["The tournament is coming. I need practice!", "Duel me?"],
+     "revancha_si": ["Thanks! Don't hold back!"]}
+  ]
+
+F) Mejor premio en las revanchas después de un evento
+
+  "variantes": [
+    {"si": {"vencidos": 5}, "revancha": 2, "sobre": "ex5", "dinero_revancha": 300}
+  ]
+
+G) Un consejo si un rival te ganó muchas veces
+
+  "variantes": [
+    {"si": {"perdidas": 2, "ganadas": 0},
+     "otra_vez": ["You again? Here's a tip:", "Attach an Energy every turn!", "Now let's duel!"]}
+  ]
+
+H) Una cadena: el maestro te manda a ver a la alumna, y ella te da una carta
+
+  Maestro (mapa):
+    "variantes": [
+      {"si": {"vencer": "jefe", "sin_marca": "encargo_maestro"},
+       "marcar": "encargo_maestro",
+       "frases": ["Could you check on the girl by the blackboard?", "She has something for you."]}
+    ]
+  Alumna que regala (mapa):
+    "frases": ["(She's busy reading.)"],
+    "regalo": {"id": "carta_encargo", "cartas": ["ex3-98"],
+               "requiere": {"marca": "encargo_maestro"},
+               "dar": ["The teacher sent you? Here, take this!"],
+               "despues": ["Take good care of that card!"]}
+
+I) Un rival que juega más fuerte si le ganaste a alguien más difícil
+
+  "variantes": [
+    {"si": {"ganadas_a": {"jefe": 2}}, "mazo": "Blaziken Tech (Worlds 2004)", "nivel": 5,
+     "hola": ["Twice against the Headmaster? Then I won't go easy on you!"]}
+  ]
+
+J) Un rival que recién juega cuando ya tenés cierta plata (por ejemplo, "con apuesta")
+
+  "requiere": {"dinero": 1000},
+  (en el mapa) "bloqueado": ["Come back when you have ₽1000. I only duel serious trainers."]
+
+K) Alguien que aparece en el patio después de ganarle al director
+
+  (en data/mapas/patio.json, con una casilla libre)
+  {"id": "fan", "x": 10, "y": 11, "dir": "up", "sprite": "nina_rubia", "nombre": "Fan",
+   "solo_si": {"vencer": "jefe"},
+   "frases": ["You're the one who beat the Headmaster!"]}
+
+L) Que otros personajes comenten que le ganaste a un rival
+
+  "marcar_al_ganar": "le_gane_a_roja",
+  y en otro personaje: {"si": {"marca": "le_gane_a_roja"}, "frases": ["Roja is still upset, hehe."]}
+
+
+M) Un personaje que te da un regalo y, después de cierto punto, otro
+
+  "frases": ["Good morning!"],
+  "regalo": {"id": "regalo_maestra_1", "cartas": ["ex1-91"],
+             "dar": ["Take this Potion!"],
+             "despues": ["Use that Potion well."]},
+  "variantes": [
+    {"si": {"regalo": "regalo_maestra_1", "vencer": "jefe"},
+     "regalo": {"id": "regalo_maestra_2", "cartas": ["ex2-88"],
+                "dar": ["You beat the Headmaster! Here's a Rare Candy!"],
+                "despues": ["I'm proud of you."]}}
+  ]
+
+  Qué pasa: la primera vez te da la Potion; hasta que le ganes al director dice el
+  "despues" del primero; cuando le ganaste, te da la Rare Candy; desde ahí, "I'm proud
+  of you."
+  - Cada regalo con su propio "id" (si se repite, el segundo nunca se da).
+  - "regalo": "regalo_maestra_1" dentro del "si": el segundo pide haber recibido el primero.
+    Sin eso, alguien que le gana al director antes de hablarle se saltearía el primero.
+  - Para un tercero: otra variante ARRIBA de esa, con "si": {"regalo": "regalo_maestra_2", ...}.
+  - Funciona igual en los objetos del mapa (punto 17): una maceta con dos cartas escondidas.
+
+
+N) Un regalo distinto según el mazo con el que empezaste
+
+  Los mazos iniciales son Blaze (Fire), Torrent (Water) y Overgrow (Grass). Sus cartas están
+  en data/decks.json y cómo se presentan al elegir (título, carta de muestra, texto) en
+  data/campana.json, sección "starters".
+
+  El regalo se escribe una sola vez y cada variante cambia solo las cartas (así lo hace el
+  pelirrojo de la escuela):
+
+  "frases": ["Pokémon-ex cards are strong, but you give up 2 Prize cards. Be careful!"],
+  "regalo": {"id": "regalo_inicial",
+             "dar": ["You can have my card.", "It should fit your {inicial} deck."]},
+  "variantes": [
+    {"si": {"inicial": "Fire"},  "regalo": {"cartas": ["ex1-100"]}},
+    {"si": {"inicial": "Water"}, "regalo": {"cartas": ["ex1-99"]}},
+    {"si": {"inicial": "Grass"}, "regalo": {"cartas": ["ex1-102"]}}
+  ]
+
+  - Un "regalo" de variante SIN "id" se combina con el de base: solo cambia lo que
+    escribas (acá, las cartas). Con un "id" propio es un regalo distinto y reemplaza al
+    de base entero (como en la receta M).
+  - Sin "despues", cuando ya te lo dio dice sus "frases".
+  - {inicial} en cualquier texto se cambia por Fire, Water o Grass.
+  - Acá SÍ conviene el mismo "id" para los tres: el jugador solo tiene un mazo inicial,
+    así que recibe uno solo, y otros personajes pueden preguntar por "regalo_inicial" sin
+    importar cuál fue.
+  - "inicial" sirve en cualquier condición, no solo en regalos: un rival que juega con el
+    mazo que le gana al tuyo, frases que comentan tu elección, personajes que aparecen
+    solo para cierto mazo ("solo_si"), etc.
+  - Los ids de las cartas los ves en la ficha de cada carta (C en el editor de mazos).
+
+
+15. CÓMO PROBAR LO QUE CAMBIASTE
+--------------------------------
+  - Cerrá y abrí el juego después de editar.
+  - Las condiciones miran tu partida guardada. Para volver a vivir los eventos desde cero:
+    en el mapa, X > Start over (borra la partida de la campaña; tus mazos no se borran).
+  - Para probar algo que pasa después de ganarle al director, lo más rápido es una partida
+    nueva solo para pruebas, o poner la condición temporalmente en algo fácil
+    ({"vencidos": 1}) y después volverla a dejar como estaba.
+  - Si el juego no arranca o un personaje no aparece: revisá las comas y que las llaves
+    { } y corchetes [ ] cierren. Un validador de JSON en línea marca la línea exacta.
+
+
+16. ERRORES COMUNES
+-------------------
+  - La variante nunca se usa: hay otra más fácil ARRIBA que ya se cumple. Ordená de más
+    difícil a más fácil.
+  - Falta el "si" de una variante: entonces se cumple siempre.
+  - Se escribió "vencer": "Jefe" (con mayúscula): los ids distinguen mayúsculas. Tiene que
+    ser igual al id de data/campana.json.
+  - Un rival con variante de "mazo" que no existe: el duelo no puede empezar. Revisá que el
+    nombre sea exactamente el del título (incluidos los paréntesis de los de Worlds 2004).
+  - "solo_si" no cambió nada: se revisa al entrar al mapa; salí y volvé a entrar.
+  - Dos regalos con el mismo "id": el segundo nunca se da.
+  - Una marca con un nombre y la pregunta con otro ("conoce_pelirojo" vs "conoce_pelirrojo"):
+    el juego no avisa, simplemente no se cumple.
+
+
+17. OBJETOS DEL MAPA: LO QUE SE LEE AL MIRAR COSAS CON Z
+--------------------------------------------------------
+Al pararte frente a algo y apretar Z se lee su descripción. Va en el archivo del mapa, en
+dos lugares:
+
+  "objetos"            por LETRA de "baldosas": vale para todas las casillas de esa letra
+  "objetos_casilla"    por CASILLA puntual ("columna,fila"): tiene prioridad sobre la letra
+
+Letras con objeto hoy:
+  escuela   E pizarrón · M escritorio del maestro · T pupitre · P maceta
+  patio     M mesa de duelo · B banco
+Una letra que no está en "objetos" (pared, puerta, pasto, flores...) no dice nada. Para
+que diga algo, agregala: "f": {"frases": ["Pretty red flowers."]}.
+
+a) Lo básico, por letra:
+
+  "objetos": {
+    "P": {"frases": ["A potted plant. Someone waters it every day."]}
+  }
+
+b) Una casilla puntual (columna y fila, como "x" e "y" de los personajes; las ves contando
+   en "baldosas" desde 0, arriba a la izquierda):
+
+  "objetos_casilla": {
+    "13,5": {"frases": ["This desk has a Torchic sticker on it."]}
+  }
+
+   Para un objeto de varias casillas (el pizarrón ocupa 8), cada casilla es aparte: usá
+   la letra si querés que todo diga lo mismo.
+
+c) Al azar: cada vez que mirás, sale una de las versiones (cada versión es una lista de
+   páginas). Si hay "al_azar", "frases" no se usa (si querés que también salga, ponela
+   como una versión más):
+
+  "T": {"frases": ["A student's desk."],
+        "al_azar": [
+          ["A student's desk.", "Someone carved \"MUDKIP!!\" into the corner."],
+          ["A student's desk. There's a half-finished deck list on it."],
+          ["A student's desk. It's covered in eraser crumbs."]
+        ]}
+
+d) Que cambie después de un evento: "variantes", exactamente como en los personajes
+   (puntos 10 y 11). Una variante puede cambiar "frases", "al_azar", "regalo", "marcar" y
+   "accion".
+
+  "E": {"frases": ["The blackboard is empty."],
+        "variantes": [
+          {"si": {"vencer": "jefe"},
+           "frases": ["Someone wrote on the blackboard:", "\"{nombre} beat the Headmaster!\""]}
+        ]}
+
+e) Que anote un evento al mirarlo: "marcar" (punto 12). Por ejemplo, leer un cartel que
+   después un personaje comenta:
+
+  "objetos_casilla": {
+    "9,4": {"frases": ["A note on the desk: \"Detention for whoever drew on the board.\""],
+            "marcar": "leyo_la_nota"}
+  }
+  y en un personaje: {"si": {"marca": "leyo_la_nota"}, "frases": ["You read the note?! It wasn't me!"]}
+
+f) Cartas escondidas: "regalo", igual que en los personajes (punto 9). Se da una sola vez;
+   antes de cumplirse su "requiere" (si tiene) dice sus "frases" de siempre, y después de
+   darlo dice "despues".
+
+  "objetos_casilla": {
+    "16,15": {"frases": ["A potted plant by the door."],
+              "regalo": {"id": "maceta_entrada", "cartas": ["ex2-72"],
+                         "dar": ["Something shiny is poking out of the soil...", "It's a Pokémon card!"],
+                         "despues": ["A potted plant by the door.", "The soil looks freshly dug."]}}
+  }
+
+   Ponele siempre un "id" propio a cada regalo escondido (si falta, se usa el mapa y la
+   casilla). Con "requiere" podés esconder cartas que recién aparecen después de un evento:
+   "requiere": {"vencer": "jefe"}.
+
+g) Abrir tu mazo: "accion": "mazo". Después de las frases pregunta "Do you want to edit your
+   deck?" (por ejemplo, para una computadora o una caja de cartas).
+
+  "objetos_casilla": {
+    "8,4": {"frases": ["The teacher's PC. There's a deck-building program open."],
+            "accion": "mazo"}
+  }
+
+Ejemplos ya puestos en data/mapas/escuela.json:
+  - El pizarrón (E) cambia después de ganarle al alumno y después de ganarle al director.
+  - Los pupitres (T) y las macetas (P) dicen una cosa distinta al azar cada vez.
+  - El pupitre de la casilla 13,5 tiene un sticker de Torchic, y después del director
+    alguien le escribió tu nombre.
+  - La maceta de la casilla 16,15 (al lado de la puerta, abajo a la derecha) esconde un
+    Pikachu.
+
+Consejos de flavor text:
+  - Una o dos páginas como mucho: mirar cosas tiene que ser rápido.
+  - Los detalles concretos venden el mundo: un nombre tallado, una nota, un olor.
+  - Usá "al_azar" en los objetos que se repiten mucho (pupitres, bancos) y "objetos_casilla"
+    para el que esconde algo, así el jugador aprende que vale la pena mirar.
+  - Los objetos son una buena forma de contar lo que pasó: después de un evento grande,
+    que el pizarrón, un cartel o una mesa lo comenten.
+

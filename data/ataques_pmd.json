@@ -1,0 +1,473 @@
+{
+ "_ayuda": [
+  "Qué animación de SpriteCollab usa cada ataque en la mini pelea (Options > Battles: Mini).",
+  "'por_ataque': nombre exacto del ataque -> animaciones en orden de preferencia. Se puede afinar por Pokémon con 'Pokémon|Ataque' (ej. 'Blaziken|Flamethrower').",
+  "'palabras': se busca cada palabra dentro del nombre del ataque (en minúsculas), de arriba hacia abajo; gana la primera regla que coincida.",
+  "'distancia': true = el ataque viaja hasta el rival (chorro, rayo, burbujas...); false = el atacante se acerca y golpea.",
+  "Si la especie no tiene ninguna de las animaciones de la lista, se prueba la siguiente regla y al final las de 'por_defecto'.",
+  "Nombres de animación de SpriteCollab (entre paréntesis, cuántas de nuestras especies la tienen): Attack, Swing, Double, Hop, Charge, Rotate (todas), Shoot (258), Strike (179), SpAttack (64), Head (75), RearUp (41), QuickStrike (27), Emit (15), Punch (11), Bite (10), Slam (10), Shock (10), MultiScratch (8), MultiStrike (8), Ricochet (5), Kick (5), TailWhip (4), Scratch (4), Stomp (4), Jab (3), Sound (3), Sing (2), Gas (2), Slice (2), Uppercut (1).",
+  "'tambien_estado': true = la regla vale también para los ataques que no hacen daño (por ejemplo Wrap, que solo puede paralizar)."
+ ],
+ "por_ataque": {
+  "Blaze Kick": {
+   "anims": [
+    "Kick",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  "Sky Uppercut": {
+   "anims": [
+    "Uppercut",
+    "Punch",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  "Hydro Punch": {
+   "anims": [
+    "Punch",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  "Pin Missile": {
+   "anims": [
+    "Shoot",
+    "MultiStrike"
+   ],
+   "distancia": true
+  },
+  "Fire Spin": {
+   "anims": [
+    "Shoot",
+    "SpAttack",
+    "Charge"
+   ],
+   "distancia": true
+  },
+  "Double Bubble": {
+   "anims": [
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  "Double Razor Leaf": {
+   "anims": [
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  "Double Metal Ball": {
+   "anims": [
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  "Crushing Wave": {
+   "anims": [
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  "Double-edge": {
+   "anims": [
+    "Slam",
+    "Charge",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  "Take Down": {
+   "anims": [
+    "Slam",
+    "Charge",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  "Stampede": {
+   "anims": [
+    "Charge",
+    "Slam",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  "Surf": {
+   "anims": [
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  "Will-o'-the-wisp": {
+   "anims": [
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  "Spit Up": {
+   "anims": [
+    "Shoot"
+   ],
+   "distancia": true
+  }
+ },
+ "palabras": [
+  {
+   "palabras": [
+    "wrap",
+    "bind",
+    "constrict",
+    "squeeze",
+    "coil",
+    "strangle",
+    "entangle"
+   ],
+   "anims": [
+    "Attack",
+    "Strike"
+   ],
+   "distancia": false,
+   "tambien_estado": true
+  },
+  {
+   "palabras": [
+    "kick",
+    "stomp"
+   ],
+   "anims": [
+    "Kick",
+    "Stomp",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "punch",
+    "uppercut",
+    "jab",
+    "hook",
+    "lariat",
+    "chop",
+    "knuckle",
+    "pound",
+    "smash",
+    "beat",
+    "slap",
+    "mega throw",
+    "touch throw"
+   ],
+   "anims": [
+    "Punch",
+    "Uppercut",
+    "Jab",
+    "QuickStrike",
+    "MultiStrike",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "double",
+    "fury",
+    "one-two",
+    "continuous",
+    "multi"
+   ],
+   "anims": [
+    "MultiStrike",
+    "MultiScratch",
+    "Double",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "claw",
+    "scratch",
+    "slash",
+    "swipe",
+    "cutter",
+    "cut",
+    "blade",
+    "razor fin",
+    "rend",
+    "guillotine",
+    "pinchers",
+    "scrunch"
+   ],
+   "anims": [
+    "Scratch",
+    "Slice",
+    "MultiScratch",
+    "Swing",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "bite",
+    "fang",
+    "gnaw",
+    "crunch"
+   ],
+   "anims": [
+    "Bite",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "tail"
+   ],
+   "anims": [
+    "TailWhip",
+    "Swing",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "wing",
+    "peck",
+    "drill",
+    "horn",
+    "stab",
+    "pierce"
+   ],
+   "anims": [
+    "Swing",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "spin",
+    "rollout",
+    "rolling",
+    "tumble"
+   ],
+   "anims": [
+    "Rotate",
+    "Charge",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "quick",
+    "agility",
+    "fake out",
+    "feint"
+   ],
+   "anims": [
+    "QuickStrike",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "head",
+    "skull",
+    "tackle",
+    "slam",
+    "ram",
+    "rush",
+    "bash",
+    "body",
+    "lunge",
+    "overrun",
+    "impact",
+    "crush",
+    "dive",
+    "bounce",
+    "shove",
+    "push",
+    "knock",
+    "breaking",
+    "edge"
+   ],
+   "anims": [
+    "Slam",
+    "Head",
+    "Charge",
+    "Strike"
+   ],
+   "distancia": false
+  },
+  {
+   "palabras": [
+    "shock",
+    "bolt",
+    "volt",
+    "spark",
+    "thunder",
+    "zap",
+    "plasma",
+    "jolt",
+    "lightning",
+    "kerzap",
+    "circuit"
+   ],
+   "anims": [
+    "Shock",
+    "Shoot",
+    "Charge"
+   ],
+   "distancia": true
+  },
+  {
+   "palabras": [
+    "song",
+    "sing",
+    "voice",
+    "sound",
+    "roar",
+    "lullaby",
+    "noise",
+    "chime",
+    "sonic"
+   ],
+   "anims": [
+    "Sing",
+    "Sound",
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  {
+   "palabras": [
+    "smog",
+    "gas",
+    "poison breath",
+    "smokescreen"
+   ],
+   "anims": [
+    "Gas",
+    "Shoot",
+    "SpAttack"
+   ],
+   "distancia": true
+  },
+  {
+   "palabras": [
+    "thrower",
+    "beam",
+    "pump",
+    "cannon",
+    "gun",
+    "blast",
+    "shot",
+    "bubble",
+    "ember",
+    "flame",
+    "fire",
+    "flare",
+    "spray",
+    "splash",
+    "stream",
+    "spurt",
+    "breath",
+    "smog",
+    "gas",
+    "sludge",
+    "water",
+    "hydro",
+    "ball",
+    "ray",
+    "wave",
+    "psy",
+    "mind",
+    "confus",
+    "hypno",
+    "powder",
+    "spore",
+    "leaf",
+    "needle",
+    "sting",
+    "barb",
+    "thread",
+    "snow",
+    "ice",
+    "blizzard",
+    "cold",
+    "mist",
+    "glare",
+    "eye",
+    "light",
+    "gust",
+    "wind",
+    "storm",
+    "burn",
+    "heat",
+    "magma",
+    "lava",
+    "mud",
+    "sand",
+    "pebble",
+    "rock",
+    "boom",
+    "burst",
+    "pulse",
+    "purge",
+    "comet",
+    "star"
+   ],
+   "anims": [
+    "Shoot",
+    "SpAttack",
+    "Charge"
+   ],
+   "distancia": true
+  }
+ ],
+ "por_defecto": {
+  "golpe": [
+   "Strike",
+   "MultiStrike",
+   "Slam",
+   "Attack",
+   "Swing",
+   "Double",
+   "Charge",
+   "Shoot"
+  ],
+  "distancia": [
+   "Shoot",
+   "SpAttack",
+   "Charge",
+   "Strike",
+   "Attack"
+  ],
+  "estado": [
+   "Shoot",
+   "SpAttack",
+   "Charge",
+   "Strike",
+   "Attack"
+  ],
+  "tipos_a_distancia": [
+   "Water",
+   "Lightning",
+   "Psychic",
+   "Grass"
+  ]
+ }
+}

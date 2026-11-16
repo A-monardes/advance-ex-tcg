@@ -1,0 +1,36 @@
+.godot/
+*.import
+
+# Letra propia del usuario (no se reparte con el código)
+fonts/propia.fnt
+fonts/propia.png
+mundo/propios/*.png
+efectos/propios/*.png
+__pycache__/
+efectos/propios/*.json
+mundo/propios/*.json
+mundo/propios/monedas/
+mundo/propios/tipos/
+mundo/propios/ui/
+mundo/propios/batalla/
+mundo/propios/arte/
+mundo/propios/cartas/
+build/
+mundo/propios/pmd/
+
+mundo/propios/titulo/
+mundo/propios/estadios/
+mundo/propios/intro/
+
+# Sonidos y música propios (rips)
+sonidos/*.ogg
+sonidos/*.wav
+sonidos/*.mp3
+sonidos/golpes/
+musica/*.ogg
+musica/*.wav
+musica/*.mp3
+musica/*.json
+
+# Recortes de arte oficial: no van al repositorio público
+sprites/*.png

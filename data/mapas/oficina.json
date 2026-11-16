@@ -1,0 +1,121 @@
+{
+  "_ayuda": "Oficina del director (se sube por la puerta del fondo de la biblioteca). Fondo: mundo/propios/oficina_director.png (tools/armar_salas.py). Letras: '.' piso, '#' pared, 'E' puerta cerrada, 'T' escritorio, 'C' sillón del director, 'r' vitrina, 'L' estante, 'P' maceta, 'D' alfombra.",
+  "nombre": "Headmaster's Office",
+  "fondo": "oficina_director",
+  "baldosas": [
+    "############",
+    "##EE########",
+    "......rrLL.P",
+    "............",
+    ".r......TT..",
+    ".r......TTC.",
+    ".r......TTC.",
+    "Pr..........",
+    ".....DD....."
+  ],
+  "inicio": [
+    5,
+    7,
+    "up"
+  ],
+  "salidas": [
+    {
+      "x": 5,
+      "y": 8,
+      "mapa": "biblioteca",
+      "a": [
+        17,
+        2,
+        "down"
+      ]
+    },
+    {
+      "x": 6,
+      "y": 8,
+      "mapa": "biblioteca",
+      "a": [
+        17,
+        2,
+        "down"
+      ]
+    }
+  ],
+  "personajes": [
+    {
+      "id": "jefe",
+      "x": 7,
+      "y": 4,
+      "dir": "down",
+      "sprite": "jefe",
+      "rival": "jefe"
+    }
+  ],
+  "objetos": {
+    "E": {
+      "frases": [
+        "A door to the Headmaster's private study.",
+        "It's locked."
+      ]
+    },
+    "T": {
+      "frases": [
+        "The Headmaster's desk. There's a stack of student reports on it."
+      ],
+      "variantes": [
+        {
+          "si": {
+            "vencer": "jefe"
+          },
+          "frases": [
+            "The Headmaster's desk. A report on top says:",
+            "\"{nombre}: outstanding.\""
+          ]
+        }
+      ]
+    },
+    "C": {
+      "frases": [
+        "The Headmaster's chair. Better not sit in it."
+      ]
+    },
+    "r": {
+      "frases": [
+        "A glass case full of trophies from old card tournaments."
+      ]
+    },
+    "L": {
+      "frases": [
+        "Books about famous Card Trainers from other regions."
+      ]
+    },
+    "P": {
+      "frases": [
+        "A potted plant."
+      ]
+    }
+  },
+  "objetos_casilla": {
+    "1,4": {
+      "frases": [
+        "A display case. Inside is a rare card in a frame...",
+        "It's signed by the Headmaster himself!"
+      ]
+    },
+    "1,5": {
+      "frases": [
+        "A display case. Inside is a rare card in a frame...",
+        "It's signed by the Headmaster himself!"
+      ]
+    },
+    "1,6": {
+      "frases": [
+        "A display case with an old card from the very first set ever printed."
+      ]
+    },
+    "1,7": {
+      "frases": [
+        "A display case with an old card from the very first set ever printed."
+      ]
+    }
+  }
+}

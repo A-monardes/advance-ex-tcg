@@ -1,0 +1,121 @@
+extends RefCounted
+## Evaluación de una posición desde el punto de vista de un jugador (para la IA).
+## Número más alto = mejor para `me`. No mira cartas ocultas: solo la mesa, los
+## Premios y cuántas cartas hay en mano y mazo.
+
+const WIN := 100000.0
+
+## Pesos de la evaluación (se pueden ajustar desde tests/ai_levels.gd para probar).
+static var W := {"prize": 120.0, "ko": 55.0, "dmg": 25.0, "hand_me": 3.0, "hand_opp": 1.0,
+		"mon": 12.0, "stage": 10.0, "hp": 0.15, "energy": 12.0, "ready": 20.0, "bench": 4.0}
+
+
+static func evaluate(g: Game, me_index: int) -> float:
+	var me: PlayerState = g.players[me_index]
+	var opp: PlayerState = g.players[1 - me_index]
+	if g.phase == "over":
+		if g.winner == me_index:
+			return WIN
+		if g.winner == 1 - me_index:
+			return -WIN
+		return 0.0
+	var v := 0.0
+	# Premios: lo más importante
+	v += (opp.prizes.size() - me.prizes.size()) * W["prize"]
+	# Sin Pokémon en juego = derrota cercana
+	if me.all_in_play().is_empty():
+		return -WIN * 0.5
+	if opp.all_in_play().is_empty():
+		return WIN * 0.5
+	v += _side_value(g, me) - _side_value(g, opp)
+	# Amenazas sobre los Activos (en dobles, el mejor par atacante/defensor de cada lado)
+	if not me.actives().is_empty() and not opp.actives().is_empty():
+		# Se evalúa al terminar mi turno: el rival ataca primero (con 1 Energía más) y después yo.
+		var to_move: int = g.current
+		var my_w := 1.0 if to_move == me_index else 0.6       # si le toca al rival, mi amenaza vale menos
+		var their_w := 1.0 if to_move != me_index else 0.6
+		v += _threat(g, me.actives(), opp.actives()) * my_w
+		v -= _threat(g, opp.actives(), me.actives()) * their_w
+		for d in opp.actives():
+			v += _status_value(d)
+		for d in me.actives():
+			v -= _status_value(d)
+	# Recursos
+	v += mini(me.hand.size(), 10) * W["hand_me"] - mini(opp.hand.size(), 10) * W["hand_opp"]
+	if me.deck.size() < 6:
+		v -= (6 - me.deck.size()) * 15.0
+	return v
+
+
+## Lo mejor que pueden hacer los atacantes contra los defensores el turno que viene: un KO
+## (vale por los Premios que da) o, si no llega, la parte de los PS que le saca.
+static func _threat(g: Game, atts: Array, defs: Array) -> float:
+	var best := 0.0
+	for a in atts:
+		for d in defs:
+			var dmg := best_damage(g, a, d, 1)
+			var val: float
+			if dmg >= d.hp_left():
+				val = W["ko"] * (2.0 if d.is_ex() else 1.0)
+			else:
+				val = W["dmg"] * float(dmg) / maxf(1.0, d.hp_left())
+			best = maxf(best, val)
+	return best
+
+
+static func _side_value(g: Game, p: PlayerState) -> float:
+	var v := 0.0
+	for m in p.all_in_play():
+		var stage := CardDB.stage(m.top())
+		v += W["mon"] + stage * W["stage"]
+		v += m.hp_left() * W["hp"]
+		var useful := mini(Energy.total(m), _max_cost(m) + 1)
+		v += useful * W["energy"]
+		if m.tool != "":
+			v += 4.0
+		# Pokémon listo para atacar (sirve de reemplazo si cae el Activo)
+		if not p.is_active(m) and m.attacks().any(func(atk): return int(atk.get("damage", 0)) > 0 and Energy.can_pay(m, atk.get("cost", []))):
+			v += W["ready"]
+	v += mini(p.bench.size(), 4) * W["bench"]
+	return v
+
+
+static func _max_cost(m: PokemonInPlay) -> int:
+	var c := 0
+	for atk in m.attacks():
+		c = maxi(c, atk.get("cost", []).size())
+	return c
+
+
+static func _status_value(m: PokemonInPlay) -> float:
+	var v := 0.0
+	if m.rotation in ["asleep", "paralyzed"]:
+		v += 10.0
+	elif m.rotation == "confused":
+		v += 6.0
+	if m.poison > 0:
+		v += 6.0
+	if m.burned:
+		v += 6.0
+	return v
+
+
+## Daño aproximado del mejor ataque de `att` contra `def` (Debilidad y Resistencia
+## incluidas). extra_energy: Energías que podría unir antes de atacar (1 = el turno que viene).
+static func best_damage(g: Game, att: PokemonInPlay, def: PokemonInPlay, extra_energy: int) -> int:
+	var best := 0
+	var have := Energy.total(att) + extra_energy
+	for atk in att.attacks():
+		var cost: Array = atk.get("cost", [])
+		var ok := Energy.can_pay(att, cost) if extra_energy == 0 else cost.size() <= have
+		if not ok:
+			continue
+		var dmg := int(atk.get("damage", 0))
+		if dmg <= 0:
+			continue
+		if att.types().any(func(t): return t in def.data().get("weaknesses", [])):
+			dmg *= 2
+		if att.types().any(func(t): return t in def.data().get("resistances", [])):
+			dmg -= 30
+		best = maxi(best, dmg)
+	return best

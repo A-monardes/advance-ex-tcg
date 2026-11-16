@@ -1,0 +1,19 @@
+{
+  "_ayuda": "Posiciones para la hoja de efectos de Rubí/Zafiro (491x1926). Ver tools/hoja_a_efectos.py.",
+  "paneles": {
+    "llama":     {"buscar": [140, 1285, 190, 1550], "fondo": ["#60c0c0"], "alto": 32},
+    "anillo":    {"buscar": [140, 1100, 190, 1290], "fondo": ["#000000"], "alto": 32},
+    "colmillos": {"buscar": [10, 225, 57, 305],     "fondo": ["#000000"], "alto": 32},
+    "roca":      {"buscar": [235, 45, 280, 250],    "fondo": ["#98f8f8"], "alto": 32},
+    "explosion": {"buscar": [78, 255, 125, 465],    "fondo": ["#000000"], "alto": 32},
+    "estrellas": {"buscar": [367, 1535, 413, 1710], "fondo": ["#90c0f0"], "alto": 32},
+    "rayo":      {"buscar": [10, 110, 57, 240],     "fondo": ["#000000"], "alto": 16},
+    "zarpazo":   {"buscar": [45, 295, 90, 445],     "fondo": ["#90c0f0"], "alto": 32},
+    "hoja":      {"buscar": [0, 370, 25, 470],      "fondo": ["#c0f0f0"], "alto": 16}
+  },
+  "grandes": {
+    "ola": {"cuadros": [[130, 1732, 258, 1796], [130, 1796, 258, 1860]],
+            "fondo": ["#689088", "#6058f8"],
+            "borrar": [[0, 96, 0, 128, 16], [1, 0, 0, 48, 14]]}
+  }
+}

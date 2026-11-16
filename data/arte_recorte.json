@@ -1,0 +1,33 @@
+{
+  "_ayuda": "Dónde está el recuadro del arte en la carta escaneada, en proporciones (0 a 1): [izquierda, arriba, derecha, abajo]. El juego busca el marco plateado cerca de esta medida y la usa si no lo encuentra. Si el arte sale corrido, ajustá estos números y borrá la carpeta arte de los datos del juego (user://arte) para que se recorte de nuevo. Las claves 'ecard ...' son para Expedition, Aquapolis y Skyridge: su arte no tiene marco plateado (el de los Pokémon llega hasta el borde derecho), así que se usa la medida tal cual (con el lado izquierdo redondeado afuera).",
+  "Pokémon": [
+    0.075,
+    0.095,
+    0.927,
+    0.47
+  ],
+  "Trainer": [
+    0.08,
+    0.145,
+    0.917,
+    0.487
+  ],
+  "Energy": [
+    0.0,
+    0.0,
+    1.0,
+    1.0
+  ],
+  "ecard Pokémon": [
+    0.15,
+    0.15,
+    0.955,
+    0.455
+  ],
+  "ecard Trainer": [
+    0.155,
+    0.195,
+    0.89,
+    0.48
+  ]
+}

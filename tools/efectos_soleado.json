@@ -1,0 +1,20 @@
+{
+ "_ayuda": "Clima soleado de Mystery Dungeon Equipo de Rescate Rojo (752x608): 13 pantallas de 240x112.",
+ "fondo": "#5a5a78",
+ "tolerancia": 4,
+ "tiras": [
+  {
+   "nombre": "soleado",
+   "pantallas": [
+    8,
+    8,
+    248,
+    120,
+    240,
+    112,
+    13,
+    3
+   ]
+  }
+ ]
+}

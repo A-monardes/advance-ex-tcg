@@ -1,0 +1,55 @@
+PLAN DE EFECTOS DE ATAQUE PARA LA MINI PELEA (Mystery Dungeon)
+==============================================================
+
+4 efectos por familia:
+  golpe_debil      ataque físico de menos de 50 de daño
+  golpe_fuerte     ataque físico de 50 o más
+  distancia_debil  ataque a distancia de menos de 50
+  distancia_fuerte ataque a distancia de 50 o más
+
+La familia sale del tipo del Pokémon en los juegos (no solo del tipo de la carta), así un
+Onix (carta Lucha) usa los de Roca y un Arbok (carta Planta) los de Veneno. Si un Pokémon
+tiene dos tipos, se usa el que coincide con el tipo de la carta (y si ninguno coincide, el primero).
+Si un hueco queda vacío, se usa el efecto de la familia "madre" (la de su tipo de carta).
+
+Anotá al lado de cada uno qué animación de Mystery Dungeon querés (el nombre del movimiento,
+por ejemplo "Ember", "Flamethrower") y guardá esas hojas en una carpeta para que las recorte.
+
+FAMILIA     (carta)      golpe_debil        golpe_fuerte       distancia_debil    distancia_fuerte
+---------   ----------   ----------------   ----------------   ----------------   ----------------
+Fuego       Fire
+Agua        Water
+Hielo       Water
+Planta      Grass
+Bicho       Grass
+Veneno      Grass/Psychic
+Eléctrico   Lightning
+Psíquico    Psychic
+Fantasma    Psychic
+Lucha       Fighting
+Roca        Fighting
+Tierra      Fighting
+Siniestro   Darkness
+Acero       Metal
+Normal      Colorless
+Volador     Colorless
+Dragón      Colorless
+
+Ideas de movimientos de Mystery Dungeon que suelen servir (solo como guía):
+  Fuego:      Ember / Fire Punch / Flamethrower / Fire Blast
+  Agua:       Bubble / Waterfall / Water Gun / Hydro Pump
+  Hielo:      Powder Snow / Ice Punch / Ice Beam / Blizzard
+  Planta:     Vine Whip / Leaf Blade / Razor Leaf / Solar Beam
+  Bicho:      Fury Cutter / Megahorn / String Shot / Signal Beam
+  Veneno:     Poison Sting / Poison Fang / Sludge / Sludge Bomb
+  Eléctrico:  Spark / Thunder Punch / Thunder Shock / Thunder
+  Psíquico:   Confusion / Zen Headbutt / Psybeam / Psychic
+  Fantasma:   Lick / Shadow Punch / Night Shade / Shadow Ball
+  Lucha:      Karate Chop / Cross Chop / Vacuum Wave / Focus Blast
+  Roca:       Rock Throw / Rock Smash / Rock Tomb / Rock Slide
+  Tierra:     Mud-Slap / Earthquake / Mud Shot / Earth Power
+  Siniestro:  Bite / Crunch / Faint Attack / Dark Pulse
+  Acero:      Metal Claw / Iron Tail / Mirror Shot / Flash Cannon
+  Normal:     Tackle / Body Slam / Swift / Hyper Beam
+  Volador:    Peck / Wing Attack / Gust / Aeroblast
+  Dragón:     Dragon Claw / Outrage / Dragon Rage / Draco Meteor

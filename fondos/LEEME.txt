@@ -1,0 +1,24 @@
+FONDOS DE MESA
+==============
+Cada PNG (o JPG/WEBP) de esta carpeta aparece como opción de mesa: en el título
+(Options > Table) y en la pausa del duelo (P > Table). Se leen al abrir el juego,
+así que después de agregar o cambiar uno hay que reiniciarlo.
+
+Nombre: sale del archivo. El número del principio solo sirve para ordenarlos y los
+"_" se vuelven espacios: "18_my_forest.png" se ve como "My Forest". Los incluidos
+tienen nombre en castellano y se muestran en inglés con la tabla TABLE_NAMES de
+scenes/duel.gd ("05_risco.png" -> "Cliff").
+
+Tamaño: lo ideal es 240x112 píxeles (la mesa, sin el cuadro de texto). Con otro
+tamaño se agranda o se recorta desde el centro para cubrirla. Mitad de arriba
+(filas 0-54) = lado del rival, que el juego oscurece un poco solo; mitad de abajo =
+tu lado. Las cartas tapan casi toda la mesa: conviene un dibujo suave, de pocos
+colores, que no compita con ellas.
+
+Para cambiar uno existente, reemplazá el PNG por otro con el mismo nombre. Para
+sacarlo de la lista, borralo o movelo fuera de la carpeta.
+
+Los incluidos son originales, dibujados con tools/make_backgrounds.py (si volvés
+a correr ese script, pisa los archivos con esos mismos nombres; los tuyos, con
+otros nombres, no se tocan). También podés poner los tuyos en la carpeta de datos
+del juego (user://fondos/), que no se toca al actualizar el código.

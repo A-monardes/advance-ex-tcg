@@ -1,0 +1,20 @@
+MÚSICA PROPIA
+=============
+Archivos (sirve .ogg, .mp3 o .wav):
+
+  titulo.ogg     pantalla de título y menús
+  mazos.ogg      editor de mazos (si no está, suena la del título)
+  duelo.ogg      durante la partida. Si hay más (duelo2.ogg, duelo3.ogg...), cada duelo
+                 elige una al azar.
+  victoria.ogg   al ganar (opcional, suena una vez)
+  derrota.ogg    al perder (opcional, suena una vez)
+
+Para que se repitan sin cortes, prepará cada pista con:
+  python3 tools/armar_musica.py grabacion.wav duelo2
+Busca dónde vuelve a empezar la canción, corta la primera vuelta, funde la unión y deja
+duelo2.json con el punto desde donde se repite ("loop_offset", en segundos: la
+introducción suena solo la primera vez). Lo mejor es grabar dos vueltas completas.
+Si detecta mal la vuelta: --lag <segundos>. Para victoria y derrota: --sin-loop.
+
+Si un archivo no está, se usa la música de relleno que genera el juego.
+También podés ponerlos en la carpeta de datos del juego, en user://musica/.

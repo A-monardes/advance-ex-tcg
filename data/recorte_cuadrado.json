@@ -1,0 +1,3 @@
+{
+  "_ayuda": "Ajuste del cuadrado chico que el juego saca del arte en alta, para las cartas sin imagen propia en sprites/. x e y: dónde cae el centro del cuadrado (0 a 1, 0.5 = medio); zoom: más de 1 acerca. Ejemplo: \"ecard1-1\": {\"x\": 0.4, \"zoom\": 1.2}"
+}

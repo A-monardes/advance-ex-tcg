@@ -1,0 +1,106 @@
+{
+ "_ayuda": [
+  "Guion de la introducción de una partida nueva (el Profesor Birch). Se reproduce en orden.",
+  "Pasos posibles (uno por línea de 'pasos'):",
+  "  {\"dice\": [\"página 1\", \"página 2\"]}       Birch habla (cada texto es una página; {nombre} = tu nombre, {inicial} = el tipo de tu mazo inicial).",
+  "  {\"quien\": \"Prof. Birch\"}                     cambia el nombre que aparece arriba del cuadro de texto.",
+  "  {\"birch\": \"entra\"} / {\"birch\": \"sale\"}    Birch aparece o se va (imagen: mundo/propios/intro/birch.png; sin imagen solo se ve el texto).",
+  "  {\"pokemon\": \"lotad\", \"accion\": \"sale\"}     el Pokémon sale (con la tira de Birch se ve la animación de Rubí/Zafiro con Azurill; sin ella, el sprite de mundo/propios/pmd/<especie>); \"vuelve\" lo guarda.",
+  "  {\"pausa\": 0.6}                                espera esos segundos.",
+  "  {\"carta\": \"ex2-31\"} / {\"carta\": \"\"}            Birch muestra una carta (id de data/cards_adv.json; ex2-31 es Azurill de Sandstorm) o la guarda.",
+  "  {\"nombre\": true}                              abre la pantalla para escribir tu nombre.",
+  "  {\"mazo\": true}                                abre la pantalla para elegir el mazo inicial.",
+  "  {\"fin\": true}                                 termina y empieza la campaña (data/campana.json, 'inicio')."
+ ],
+ "pasos": [
+  {
+   "pausa": 0.6
+  },
+  {
+   "birch": "entra"
+  },
+  {
+   "pausa": 0.4
+  },
+  {
+   "dice": [
+    "Ah, there you are! Come in, come in!",
+    "I'm Birch. Around here, people call me the Pokémon Professor."
+   ]
+  },
+  {
+   "pokemon": "azurill",
+   "accion": "sale"
+  },
+  {
+   "dice": [
+    "This little one is Azurill. Say hello!",
+    "Here in Hoenn, people and Pokémon live side by side. Some travel together, some battle together...",
+    "...and some, like me, spend their days studying them!"
+   ]
+  },
+  {
+   "pokemon": "azurill",
+   "accion": "vuelve"
+  },
+  {
+   "dice": [
+    "But lately, Pokémon have turned up somewhere new. Take a look at this!"
+   ]
+  },
+  {
+   "carta": "ex2-31"
+  },
+  {
+   "dice": [
+    "It's Azurill again... as a card!",
+    "This is the Pokémon Trading Card Game. Devon brought it to Hoenn not long ago.",
+    "Their designers asked researchers like me how each Pokémon really behaves...",
+    "...and turned it into HP, attacks, a type and a Weakness, all on one little card.",
+    "Build a deck, and you can have a Pokémon battle right on top of a table!",
+    "Now the whole region is crazy about them."
+   ]
+  },
+  {
+   "carta": ""
+  },
+  {
+   "dice": [
+    "But I'm getting ahead of myself. First things first...",
+    "What's your name?"
+   ]
+  },
+  {
+   "nombre": true
+  },
+  {
+   "dice": [
+    "{nombre}! What a great name.",
+    "Listen, {nombre}. Starting tomorrow, the Trainer's School in Rustboro City opens its very first card course.",
+    "Anyone who passes gets a duelist license, and with it, the right to enter the Hoenn Card League.",
+    "I took the liberty of signing you up. I hope you don't mind!",
+    "Of course, every student needs a deck of their own. I brought three with me.",
+    "Go on, pick the one that suits you best!"
+   ]
+  },
+  {
+   "mazo": true
+  },
+  {
+   "dice": [
+    "The {inicial} deck! A fine choice.",
+    "Learn the rules, make some friends, and earn that license.",
+    "Your own adventure is about to begin, {nombre}. Good luck at school!"
+   ]
+  },
+  {
+   "birch": "sale"
+  },
+  {
+   "pausa": 0.5
+  },
+  {
+   "fin": true
+  }
+ ]
+}

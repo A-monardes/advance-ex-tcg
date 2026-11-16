@@ -1,0 +1,40 @@
+TUS PROPIOS SPRITES Y FONDOS
+Un PNG acá con el mismo nombre que uno de mundo/personajes/ (por ejemplo jugador.png)
+lo reemplaza. Mismo formato: 48x128, 3 columnas (quieto, paso 1, paso 2) x 4 filas
+(abajo, arriba, izquierda, derecha) de 16x32, fondo transparente. Los pies de cada cuadro
+se apoyan solos en la fila 29 (no importa si la hoja los trae corridos un píxel o dos).
+Los scripts de tools/ nunca escriben en esta carpeta y lo que pongas acá no se incluye
+en el paquete del código.
+
+Fondos de mapas: un PNG del mapa entero (por ejemplo escuela_rustboro.png para
+data/mapas/escuela.json, que dice "fondo": "escuela_rustboro"), del tamaño exacto del mapa
+(columnas x 16 por filas x 16).
+Los muebles de la imagen (las casillas que no se pisan, salvo paredes y pizarrón) tapan
+solos al personaje que pasa por detrás: el juego copia esas casillas, y lo que sobresale
+hacia la casilla de atrás, a una capa que se dibuja encima de él.
+
+Tienda de cartas: tienda_fondo.png (la pantalla entera), bridgette.png y bridgette.json (la
+vendedora con sus caras). Las arma tools/armar_tienda.py; ver data/LEEME_CAMPANA.txt, punto 5.
+
+Sobres: sobre_ex1.png ... sobre_ex5.png (la tienda) y sobre_ex1_grande.png ... (la animación
+al abrirlos). Los arma tools/armar_sobres.py.
+
+Dorso de las cartas: dorso_carta.png (se usa en todas las cartas boca abajo). Lo copia
+tools/armar_dorso.py; sin él, se dibuja un dorso genérico azul.
+
+Monedas: monedas/moneda_01.png ... (la cara) y moneda_01_cruz.png ... (la cruz). En cada
+partida el juego elige una al azar. Las arma tools/armar_monedas.py (ver ahí). Sin ellas se
+usa la moneda dibujada de siempre (estrella dorada / anillo plateado).
+
+Íconos de tipo: tipos/energy_grass.png ... energy_colorless.png y energy_rainbow.png (los
+círculos de cada tipo). Los arma tools/armar_tipos.py. Se ven en la ficha de las cartas
+(tipo, costos, debilidad, resistencia, retirada, delante de cada tipo que nombra el texto),
+en el costo de los ataques y en las Energías unidas. Sin ellos se dibujan los de siempre.
+
+Interfaz al estilo Rubí/Zafiro: ui/marco.png (+ marco.json) el cuadro de texto con borde
+lila que usan todos los cuadros y menús, ui/fondo.png las rayas verde oliva de las
+pantallas enteras (ficha de una carta, mano, registro, resultado, campaña, mazos),
+ui/estado_psn.png / par / slp / brn / cnf las pastillas de estado de la ficha del Pokémon,
+y ui/flor.png las flores del patio que se mecen con el viento. Las arma tools/armar_ui.py
+(con las capturas de la pantalla de equipo, las pastillas y las flores). Sin ellas se ve
+el estilo de siempre.

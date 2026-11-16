@@ -1,0 +1,29 @@
+Poné acá imágenes PNG (o JPG/WEBP) para los retratos del Pokémon Activo.
+
+Nombres que busca el juego, en este orden:
+  1. el id de la carta:     ex1-3.png      (solo esa carta)
+  2. el nombre de la carta: Blaziken.png   (todas las cartas con ese nombre)
+  3. la especie:            Kyogre.png     (sirve para "Kyogre ex" y "Team Aqua's Kyogre")
+
+Cualquier tamaño sirve. En modo Nítido (el de por defecto) se ve a 120x120, así que
+conviene que tenga al menos ese tamaño; en modo Pixel se reduce a 30x30.
+Si no hay imagen, se muestra el emblema del tipo.
+
+También podés usar la carpeta de datos de usuario de Godot (user://sprites/),
+que es la que funciona si exportás el juego.
+
+Listas de cartas (están en la carpeta listas/ del proyecto, para que Godot no las tome como traducciones):
+  cartas_mazos_tematicos.csv          todas las cartas de los 10 mazos temáticos (140),
+                                      con la columna "nueva" para las que no estaban antes
+  cartas_en_los_mazos.csv             los Pokémon de cada mazo, con las copias
+  cartas_mazos_mundial_2004.csv       todas las cartas de los 4 mazos del Mundial 2004
+  lista_de_cartas.csv                 todos los Pokémon de la era ADV
+  lista_entrenadores_y_energias.csv   todos los Entrenadores y Energías
+
+Íconos de Energía (opcionales, cuadrados y con fondo transparente):
+  energy_grass.png  energy_fire.png  energy_water.png  energy_lightning.png
+  energy_psychic.png  energy_fighting.png  energy_darkness.png  energy_metal.png
+  energy_colorless.png  energy_rainbow.png (Rainbow/Multi)
+  (también sirven en castellano: energia_planta.png, energia_fuego.png, energia_agua.png,
+   energia_rayo.png, energia_psiquico.png, energia_lucha.png, energia_oscuro.png,
+   energia_metal.png, energia_incoloro.png, energia_arcoiris.png)

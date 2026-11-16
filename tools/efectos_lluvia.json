@@ -1,0 +1,20 @@
+{
+ "_ayuda": "Lluvia de Mystery Dungeon Equipo de Rescate Rojo (1248x2192): 61 pantallas (se usa la parte de arriba, 240x112).",
+ "fondo": "#5a5a78",
+ "tolerancia": 4,
+ "tiras": [
+  {
+   "nombre": "lluvia",
+   "pantallas": [
+    8,
+    8,
+    248,
+    168,
+    240,
+    112,
+    61,
+    5
+   ]
+  }
+ ]
+}

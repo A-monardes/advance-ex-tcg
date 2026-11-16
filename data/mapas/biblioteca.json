@@ -1,0 +1,206 @@
+{
+  "_ayuda": "Biblioteca de la escuela (se entra por la alfombra de abajo a la izquierda del aula). Fondo: mundo/propios/biblioteca_escuela.png (tools/armar_salas.py). Letras: '.' piso, '#' pared y columnas, 'L' estante, 'T' mesa o computadora, 'C' silla, 'P' maceta, 'D' puerta o alfombra. Los estantes ('L') dan un consejo al azar de 'al_azar'.",
+  "nombre": "Library",
+  "fondo": "biblioteca_escuela",
+  "baldosas": [
+    "####################",
+    "#################D##",
+    ".TT.#LLLLLLLLLL....P",
+    ".T..#...TT...TT.....",
+    "CT..#..CTTC.CTTC.LL.",
+    ".T..#...TT...TT..LL.",
+    "....................",
+    "....#...TT...TT..LL.",
+    ".T..#..CTTC.CTTC.LL.",
+    "CT..#...TT...TT.....",
+    ".TP.#..............P",
+    ".........DD........."
+  ],
+  "inicio": [
+    9,
+    10,
+    "up"
+  ],
+  "salidas": [
+    {
+      "x": 9,
+      "y": 11,
+      "mapa": "escuela",
+      "a": [
+        3,
+        14,
+        "up"
+      ]
+    },
+    {
+      "x": 10,
+      "y": 11,
+      "mapa": "escuela",
+      "a": [
+        4,
+        14,
+        "up"
+      ]
+    },
+    {
+      "x": 17,
+      "y": 1,
+      "mapa": "oficina",
+      "a": [
+        5,
+        7,
+        "up"
+      ]
+    }
+  ],
+  "personajes": [
+    {
+      "id": "bibliotecaria",
+      "x": 3,
+      "y": 2,
+      "dir": "down",
+      "sprite": [
+        "bibliotecaria",
+        "maestra"
+      ],
+      "nombre": "Librarian",
+      "quieto": true,
+      "frases": [
+        "Shh! Welcome to the library.",
+        "Forgot a rule? Every shelf here has a book about the card game. Take a look!",
+        "The Headmaster's office is through the door in the back."
+      ]
+    },
+    {
+      "id": "lectora",
+      "x": 7,
+      "y": 4,
+      "dir": "right",
+      "sprite": [
+        "lectora",
+        "nina_trenzas"
+      ],
+      "nombre": "Student",
+      "sentado": true,
+      "frases": [
+        "I'm reading every rulebook before my next duel.",
+        "...Wait, so Resistance only takes away 30 damage? Hmm."
+      ]
+    },
+    {
+      "id": "lector",
+      "x": 15,
+      "y": 8,
+      "dir": "left",
+      "sprite": [
+        "lector",
+        "nino_castano"
+      ],
+      "nombre": "Student",
+      "sentado": true,
+      "frases": [
+        "This computer has a list of every card from EX Ruby & Sapphire to EX Hidden Legends.",
+        "I'm looking for cards with Poké-Powers. They're so useful!"
+      ]
+    }
+  ],
+  "objetos": {
+    "L": {
+      "frases": [
+        "Books about the Pokémon Trading Card Game."
+      ],
+      "al_azar": [
+        [
+          "A book on the basics:",
+          "\"You may attach only 1 Energy card from your hand per turn.\""
+        ],
+        [
+          "A book on Supporters:",
+          "\"You can play only 1 Supporter card per turn. Play it, then it goes to the discard pile at the end of your turn.\""
+        ],
+        [
+          "A book on Evolution:",
+          "\"You can't evolve a Pokémon on the turn you put it into play, or on your first turn.\""
+        ],
+        [
+          "A book on Weakness:",
+          "\"Weakness doubles the damage. Resistance takes away 30.\""
+        ],
+        [
+          "A book on Special Conditions:",
+          "\"A Poisoned Pokémon gets 1 damage counter between turns.\"",
+          "\"A Burned Pokémon: flip a coin between turns. If tails, put 2 damage counters on it.\""
+        ],
+        [
+          "A book on Special Conditions:",
+          "\"Asleep: flip a coin between turns. If heads, it wakes up.\"",
+          "\"Paralyzed: it can't attack or retreat until the end of your next turn.\""
+        ],
+        [
+          "A book on Special Conditions:",
+          "\"Confused: flip a coin when it attacks. If tails, the attack fails and it gets 3 damage counters.\""
+        ],
+        [
+          "A book on Pokémon-ex:",
+          "\"When your Pokémon-ex is Knocked Out, your opponent takes 2 Prize cards.\""
+        ],
+        [
+          "A book on retreating:",
+          "\"To retreat, discard Energy equal to the Retreat Cost. You can retreat only once per turn.\""
+        ],
+        [
+          "A book on Poké-Powers and Poké-Bodies:",
+          "\"Poké-Powers are used once per turn. Poké-Bodies work all the time, as long as the Pokémon is in play.\""
+        ],
+        [
+          "A book called \"Building Your First Deck\".",
+          "\"60 cards, and no more than 4 copies of a card with the same name, except basic Energy.\""
+        ],
+        [
+          "A picture book about Hoenn's Pokémon.",
+          "There's a Zigzagoon running across every page."
+        ]
+      ]
+    },
+    "T": {
+      "frases": [
+        "A computer. It shows a list of cards from every EX set."
+      ],
+      "al_azar": [
+        [
+          "A computer. It shows a list of cards from every EX set."
+        ],
+        [
+          "A computer. Someone left a deck list open on the screen."
+        ],
+        [
+          "A computer. The screen says: \"Today's practice: count your Energy!\""
+        ]
+      ]
+    },
+    "C": {
+      "frases": [
+        "A chair."
+      ]
+    },
+    "P": {
+      "frases": [
+        "A potted plant. It's well looked after."
+      ]
+    }
+  },
+  "objetos_casilla": {
+    "1,2": {
+      "frases": [
+        "The library's card catalog.",
+        "Every card is sorted by set and number."
+      ]
+    },
+    "2,2": {
+      "frases": [
+        "The library's card catalog.",
+        "Every card is sorted by set and number."
+      ]
+    }
+  }
+}

@@ -1,0 +1,60 @@
+EFECTOS DE ATAQUE CON SPRITES
+=============================
+
+Si en efectos/propios/ (o en user://efectos/propios/) hay tiras de cuadros, las animaciones
+especiales de los ataques (las de Kyogre, Groudon, los iniciales, Zangoose y Seviper, etc.,
+contra su rival) las usan en lugar de las formas dibujadas a mano. Cada tira que falte se
+reemplaza por el dibujo de siempre: funciona con todas, con algunas o con ninguna.
+
+Tiras que se usan:
+
+  llama.png      llamas (iniciales de fuego, columnas de Groudon)
+  ola.png        la ola de Kyogre (cuadro 1 rompe hacia la derecha, cuadro 0 hacia la izquierda;
+                 la ola va en la mitad de abajo de cada cuadro)
+  roca.png       piedras de mayor a menor (Groudon, salpicadura de barro de Swampert)
+  explosion.png  explosión que crece y se apaga (Groudon, Rayquaza, Mewtwo, Blaziken, Heracross, Pinsir)
+  estrellas.png  destellos (Rayquaza, Mew, Heracross; el brillo de un Pokémon ex que llega a la
+                 mesa y los destellos dorados del cartel "2 PRIZES!" cuando cae uno)
+  zarpazo.png    arañazo en arco (Zangoose, latigazo de Bulbasaur)
+  colmillos.png  colmillos de arriba en el cuadro 0 (Seviper y Totodile: el juego los tiñe)
+  hoja.png       hojas que giran (iniciales de planta; en el mapa, las hojitas que saltan al pisar pasto)
+  anillo.png     destello que se abre en anillo de agua (Kyogre, iniciales de agua)
+  rayo.png       relámpago horizontal (Rayquaza: caen girados)
+
+  Fuego (hoja de ataques de fuego de Rubí/Zafiro):
+  ascuas.png         llamitas (ataques de tipo Fuego: vuelan hacia el rival)
+  fuego_golpe.png    bola -> llamarada -> corona de fuego (el golpe de los ataques de fuego,
+                     el lanzallamas de Charmander y la patada de Torchic)
+  fuego_espiral.png  llamas en espiral del lanzallamas (Charmander)
+  anillo_fuego.png   anillo de llamas (Cyndaquil)
+
+  Veneno (hoja de ataques de veneno de Rubí/Zafiro):
+  gas_veneno.png     nube de veneno (cualquier ataque que deja Envenenado, y Seviper)
+  lodo.png           gotitas que suben de la nube
+  burbuja_acida.png  burbujas que deja la onda de Seviper
+  polvo_veneno.png   (de reserva, todavía no se usa)
+
+  Clima (Mystery Dungeon: Equipo de Rescate Rojo); cuadros de 240x112 (toda la mesa),
+  con un .json al lado que dice el tamaño:
+  soleado.png + soleado.json   el sol que cruza la mesa en el ataque de Groudon
+  lluvia.png + lluvia.json     la lluvia del ataque de Kyogre
+
+Formato: PNG con transparencia, una sola fila de cuadros CUADRADOS uno al lado del otro
+(un cuadro de 32x32 → tira de 32 de alto; 8 cuadros = 256x32). Cantidad de cuadros =
+ancho / alto.
+
+Para recortarlas de una hoja de efectos (paneles con un color de fondo liso):
+
+    python3 tools/hoja_a_efectos.py hoja.png tools/efectos_ejemplo.json
+
+efectos_ejemplo.json tiene las posiciones de la hoja de Rubí/Zafiro de 491x1926; con otra
+hoja, copialo y cambiá las coordenadas (lo explica tools/hoja_a_efectos.py).
+
+Para las hojas de ataques sueltos (fuego, veneno) y las de clima:
+
+    python3 tools/hoja_ataques_a_efectos.py hoja_fuego.png tools/efectos_fuego.json
+    python3 tools/hoja_ataques_a_efectos.py hoja_veneno.png tools/efectos_veneno.json
+    python3 tools/hoja_ataques_a_efectos.py clima_soleado.png tools/efectos_soleado.json
+    python3 tools/hoja_ataques_a_efectos.py clima_lluvia.png tools/efectos_lluvia.json
+
+Las tiras de efectos/propios/ no se reparten con el código (están en .gitignore).

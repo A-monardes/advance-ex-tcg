@@ -1,0 +1,241 @@
+CÓMO EDITAR LA CAMPAÑA (diálogos, duelos y premios)
+===================================================
+
+Todo es texto: abrí los archivos con cualquier editor (el Bloc de notas sirve, mejor uno
+que marque errores de JSON, como VS Code). Guardá en UTF-8. Después de cambiar algo,
+cerrá y volvé a abrir el juego.
+
+Ojo con el formato JSON: los textos van entre comillas dobles, los elementos se separan
+con comas y la última cosa de una lista NO lleva coma. Si el juego no arranca después de
+editar, casi siempre es una coma de más o de menos.
+
+PARA QUE TODO CAMBIE SEGÚN LO QUE PASA (textos, mazos, premios y revanchas después de un
+evento, personajes que aparecen, eventos propios): ver data/GUIA_PERSONAJES.txt, la guía
+completa de "variantes", condiciones y marcas, con recetas para copiar.
+
+Hay dos archivos:
+  data/mapas/<mapa>.json   quién está en cada mapa, dónde, mirando hacia dónde, qué dice
+  data/campana.json        los rivales: mazo, dificultad, premios y frases del duelo
+
+
+1) LO QUE DICE UN PERSONAJE
+---------------------------
+En data/mapas/escuela.json (o patio.json), en "personajes", cada uno es así:
+
+  {
+    "id": "roja",              <- nombre interno, único en el mapa (no se ve)
+    "x": 6, "y": 8,            <- casilla (columna, fila; empiezan en 0 arriba a la izquierda)
+    "dir": "up",               <- hacia dónde mira: "up", "down", "left", "right"
+    "sprite": "nina_roja",     <- el dibujo: mundo/propios/nina_roja.png
+    "nombre": "Student",       <- el nombre que sale arriba del cuadro de texto
+    "sentado": true,           <- (opcional) sentado en un pupitre: no se da vuelta al hablarle
+    "pasea": true,             <- (opcional) camina solo por ahí cerca
+    "quieto": true,            <- (opcional) no mira para los costados (los demás que están
+                                  quietos miran a los lados de vez en cuando)
+    "ajuste": [0, 7],          <- (opcional) corre el dibujo unos píxeles [x, y] sin cambiar
+                                  su casilla (y positivo = más abajo). Los duelistas del
+                                  patio lo usan para quedar pegados a la mesa.
+    "frases": [
+      "Primera página del diálogo.",
+      "Segunda página. {nombre} se cambia por el nombre del jugador."
+    ]
+  }
+
+Cada texto de "frases" es una página (Z pasa a la siguiente). Entran unos 3 renglones
+por página: si es más largo, partilo en dos.
+
+
+2) CONVERTIR A UN PERSONAJE EN RIVAL (que te desafíe a un duelo)
+----------------------------------------------------------------
+a) En el mapa, agregale "rival" con un id (y sacale "frases", que ya no se usan):
+
+  { "id": "roja", "x": 6, "y": 8, "dir": "up", "sprite": "nina_roja", "sentado": true,
+    "rival": "roja" }
+
+   Si además querés que te vea y te desafíe solo al pasar por delante (como los
+   entrenadores de los juegos), agregale "vista": 3 (cuántas casillas ve hacia donde mira).
+
+b) En data/campana.json, dentro de "rivales", agregá su ficha con ese mismo id:
+
+  "roja": {
+    "nombre": "Student",                <- nombre que se ve en los diálogos
+    "titulo": "Trainer's School",       <- (no se usa por ahora)
+    "mazo": "Caravan",                  <- nombre del mazo (ver punto 3)
+    "nivel": 2,                         <- dificultad de la IA: 1 (muy fácil) a 5 (experta)
+    "sobre": "ex1",                     <- de qué expansión son los sobres que da (ver punto 4)
+    "sobres": 2,                        <- cuántos sobres da la PRIMERA vez que le ganás
+    "cartas": ["ex1-73", "ex1-108"],    <- (opcional) cartas sueltas que da la primera vez
+    "revancha": 1,                      <- (opcional) sobres de cada revancha (0 = ninguno)
+    "requiere": {"vencer": "alumno"},   <- (opcional) no juega hasta que le ganes a otro
+    "hola":  ["Lo que dice antes del duelo."],
+    "gane":  ["Lo que dice si te ganó."],
+    "perdi": ["Lo que dice si le ganaste (antes de darte el premio)."],
+    "vencido": ["Si le hablás después de ganarle (sin revancha todavía)."],
+    "revancha_pregunta": ["Te pregunta si querés la revancha.", "¿Revancha?"],
+    "revancha_si": ["Si le decís que sí."],
+    "revancha_no": ["Si le decís que no."]
+  }
+
+   "requiere" puede ser {"vencer": "alumno"}, {"vencer": ["alumno", "alumna"]} (a todos
+   esos) o {"vencidos": 3} (a 3 rivales cualquiera). Mientras no se cumpla, si le hablás
+   no pasa nada especial: podés darle frases de "todavía no" con "bloqueado" en el mapa:
+   "bloqueado": ["Primero ganale a los demás."]
+
+   LO QUE DICE SEGÚN CÓMO VA (todos opcionales menos "hola", "gane" y "perdi"):
+
+     "hola"               antes del primer duelo
+     "otra_vez"           antes del duelo, si ya te ganó alguna vez (si no está: "hola")
+     "gane"               cuando te gana (podés volver a hablarle y jugar de nuevo)
+     "perdi"              cuando le ganás (antes de darte el premio)
+     "vencido"            si le hablás después de ganarle, mientras todavía no hay revanchas
+     "revancha_pregunta"  cuando ya hay revanchas: la última página es la pregunta Sí/No
+     "revancha_si"        si contestás Sí (después empieza el duelo)
+     "revancha_no"        si contestás No
+
+   CUÁNDO HAY REVANCHAS: después de ganarle a un rival no se le puede pedir revancha hasta
+   que se cumpla "revanchas_requieren" de data/campana.json. Ahora es {"vencer": "jefe"}:
+   hasta que le ganes al director (que está en el patio). Para un rival en particular se
+   puede cambiar con "revancha_requiere" en su ficha ({} = siempre hay revancha).
+
+
+3) EL MAZO DE UN RIVAL
+----------------------
+"mazo" es el nombre de un mazo, igual que en el título del juego. Hay dos formas:
+
+  - Uno de los incluidos: Blaze, Torrent, Overgrow, Ruby, Sapphire, Oasis, Caravan,
+    WindBlast, FireFang, Team Magma, Team Aqua, Wish Maker, Forest Guardian,
+    Magma Spirit (Worlds 2004), Blaziken Tech (Worlds 2004), Team Rushdown (Worlds 2004), Rocky Beach (Worlds 2004).
+
+  - Uno tuyo: armalo en el juego (título > Edit decks > New deck), ponele un nombre
+    (por ejemplo "Roja - fuego") y escribí ese nombre exacto en "mazo". Los mazos que
+    armás quedan en tu carpeta de datos del juego (user://mis_mazos.json).
+    Ojo: si después lo borrás o le cambiás el nombre, el rival se queda sin mazo.
+
+El mazo tiene que ser válido (60 cartas, al menos un Básico, máximo 4 copias).
+
+
+4) LOS PREMIOS
+--------------
+  "sobres" + "sobre"   cantidad y expansión de los sobres de la primera victoria:
+                       ex1 Ruby & Sapphire · ex2 Sandstorm · ex3 Dragon ·
+                       ex4 Team Magma vs Team Aqua · ex5 Hidden Legends
+  "cartas"             cartas puntuales, por id (el id se ve en la ficha de cada carta, al
+                       lado del nombre: "ex1-73"). Sirve para las secret rare.
+  "revancha"           sobres de cada revancha; si no está, se usa
+                       "recompensas" > "revancha" de data/campana.json. 0 = ninguno.
+  "dinero"             plata (₽) de la primera victoria.
+  "dinero_revancha"    plata de cada revancha (si no está, 0).
+
+Cualquiera de estas cosas se puede dejar en 0 o sacar: un rival puede dar solo plata,
+solo sobres, solo cartas o una mezcla.
+
+Un personaje que NO es rival también puede regalar cartas una sola vez, con "regalo" en
+el mapa (en lugar de "frases" o además):
+
+  "regalo": {"id": "regalo_roja", "cartas": ["ex3-98"],
+             "requiere": {"vencer": "alumna"},
+             "dar": ["Frases cuando te lo da."],
+             "despues": ["Frases las veces siguientes."]}
+
+"cartas" puede tener todas las cartas que quieras: ["ex3-98", "ex4-95", "ex5-102"].
+Para dar varias copias de la misma, repetila: ["ex1-73", "ex1-73"]. Al recibirlas sale
+una página por carta ("You received ...!") con su imagen. Lo mismo vale para las
+"cartas" de un rival.
+El "id" del regalo es un nombre que inventás vos (distinto para cada regalo): el juego lo
+anota en la partida para no darlo dos veces. Si no lo ponés, usa el id del personaje.
+
+
+5) EL DINERO Y LA TIENDA DE CARTAS
+----------------------------------
+El dinero (₽) se ve en el menú (X). Se gana en los duelos ("dinero" de cada rival) y se
+gasta en la tienda. Con cuánto empezás: data/campana.json > "dinero_inicial".
+
+La tienda es una pantalla aparte, como en los juegos clásicos: la vendedora atrás del
+mostrador, el cuadro de texto abajo y las opciones BUY / TALK / EXIT. Se entra por la
+puerta principal de la escuela: al chocar con la puerta pregunta "Go to the Card Shop?"
+y con Sí entrás. Al salir (EXIT o X) volvés a la escuela, delante de la puerta.
+
+Todo lo de la tienda está en data/campana.json > "tiendas" > "bridgette":
+
+  "bridgette": {
+    "nombre": "Card Shop",          <- el cartel de la tienda
+    "vendedora": "Bridgette",       <- el nombre que sale arriba del cuadro de texto
+    "fondo": "tienda_fondo",        <- la pantalla entera: mundo/propios/tienda_fondo.png
+    "retrato": "bridgette",         <- la vendedora: mundo/propios/bridgette.png (+ .json)
+    "primera_vez": ["Solo la primera vez que entrás (en lugar de \"hola\")."],
+    "hola": ["Al entrar las demás veces.", "Puede tener varias páginas."],
+    "pregunta": "Lo que dice mientras elegís BUY / TALK / EXIT.",
+    "otra_cosa": "Lo mismo, pero después de comprar o charlar.",
+    "charla": ["Lo que dice con TALK."],     <- si lo sacás, no aparece TALK
+    "confirmar": "{sobre}? That will be ₽{precio}. OK?",   <- antes de comprar (Sí/No)
+    "gracias": ["Después de comprar (y se abre el sobre)."],
+    "sin_dinero": ["Si no te alcanza."],
+    "adios": ["Al irte."],
+    "sobres": [
+      {"sobre": "ex1", "precio": 300},
+      {"sobre": "ex5", "precio": 400, "nombre": "Hidden Legends (special)",
+       "texto": "Lo que dice el cuadro de abajo con este sobre marcado."}
+    ]
+  }
+
+  En "sobres": "sobre" es la expansión (ex1 a ex5), "precio" lo que cuesta cada uno,
+  "nombre" (opcional) cómo se ve en la lista y "texto" (opcional) la descripción.
+  Cada sobre comprado se abre en el momento y después volvés a la tienda.
+
+LAS IMÁGENES DE LA TIENDA: no vienen con el juego. Se arman con tus dos imágenes (el fondo
+de la tienda y la hoja de Bridgette con sus ojos y bocas):
+
+  python3 tools/armar_tienda.py fondo_tienda.png hoja_bridgette.png
+
+  Eso deja en mundo/propios/:
+  - tienda_fondo.png: el fondo achicado a 240x160 (tapa toda la pantalla).
+  - bridgette.png: Bridgette con 7 caras (normal, medio parpadeo, ojos cerrados,
+    contenta, y las tres primeras con la boca abierta) y bridgette.json, que dice dónde se
+    dibuja y qué cara es cada una:
+      {"celda": [103, 150], "x": 128, "y": 4,
+       "normal": 0, "parpadeo": [1, 2, 1], "feliz": 3, "hablar": [4, 5, 6]}
+    "hablar" es la versión con boca abierta de las caras 0, 1 y 2.
+    "x" e "y" son la esquina de arriba a la izquierda en la pantalla (240x160): para
+    correrla, cambiá esos números (no hace falta volver a correr el script).
+
+  Bridgette parpadea sola cada 2 a 5 segundos, mueve la boca mientras aparece el texto, y sonríe con los ojos cerrados (^^) cuando
+  comprás un sobre ("gracias") y cuando te despedís ("adios").
+  Sin estas imágenes se ve un local genérico con una silueta.
+
+LAS IMÁGENES DE LOS SOBRES: en la tienda, al marcar un sobre de la lista se ve su imagen a
+la derecha; y cada vez que abrís un sobre (comprado o ganado) hay una animación: el sobre
+cae, tiembla, se le rompe el borde de arriba, asoman las cartas y aparecen. Z la saltea.
+Las imágenes se arman con una por expansión, en orden:
+
+  python3 tools/armar_sobres.py ex1.png ex2.png ex3.png ex4.png ex5.png
+
+  Deja mundo/propios/sobre_ex1.png (60x84, la tienda) y sobre_ex1_grande.png (80x112, la
+  animación), y así con cada una. A una imagen se le puede agregar un recorte en píxeles
+  para usar solo una parte: ex5.png:42,40,1432,1932 (x0,y0,x1,y1). Sin imagen, el sobre se
+  dibuja de un color con el nombre de la expansión.
+
+A qué puerta lleva: en data/mapas/escuela.json, "puerta_tienda": "bridgette" (el id de
+la tienda) y "puerta" (lo que dice la puerta; la última página es la pregunta Sí/No).
+Se puede tener otra tienda con otro id y ponerla en la puerta de otro mapa. También se
+le puede poner "tienda": "<id>" a un personaje del mapa: al hablarle dice sus "frases"
+y abre esa misma pantalla.
+
+
+6) OTRAS COSAS DEL MAPA
+-----------------------
+  - Mover a alguien: cambiá "x" e "y". Tiene que ser una casilla libre del dibujo (no
+    un pupitre ni una pared), salvo los "sentado", que van en la casilla de la silla
+    (la de abajo de cada pupitre).
+  - Sacar a alguien: borrá su bloque { ... } entero (y la coma que lo separa).
+  - Agregar a alguien: copiá un bloque, cambiale el "id" y la posición. Dibujos que hay
+    en mundo/propios/: jefe, vendedor (ya no se usa), maestro, maestra, alumno, alumna, nino_castano, nina_roja,
+    nino_verde, nina_lazo, nino_grandote, nina_trenzas, nino_moreno, nina_rubia,
+    nino_pelirrojo, nino_gorra_verde, nina_gorra_verde, nino_rubio, nina_morena
+    (ver personajes.png, que viene aparte con los dibujos).
+  - Lo que se ve al mirar cosas con Z (pizarrón, pupitres, macetas): "objetos" (por letra)
+    y "objetos_casilla" (por casilla), con textos al azar, variantes y cartas escondidas:
+    ver data/GUIA_PERSONAJES.txt, punto 17.
+  - "puerta" y "puerta_tienda": la puerta de la entrada lleva a la tienda (punto 5).
+  - "viento": true (en data/mapas/patio.json): cada 14 a 20 segundos pasa una ráfaga con
+    hojitas que cruzan la pantalla y las flores ('f') se mecen (mundo/propios/ui/flor.png).
+  - Dónde empieza la partida: data/campana.json > "inicio".

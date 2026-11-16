@@ -1,0 +1,62 @@
+EX TCG - VERSIÓN COMPLETA PARA PROBAR Y MODIFICAR
+==================================================
+
+Este paquete trae el juego entero, listo para abrir: el código y todas las imágenes
+personalizadas ya puestas en su lugar.
+
+CÓMO ABRIRLO
+  1. Descomprimilo en una carpeta NUEVA (no encima de una versión anterior).
+  2. Abrí Godot 4.3 > Import > elegí el archivo project.godot de esta carpeta.
+     La primera vez Godot tarda un poco: importa todas las imágenes (crea la carpeta
+     .godot y los archivos .import; es normal).
+  3. F5 para jugar.
+
+QUÉ TRAE
+  Código y datos (lo que se edita para cambiar el juego):
+    engine/               reglas del juego, IA, campaña (dinero, rivales, regalos, tiendas)
+    scenes/               pantallas: duelo, campaña, mapa caminable, tienda, efectos especiales
+    data/campana.json     rivales, premios, revanchas, la tienda de Bridgette y sus diálogos
+    data/mapas/           la escuela y el patio (personajes, diálogos, salidas)
+    data/LEEME_CAMPANA.txt  la guía para editar todo eso (empezá por acá)
+    tools/                scripts de Python para rearmar las imágenes (ver abajo)
+    tests/                pruebas automáticas (ver README.md)
+
+  Imágenes personalizadas (sacadas de los juegos o de tus imágenes; no se reparten aparte):
+    sprites/              tus imágenes de las cartas (sin cambios)
+    mundo/propios/        la escuela, el patio (mesas y bancos de POKémapPARTS), los
+                          personajes, el jugador, la tienda (fondo + Bridgette con sus
+                          caras), las imágenes de los 5 sobres, el dorso de las cartas
+                          las 29 monedas (monedas/; una al azar en cada partida) y los
+                          íconos de tipo (tipos/) y la interfaz de Rubí/Zafiro (ui/: marco,
+                          fondo a rayas, pastillas de estado, flores)
+    efectos/propios/      los efectos de los ataques (fuego, veneno, sol, lluvia, ola...) y
+                          los íconos de estado de Mystery Dungeon (est_*)
+
+  .git/                   el historial de todos los cambios (opcional). Si usás git, podés
+                          ver qué cambió y volver atrás: git log, git diff, git checkout.
+                          Las imágenes de mundo/propios/ y efectos/propios/ no están en git
+                          (están en .gitignore), así que guardá una copia de esas carpetas.
+
+REARMAR LAS IMÁGENES (si cambiás alguna hoja original)
+    python3 tools/armar_escuela.py  <hoja de interiores>
+    python3 tools/armar_patio.py    <hoja de exteriores> --piezas <hoja POKémapPARTS>
+    python3 tools/armar_tienda.py   <fondo de la tienda> <hoja de Bridgette>
+    python3 tools/armar_sobres.py   ex1.png ex2.png ex3.png ex4.png ex5.png
+    python3 tools/armar_dorso.py    <dorso de carta>
+    python3 tools/armar_monedas.py  moneda1.png moneda2.png ...
+    python3 tools/armar_tipos.py    <pastillas de tipos> <incolora y arcoíris>
+    python3 tools/armar_estados.py  <hoja de estados de Mystery Dungeon>
+    python3 tools/armar_ui.py       --equipo <pantalla de equipo> --estados <pastillas> --flores <flores>
+  Necesitan Python 3 con Pillow (pip install pillow; armar_tienda también usa numpy).
+  Cada script explica su uso si lo corrés sin nada.
+
+PASARLE EL JUEGO A ALGUIEN (Windows, sin Godot)
+    python3 tools/exportar_windows.py <ruta a tu Godot 4.3>
+  Deja build/windows/Advance EX TCG.exe (un solo archivo con todo adentro). Necesita las
+  plantillas de exportación (en Godot: Editor > Manage Export Templates > Download and
+  Install). Usá este script y no el botón Export de Godot: el juego lee los PNG originales y
+  el botón no los mete en el ejecutable (el script lo arregla sin tocar tu proyecto).
+
+DÓNDE QUEDA TU PARTIDA
+  La partida y tus mazos se guardan en la carpeta de datos de Godot (user://), no en esta
+  carpeta: al cambiar de versión no se pierden.

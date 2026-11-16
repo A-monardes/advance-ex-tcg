@@ -1,0 +1,261 @@
+{
+  "_ayuda": "Patio de duelos de la escuela (con tu hoja de exteriores de Esmeralda: tools/armar_patio.py -> mundo/propios/patio_escuela.png; sin ella se ve el dibujo original de tools/make_patio.py, en mundo/fondos/). Letras: ',' pasto, '_' arena de las canchas, 'f' flores, '#' árboles y techo, 'M' mesa de duelo, 'B' banco, 'D' alfombra que vuelve a la escuela.",
+  "nombre": "Duel Yard",
+  "fondo": "patio_escuela",
+  "viento": true,
+  "baldosas": [
+    "####################",
+    "####################",
+    "##,,ff,,,,,,,,ff,,##",
+    "##_______,,_______##",
+    "##_______,,_______##",
+    "##__MMM__,,__MMM__##",
+    "##__MMM__,,__MMM__##",
+    "##_______,,_______##",
+    "##_______,,_______##",
+    "##_______,,_______##",
+    "##,,,,BBB,,BBB,,,,##",
+    "##,,,,,,,,,,,,,,,,##",
+    "##,,DD,,,,,,,,DD,,##",
+    "####################",
+    "####################"
+  ],
+  "inicio": [
+    4,
+    11,
+    "up"
+  ],
+  "salidas": [
+    {
+      "x": 4,
+      "y": 12,
+      "mapa": "escuela",
+      "a": [
+        1,
+        3,
+        "down"
+      ]
+    },
+    {
+      "x": 5,
+      "y": 12,
+      "mapa": "escuela",
+      "a": [
+        2,
+        3,
+        "down"
+      ]
+    },
+    {
+      "x": 14,
+      "y": 12,
+      "mapa": "escuela",
+      "a": [
+        15,
+        3,
+        "down"
+      ]
+    },
+    {
+      "x": 15,
+      "y": 12,
+      "mapa": "escuela",
+      "a": [
+        16,
+        3,
+        "down"
+      ]
+    }
+  ],
+  "personajes": [
+    {
+      "id": "gorra_verde",
+      "x": 5,
+      "y": 4,
+      "dir": "down",
+      "quieto": true,
+      "ajuste": [
+        0,
+        7
+      ],
+      "sprite": "nino_gorra_verde",
+      "nombre": "Student",
+      "rival": "patio_gorra",
+      "bloqueado": [
+        "Shh! I'm about to evolve my Gloom...",
+        "Talk to me after our duel, OK?"
+      ]
+    },
+    {
+      "id": "gorra_verde_2",
+      "x": 5,
+      "y": 7,
+      "dir": "up",
+      "quieto": true,
+      "ajuste": [
+        0,
+        -7
+      ],
+      "sprite": "nina_gorra_verde",
+      "nombre": "Student",
+      "rival": "patio_gorra2",
+      "bloqueado": [
+        "Not now! I'm one Prize card away from winning!"
+      ]
+    },
+    {
+      "id": "rubio",
+      "x": 14,
+      "y": 4,
+      "dir": "down",
+      "quieto": true,
+      "ajuste": [
+        0,
+        7
+      ],
+      "sprite": "nino_rubio",
+      "nombre": "Student",
+      "rival": "patio_rubio",
+      "bloqueado": [
+        "Hold on, I'm in the middle of a duel.",
+        "Blaziken, Flamethrower!"
+      ]
+    },
+    {
+      "id": "morena",
+      "x": 14,
+      "y": 7,
+      "dir": "up",
+      "quieto": true,
+      "ajuste": [
+        0,
+        -7
+      ],
+      "sprite": "nina_morena",
+      "nombre": "Student",
+      "rival": "patio_morena",
+      "bloqueado": [
+        "Sorry, we're dueling right now.",
+        "Maybe once you've beaten the Headmaster, I'll have time."
+      ]
+    },
+    {
+      "id": "azurill",
+      "x": 9,
+      "y": 11,
+      "dir": "down",
+      "sprite": "pkmn_azurill",
+      "nombre": "Azurill",
+      "pokemon": true,
+      "pasea": true,
+      "frases": [
+        "Rurii! Ruri?",
+        "(It's bouncing around on its tail.)"
+      ]
+    },
+    {
+      "id": "espectador_1",
+      "x": 3,
+      "y": 5,
+      "dir": "right",
+      "quieto": true,
+      "sprite": [
+        "espectador_1",
+        "nino_pelirrojo"
+      ],
+      "nombre": "Student",
+      "frases": [
+        "Go, go! Attach an Energy and attack!",
+        "Ooh, I want to duel whoever wins this one."
+      ]
+    },
+    {
+      "id": "espectadora_2",
+      "x": 7,
+      "y": 6,
+      "dir": "left",
+      "quieto": true,
+      "sprite": [
+        "espectadora_2",
+        "nina_trenzas"
+      ],
+      "nombre": "Student",
+      "frases": [
+        "Shh! They're about to flip a coin!"
+      ]
+    },
+    {
+      "id": "espectador_3",
+      "x": 12,
+      "y": 6,
+      "dir": "right",
+      "quieto": true,
+      "sprite": [
+        "espectador_3",
+        "nino_moreno"
+      ],
+      "nombre": "Student",
+      "frases": [
+        "That's the third time he's drawn a Supporter on his first turn. So lucky!"
+      ]
+    },
+    {
+      "id": "espectadora_4",
+      "x": 16,
+      "y": 5,
+      "dir": "left",
+      "quieto": true,
+      "sprite": [
+        "espectadora_4",
+        "nina_lazo"
+      ],
+      "nombre": "Student",
+      "frases": [
+        "I'm keeping score. Five wins for the left side today!"
+      ]
+    },
+    {
+      "id": "banco_1",
+      "x": 7,
+      "y": 10,
+      "dir": "up",
+      "sentado": true,
+      "sprite": [
+        "banco_1",
+        "nino_verde"
+      ],
+      "nombre": "Student",
+      "frases": [
+        "I'm resting between duels. My deck needs more Energy cards, I think..."
+      ]
+    },
+    {
+      "id": "banco_2",
+      "x": 12,
+      "y": 10,
+      "dir": "up",
+      "sentado": true,
+      "sprite": [
+        "banco_2",
+        "nina_rubia"
+      ],
+      "nombre": "Student",
+      "frases": [
+        "The Headmaster? He's in his office, past the library.",
+        "Go through the classroom: the rug at the bottom left leads to the library."
+      ]
+    }
+  ],
+  "objetos": {
+    "M": {
+      "frases": [
+        "A dueling table. There's a game in progress."
+      ]
+    },
+    "B": {
+      "frases": [
+        "A wooden bench for watching the duels."
+      ]
+    }
+  }
+}
