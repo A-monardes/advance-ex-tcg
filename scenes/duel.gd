@@ -2337,6 +2337,16 @@ func _draw_attract() -> void:
 		for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2(1, 1)]:
 			_text(Vector2(floor((W - _text_w("PRESS START")) / 2.0), 47) + o, "PRESS START", Color(0.08, 0.1, 0.18))
 		_text_center(47, "PRESS START", C_LIGHT)
+	# Aviso de proyecto de fans (va siempre, también en la versión web)
+	for i in DISCLAIMER.size():
+		var line: String = DISCLAIMER[i]
+		var y := H - 21 + i * 9
+		for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+			_text(Vector2(floor((W - _text_w(line)) / 2.0), y) + o, line, Color(0.08, 0.1, 0.18))
+		_text_center(y, line, Color(0.85, 0.87, 0.92))
+
+
+const DISCLAIMER := ["Free fan game. Not affiliated with Nintendo,", "Game Freak, Creatures or The Pokémon Company."]
 
 
 ## El logo del juego (ui/logo.png, hecho con tools/logo_juego.py). t >= 0: cada tanto lo

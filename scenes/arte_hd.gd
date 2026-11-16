@@ -139,8 +139,44 @@ func _next() -> void:
 	_request()
 
 
+## Holo → su gemela sin holo (mismo set, nombre, PS y ataques): en Expedition las holo
+## son 1-32 y las normales 33-64; en Aquapolis y Skyridge las holo son las "H". Así el
+## arte se baja sin el brillo que tapa el fondo.
+var _twins = null
+
+func source_id(id: String) -> String:
+	if _twins == null:
+		_twins = {}
+		var groups := {}
+		for c in CardDB.all_ids():
+			var d: Dictionary = CardDB.get_card(c)
+			if d.get("supertype", "") != "Pokémon" or not str(c).begins_with("ecard"):
+				continue
+			var key := "%s|%s|%s|%s" % [d["set"], d["name"], d.get("hp", ""), str(d.get("attacks", []).map(func(a): return a["name"]))]
+			if not groups.has(key):
+				groups[key] = []
+			groups[key].append(c)
+		for ids in groups.values():
+			if ids.size() < 2:
+				continue
+			var plain: String = ""
+			for c in ids:
+				var num: String = str(c).split("-")[1]
+				if not num.is_valid_int():
+					continue
+				if plain == "" or int(num) > int(plain.split("-")[1]):
+					plain = c
+			if plain != "":
+				for c in ids:
+					if c != plain:
+						_twins[c] = plain
+	return _twins.get(id, id)
+
+
 func _request() -> void:
-	var parts := _busy.split("-")
+	var parts := source_id(_busy).split("-")
+	if OS.has_feature("web") and _try == 0:
+		_try = 1             # en el navegador, la página oficial no deja leer sus imágenes (CORS)
 	while _try < SOURCES.size():
 		if parts.size() >= 2:
 			var url: String = SOURCES[_try].replace("{SET}", parts[0].to_upper()).replace("{set}", parts[0]).replace("{N}", parts[1])
