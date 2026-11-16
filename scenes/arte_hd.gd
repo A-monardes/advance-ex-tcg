@@ -180,8 +180,10 @@ func _request() -> void:
 	while _try < SOURCES.size():
 		if parts.size() >= 2:
 			var url: String = SOURCES[_try].replace("{SET}", parts[0].to_upper()).replace("{set}", parts[0]).replace("{N}", parts[1])
-			if _http.request(url) == OK:
+			var err := _http.request(url)
+			if err == OK:
 				return
+			print("arte: no se pudo pedir %s (error %d)" % [url, err])
 		_try += 1
 	_failed[_busy] = true
 	_busy = ""
@@ -205,6 +207,7 @@ func _done(result: int, code: int, _headers: PackedStringArray, body: PackedByte
 		listo.emit(id)
 		_next()
 		return
+	print("arte: %s falló (resultado %d, código %d)" % [id, result, code])
 	_try += 1                # no estaba en esa fuente: probar la siguiente
 	_request()
 
