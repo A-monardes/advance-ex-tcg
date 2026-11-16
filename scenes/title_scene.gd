@@ -50,7 +50,7 @@ func _anim(sp: String, name: String) -> Dictionary:
 	if info.has("copy"):
 		src = info["copy"]
 		info = xml["anims"].get(src, info)
-	var img := ImgLoad.load("%s/%s/%s-Anim.png" % [MiniBattle.DIR, sp, src])
+	var img := ImgLoad.load(MiniBattle.path(sp, src + "-Anim.png"))
 	if img != null and int(info.get("w", 0)) > 0:
 		var durs: Array = info["durs"].duplicate()
 		var w := int(info["w"])
@@ -66,7 +66,7 @@ func _anim(sp: String, name: String) -> Dictionary:
 		img.convert(Image.FORMAT_RGBA8)
 		out = {"tex": ImageTexture.create_from_image(img), "w": w, "h": h, "durs": durs, "total": maxi(1, total),
 				"rows": img.get_height() / h, "sh": {},
-				"shimg": ImgLoad.load("%s/%s/%s-Shadow.png" % [MiniBattle.DIR, sp, src])}
+				"shimg": ImgLoad.load(MiniBattle.path(sp, src + "-Shadow.png"))}
 	_anims[key] = out
 	return out
 

@@ -34,3 +34,4 @@ musica/*.json
 
 # Recortes de arte oficial: no van al repositorio público
 sprites/*.png
+data/pmd_web.json

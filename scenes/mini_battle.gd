@@ -50,10 +50,31 @@ static var _species := {}    # especie -> Dictionary de animaciones (vacío si n
 
 ## La carpeta de una carta (o "" si no hay): prueba los nombres de BattleScene.species().
 ## Los Pokémon Dark buscan primero la versión shiny (carpeta <especie>_shiny).
+## Dónde está un archivo de la especie: en el proyecto (res://) o, en la versión web, en
+## user://pmd, donde PmdWeb los baja a medida que hacen falta.
+const USER_DIR := "user://pmd"
+
+static func path(sp: String, file: String) -> String:
+	var r := "%s/%s/%s" % [DIR, sp, file]
+	if FileAccess.file_exists(r) or ResourceLoader.exists(r):
+		return r
+	return "%s/%s/%s" % [USER_DIR, sp, file]
+
+
+static func has_file(sp: String, file: String) -> bool:
+	var p := path(sp, file)
+	return FileAccess.file_exists(p) or ResourceLoader.exists(p)
+
+
+## La especie ya bajada en la web: se olvida lo que se había armado sin ella.
+static func forget(sp: String) -> void:
+	_species.erase(sp)
+
+
 static func folder(card_id: String) -> String:
 	for sp in BattleScene.species(CardDB.card_name(card_id)):
 		var n: String = sp.trim_suffix("#shiny") + ("_shiny" if sp.ends_with("#shiny") else "")
-		if FileAccess.file_exists("%s/%s/AnimData.xml" % [DIR, n]):
+		if has_file(n, "AnimData.xml"):
 			return n
 	return ""
 
@@ -71,7 +92,7 @@ static func has_anim(sp: String, name: String) -> bool:
 	if info.is_empty():
 		return false
 	var src: String = info.get("copy", name)
-	return FileAccess.file_exists("%s/%s/%s-Anim.png" % [DIR, sp, src])
+	return has_file(sp, src + "-Anim.png")
 
 
 ## ¿La animación lleva al Pokémon hacia el rival? (su sombra se corre más de 12 px)
@@ -156,7 +177,7 @@ static func available(card_id: String) -> bool:
 static func _data(sp: String) -> Dictionary:
 	if _species.has(sp):
 		return _species[sp]
-	var out := {"_xml": _parse_xml("%s/%s/AnimData.xml" % [DIR, sp])}
+	var out := {"_xml": _parse_xml(path(sp, "AnimData.xml"))}
 	_species[sp] = out
 	return out
 
@@ -208,7 +229,7 @@ static func _anim(sp: String, name: String) -> Dictionary:
 	if info.has("copy"):
 		src = info["copy"]
 		info = d["_xml"]["anims"].get(src, info)
-	var img := ImgLoad.load("%s/%s/%s-Anim.png" % [DIR, sp, src])
+	var img := ImgLoad.load(path(sp, src + "-Anim.png"))
 	if img != null and not info.is_empty() and int(info.get("w", 0)) > 0:
 		var w := int(info["w"])
 		var h := int(info["h"])
@@ -227,8 +248,8 @@ static func _anim(sp: String, name: String) -> Dictionary:
 		for x in out["durs"]:
 			total += int(x)
 		out["total"] = total
-		var shimg := ImgLoad.load("%s/%s/%s-Shadow.png" % [DIR, sp, src])
-		var ofimg := ImgLoad.load("%s/%s/%s-Offsets.png" % [DIR, sp, src])
+		var shimg := ImgLoad.load(path(sp, src + "-Shadow.png"))
+		var ofimg := ImgLoad.load(path(sp, src + "-Offsets.png"))
 		for row in [ROW_ME, ROW_OPP, 0]:      # 0: mirando a la pantalla (Poké-Powers)
 			var r := mini(row, rows - 1)
 			var sh := []

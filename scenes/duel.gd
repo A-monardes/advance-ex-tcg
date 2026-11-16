@@ -115,6 +115,7 @@ const SoundScript := preload("res://scenes/sound.gd")
 const SpecialFX := preload("res://scenes/special_fx.gd")
 var snd                      # sonido (scenes/sound.gd)
 var arte: ArteHD             # arte de las cartas en alta (ficha y galería)
+var pmd_web: PmdWeb          # versión web: baja los sprites de PMD que hacen falta
 var gallery_id := ""         # carta en la vista de galería ("" = cerrada)
 var _hd_tex := {}            # clave -> Texture2D del arte grande (banner y galería)
 var sfx_level := 2           # volumen de efectos: 0 apagado … 3 alto
@@ -241,6 +242,8 @@ func _ready() -> void:
 		# En el navegador la ventana es la página: escala libre (no solo enteros), centrada
 		get_window().content_scale_stretch = Window.CONTENT_SCALE_STRETCH_FRACTIONAL
 		get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	pmd_web = PmdWeb.new()
+	add_child(pmd_web)
 	arte = ArteHD.new()
 	add_child(arte)
 	arte.listo.connect(_on_arte_listo)
@@ -282,6 +285,7 @@ func _begin_duel(mine: Array[String], theirs: Array[String], level: int, intro_l
 	if doubles_mode and campaign_rival == "":
 		rules = RuleSet.make_doubles(rules)
 	game = Game.new(mine, theirs, 0, rules)
+	pmd_web.want_cards(mine + theirs)          # web: baja los sprites de PMD de los dos mazos
 	snd.jingle(["comenzar_partida"])      # la música del duelo arranca cuando termina
 	game.log_msg(intro_line)
 	game.log_msg("Rules: " + rules.name)
