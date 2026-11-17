@@ -5,10 +5,10 @@ Uso: python3 tools/fetch_rarity.py"""
 import json, pathlib, urllib.request
 BASE = "https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/cards/en/"
 OUT = pathlib.Path(__file__).resolve().parent.parent / "data" / "rarezas.json"
-# Las Black Star Promos vienen todas como "Promo": cuáles son holo o reverse holo se
-# carga a mano (lista de Elite Fourum; cuando hay versión normal y holo, va la holo).
-PROMO_HOLO = {1, 2, 12, 13, 16, 17, 18, 19, 20}
+# Las Black Star Promos vienen todas como "Promo": en el juego todas brillan como holo,
+# menos las que solo existen en reverse holo (lista de Elite Fourum), que llevan ese brillo.
 PROMO_REVERSE = {3, 8, 10}
+PROMO_HOLO = set(range(1, 27)) - PROMO_REVERSE
 out = {}
 for s in ["ex1", "ex2", "ex3", "ex4", "ex5", "ecard1", "ecard2", "ecard3", "np"]:
     with urllib.request.urlopen(BASE + s + ".json") as r:
