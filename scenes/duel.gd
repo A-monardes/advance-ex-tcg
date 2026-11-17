@@ -124,12 +124,15 @@ var music_level := 2         # volumen de la música
 var over_sound_done := false
 var editor                   # editor de mazos (scenes/deck_editor.gd)
 var title_msg := ""
-var title_row := 0           # fila elegida en el título (ver _draw_title); sin campaña arranca en "Start a free duel!"
-const TITLE_ROWS := 9
+var title_row := 0           # fila elegida en el menú principal (ver _draw_title)
+const TITLE_ITEMS := ["Campaign", "Options", "Edit decks", "Free duel"]
+const TITLE_ROWS := 4
+var duel_row := 0            # fila elegida en el armado del duelo libre (title_view "duel")
+const DUEL_ROWS := 6
 ## La campaña está en desarrollo: en el juego publicado aparece como "coming soon" y no se
 ## puede entrar. Desde el editor de Godot sí, para seguir trabajándola.
 var CAMPAIGN_ON := OS.has_feature("editor")
-var title_view := ""          # "" | "options" (submenú de opciones del título)
+var title_view := ""          # "" menú principal | "options" | "duel" (armado del duelo libre)
 var opt_cursor := 0
 var my_deck := 0
 var opp_deck := 1
@@ -230,7 +233,7 @@ func _ready() -> void:
 	title_scene.pick()          # sin escenas propias (como en la web) queda solo el fondo y el logo
 	title_attract = true        # siempre: ahí va el aviso de proyecto de fans
 	if not CAMPAIGN_ON:
-		title_row = TITLE_ROWS - 1
+		title_row = TITLE_ROWS - 1        # "Free duel"
 	font = _load_pixel_font()
 	_load_settings()
 	CardDB.load_db()
@@ -924,6 +927,9 @@ func _title_input(k: int, accept: bool) -> void:
 				_pause_change(opt_cursor + 1, 1)
 			snd.play("ok")
 		return
+	if title_view == "duel":
+		_duel_setup_input(k, accept, n)
+		return
 	match k:
 		KEY_UP:
 			title_row = (title_row + TITLE_ROWS - 1) % TITLE_ROWS
@@ -931,20 +937,6 @@ func _title_input(k: int, accept: bool) -> void:
 		KEY_DOWN:
 			title_row = (title_row + 1) % TITLE_ROWS
 			snd.play("move")
-		KEY_LEFT, KEY_RIGHT:
-			var d := 1 if k == KEY_RIGHT else -1
-			if title_row in [1, 2, 3, 4, 5]:
-				snd.play("move")
-			match title_row:
-				1: my_deck = (my_deck + d + n) % n
-				2: opp_deck = (opp_deck + d + n) % n
-				3:
-					ai_level = (ai_level - 1 + d + 5) % 5 + 1
-					_save_settings()
-				4:
-					season_idx = (season_idx + d + RuleSet.SEASONS.size()) % RuleSet.SEASONS.size()
-					_save_settings()
-				5: doubles_mode = not doubles_mode      # batalla simple o doble (2 contra 2)
 	if not accept:
 		return
 	match title_row:
@@ -956,29 +948,64 @@ func _title_input(k: int, accept: bool) -> void:
 			_go(func():
 				mode = "campaign"
 				campaign.open())
-		6:
+		1:
 			snd.play("ok")
 			title_view = "options"
 			opt_cursor = 0
-		7:
+		2:
 			snd.play("ok")
 			_go(func():
 				mode = "editor"
 				editor.open())
-		8:
-			var names := Decks.names()
-			for pair in [[my_deck, "Your deck"], [opp_deck, "The opponent's deck"]]:
-				var errs := Game.validate_deck(Decks.get_deck(names[pair[0]]))
-				if not errs.is_empty():
-					title_msg = "%s is not valid: %s" % [pair[1], errs[0]]
-					snd.play("error")
-					return
+		3:
 			snd.play("ok")
-			campaign_rival = ""
-			_go(_start_duel)
-		_:
+			title_view = "duel"
+			duel_row = DUEL_ROWS - 1        # el cursor arranca en "Start duel!"
+
+
+## Armado del duelo libre: mazos, dificultad, formato y tipo de batalla.
+func _duel_setup_input(k: int, accept: bool, n: int) -> void:
+	match k:
+		KEY_UP:
+			duel_row = (duel_row + DUEL_ROWS - 1) % DUEL_ROWS
 			snd.play("move")
-			title_row = 8
+		KEY_DOWN:
+			duel_row = (duel_row + 1) % DUEL_ROWS
+			snd.play("move")
+		KEY_X, KEY_ESCAPE, KEY_BACKSPACE:
+			title_view = ""
+			snd.play("back")
+			return
+		KEY_LEFT, KEY_RIGHT:
+			var d := 1 if k == KEY_RIGHT else -1
+			if duel_row < DUEL_ROWS - 1:
+				snd.play("move")
+			match duel_row:
+				0: my_deck = (my_deck + d + n) % n
+				1: opp_deck = (opp_deck + d + n) % n
+				2:
+					ai_level = (ai_level - 1 + d + 5) % 5 + 1
+					_save_settings()
+				3:
+					season_idx = (season_idx + d + RuleSet.SEASONS.size()) % RuleSet.SEASONS.size()
+					_save_settings()
+				4: doubles_mode = not doubles_mode      # batalla simple o doble (2 contra 2)
+	if not accept:
+		return
+	if duel_row < DUEL_ROWS - 1:
+		duel_row = DUEL_ROWS - 1
+		snd.play("move")
+		return
+	var names := Decks.names()
+	for pair in [[my_deck, "Your deck"], [opp_deck, "The opponent's deck"]]:
+		var errs := Game.validate_deck(Decks.get_deck(names[pair[0]]))
+		if not errs.is_empty():
+			title_msg = "%s is not valid: %s" % [pair[1], errs[0]]
+			snd.play("error")
+			return
+	snd.play("ok")
+	campaign_rival = ""
+	_go(_start_duel)
 
 
 # ===========================================================================
@@ -2401,40 +2428,23 @@ func _draw_title() -> void:
 	draw_rect(Rect2(0, 0, W, H), C_BG)
 	draw_texture_rect(_table_tex, Rect2(0, 0, W, H), false, Color(1, 1, 1, 0.35))
 	_draw_logo(1)
-	var names := Decks.names()
-	var r := RuleSet.from_season(season_idx)
-	var fmt := r.name
-	if not r.missing_sets().is_empty():
-		fmt += " (in progress: %d/%d sets)" % [r.legal_sets.size() - r.missing_sets().size(), r.legal_sets.size()]
-	if not _deck_legal(names[clampi(my_deck, 0, names.size() - 1)], r):
-		fmt += " · your deck isn't legal"
-	my_deck = clampi(my_deck, 0, names.size() - 1)
-	opp_deck = clampi(opp_deck, 0, names.size() - 1)
-	var star := func(n: String) -> String: return ("★ " if Decks.is_user(n) else "") + n
-	var rows := [["", "Campaign" if CAMPAIGN_ON else "Campaign (coming soon)"], ["Your deck", star.call(names[my_deck])], ["Opponent", star.call(names[opp_deck])],
-			["Difficulty", "%d · %s" % [ai_level, SimpleAI.LEVEL_NAMES[ai_level - 1]]], ["Format", fmt],
-			["Battle", "Doubles (2 vs 2)" if doubles_mode else "Singles"],
-			["", "Options"], ["", "Edit decks"], ["", "Start a free duel!"]]
-	var panel := Rect2(0, 40, W, 108)
-	_frame(panel)
-	draw_rect(Rect2(8, 56, W - 16, 1), C_PANEL_DARK)     # separa la campaña del duelo libre
-	for i in rows.size():
-		var y := 44 + i * 11 + (2 if i > 0 else 0)
-		var sel := i == title_row
-		if sel:
-			_text(Vector2(8, y), "▶", C_TEXT)
-		if rows[i][0] != "":
-			_text(Vector2(17, y), rows[i][0], C_DIM)
-			var val: String = rows[i][1]
-			if sel:
-				_text_scroll(Vector2(72, y), "◀ " + val + " ▶", C_TEXT, 158, "title%d" % i)
-			else:
-				_text_fit(Vector2(72, y), val, C_TEXT, 158)
-		else:
+	if title_view == "duel":
+		_draw_duel_setup()
+	else:
+		# Menú principal: cuatro opciones
+		var panel := Rect2(64, 62, 112, 56)
+		_frame(panel)
+		for i in TITLE_ROWS:
+			var y := panel.position.y + 6 + i * 12
+			var sel := i == title_row and title_view == ""
+			var label: String = TITLE_ITEMS[i]
 			var col: Color = Color("#c03028") if sel else C_TEXT
 			if i == 0 and not CAMPAIGN_ON:
+				label = "Campaign (soon)"
 				col = C_DIM
-			_text(Vector2(17, y), rows[i][1], col)
+			if sel:
+				_text(Vector2(panel.position.x + 8, y), "▶", C_TEXT)
+			_text(Vector2(panel.position.x + 18, y), label, col)
 	if title_view == "options":
 		var o := Rect2(40, 40, 160, 84)
 		_frame(o)
@@ -2451,8 +2461,44 @@ func _draw_title() -> void:
 			_text(Vector2(o.end.x - 8 - _text_w(vs), y), vs, C_TEXT if sel else C_DIM)
 	if title_msg != "":
 		_text_scroll(Vector2(6, 149), title_msg, Color("#f8a090"), 228, "title_msg")
+	elif title_view == "duel":
+		_text(Vector2(6, 149), "▲▼ select · ◀▶ change · Z start · X back", C_LIGHT)
 	else:
-		_text(Vector2(6, 149), "▲▼ select · ◀▶ change · Z accept", C_LIGHT)
+		_text(Vector2(6, 149), "▲▼ select · Z accept", C_LIGHT)
+
+
+## Armado del duelo libre (se entra desde "Free duel" del menú principal).
+func _draw_duel_setup() -> void:
+	var names := Decks.names()
+	var r := RuleSet.from_season(season_idx)
+	var fmt := r.name
+	if not r.missing_sets().is_empty():
+		fmt += " (in progress: %d/%d sets)" % [r.legal_sets.size() - r.missing_sets().size(), r.legal_sets.size()]
+	my_deck = clampi(my_deck, 0, names.size() - 1)
+	opp_deck = clampi(opp_deck, 0, names.size() - 1)
+	if not _deck_legal(names[my_deck], r):
+		fmt += " · your deck isn't legal"
+	var star := func(nm: String) -> String: return ("★ " if Decks.is_user(nm) else "") + nm
+	var rows := [["Your deck", star.call(names[my_deck])], ["Opponent", star.call(names[opp_deck])],
+			["Difficulty", "%d · %s" % [ai_level, SimpleAI.LEVEL_NAMES[ai_level - 1]]], ["Format", fmt],
+			["Battle", "Doubles (2 vs 2)" if doubles_mode else "Singles"], ["", "Start duel!"]]
+	var panel := Rect2(0, 44, W, 100)
+	_frame(panel)
+	_text(Vector2(9, 48), "FREE DUEL", C_DIM)
+	for i in rows.size():
+		var y := 61 + i * 12 + (3 if i == rows.size() - 1 else 0)
+		var sel := i == duel_row
+		if sel:
+			_text(Vector2(8, y), "▶", C_TEXT)
+		if rows[i][0] != "":
+			_text(Vector2(17, y), rows[i][0], C_DIM)
+			var val: String = rows[i][1]
+			if sel:
+				_text_scroll(Vector2(72, y), "◀ " + val + " ▶", C_TEXT, 158, "duel%d" % i)
+			else:
+				_text_fit(Vector2(72, y), val, C_TEXT, 158)
+		else:
+			_text(Vector2(17, y), rows[i][1], Color("#c03028") if sel else C_TEXT)
 
 
 # ===========================================================================
