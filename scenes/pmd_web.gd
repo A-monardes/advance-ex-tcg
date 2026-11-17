@@ -26,6 +26,7 @@ func _ready() -> void:
 	for i in PARALLEL:
 		var h := HTTPRequest.new()
 		h.timeout = 30.0
+		h.accept_gzip = false       # en el navegador ya llega descomprimido (AnimData.xml fallaba)
 		add_child(h)
 		h.request_completed.connect(_done.bind(h))
 		_pool.append(h)
@@ -79,6 +80,8 @@ func _done(result: int, code: int, _h: PackedStringArray, body: PackedByteArray,
 	if item.is_empty():
 		return
 	var sp: String = item[0]
+	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
+		print("pmd: no se pudo bajar %s/%s (resultado %d, código %d)" % [sp, item[1], result, code])
 	if result == HTTPRequest.RESULT_SUCCESS and code == 200:
 		DirAccess.make_dir_recursive_absolute("%s/%s" % [MiniBattle.USER_DIR, sp])
 		var f := FileAccess.open("%s/%s/%s" % [MiniBattle.USER_DIR, sp, item[1]], FileAccess.WRITE)
