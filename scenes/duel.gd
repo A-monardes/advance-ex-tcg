@@ -2042,7 +2042,7 @@ func _draw_mini_card(r: Rect2, m: PokemonInPlay, hp_inside: bool = false) -> voi
 	draw_rect(r.grow(-1), C_YELLOW)
 	draw_rect(Rect2(r.position.x + 1, r.end.y - 2, r.size.x - 2, 1), C_YELLOW_D)
 	_fill_types(r.grow(-2), m, true)
-	if reverse_ids.has(m.top()) and game != null and game.players[human].all_in_play().has(m):
+	if _shows_reverse(m):
 		_draw_reverse(r.grow(-1), Rect2(r.position + Vector2(2, 3), Vector2(16, 16)), m.top())
 	draw_rect(Rect2(r.position + Vector2(2, 3), Vector2(16, 16)), Color("#c8c8d0"))
 	var tex := _art_texture(m.top(), 14, 14)
@@ -2105,7 +2105,7 @@ func _draw_info_box(r: Rect2, m: PokemonInPlay) -> void:
 	draw_rect(r, C_INK)
 	draw_rect(r.grow(-1), Color("#f8f8e8"))
 	draw_rect(Rect2(r.position.x + 1, r.end.y - 3, r.size.x - 2, 2), Color("#d8d8b8"))
-	if reverse_ids.has(m.top()) and game != null and game.players[human].all_in_play().has(m):
+	if _shows_reverse(m):
 		_draw_reverse_box(Rect2(r.position + Vector2(4, 1), r.size - Vector2(5, 2)), m.top())
 	_fill_types(Rect2(r.position + Vector2(1, 1), Vector2(3, r.size.y - 2)), m)
 	var name := m.display_name()
@@ -2545,6 +2545,14 @@ func _rarity_of(id: String) -> String:
 		var r = JSON.parse_string(FileAccess.get_file_as_string("res://data/rarezas.json"))
 		_rarity = r if r is Dictionary else {"_": ""}
 	return str(_rarity.get(id, ""))
+
+
+## Brillo reverse en el marco: las cartas tuyas que sacaste reverse en la campaña, y las
+## que solo existen en reverse holo (Black Star Promos 3, 8 y 10), sean de quien sean.
+func _shows_reverse(m: PokemonInPlay) -> bool:
+	if "Reverse" in _rarity_of(m.top()):
+		return true
+	return reverse_ids.has(m.top()) and game != null and game.players[human].all_in_play().has(m)
 
 
 func _is_holo(id: String) -> bool:
