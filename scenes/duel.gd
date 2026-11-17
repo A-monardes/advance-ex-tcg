@@ -35,6 +35,11 @@ const MARQUEE_HOLD := 0.9   # pausa al principio y al final del texto que se des
 const MARQUEE_STEP := 0.11  # segundos por letra
 const SHUFFLE_TIME := 0.9
 const DRAW_FLY := 0.45     # segundos que tarda cada carta robada en llegar a la mano
+# Robo de 1 o 2 cartas tuyas: cada una sale del mazo al centro, se ve en primer plano y va a la mano
+const CU_IN := 0.32
+const CU_HOLD := 0.85
+const CU_OUT := 0.32
+const CU_MAX := 2          # con más cartas (la mano inicial, Professor Birch...) se ve el robo de siempre
 const PRIZE_TIME := 2.0
 const KO_TIME := 1.6
 const TRAINER_TIME := 1.4  # carta de Entrenador mostrada en la mesa       # animación de fuera de combate
@@ -456,6 +461,9 @@ func _process(delta_real: float) -> void:
 				var d: Dictionary = e.duplicate()
 				d["t"] = 0.0
 				d["dur"] = SHUFFLE_TIME if d["k"] == "shuffle" else _draw_duration(d["ids"].size())
+				if d["k"] == "draw" and d["p"] == human and d["ids"].size() <= CU_MAX and game.phase != "setup":
+					d["closeup"] = true
+					d["dur"] = d["ids"].size() * (CU_IN + CU_HOLD + CU_OUT)
 				deck_anim.append(d)
 		deck_seen = game.deck_log.size()
 	_update_music()
@@ -772,6 +780,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not prize_anim.is_empty() and anim.is_empty() and energy_anim.is_empty():
 		if accept and not event.echo:
 			prize_anim[0]["t"] = maxf(prize_anim[0]["t"], 0.82)   # Z adelanta
+		return
+	if accept and not event.echo and _deck_showing() and deck_anim[0].get("closeup", false):
+		# Z: la carta que se está mirando se va ya a la mano
+		var per := CU_IN + CU_HOLD + CU_OUT
+		var t0: float = deck_anim[0]["t"]
+		var i := int(t0 / per)
+		deck_anim[0]["t"] = maxf(t0, i * per + CU_IN + CU_HOLD)
 		return
 	if anim.get("scene", false) and accept and not event.echo:
 		if anim.get("mini", false):
@@ -6513,6 +6528,9 @@ func _draw_deck_anim() -> void:
 		for i in 3:
 			_draw_card_back(Rect2(spot - DECK_CARD / 2 + Vector2(i, -i), DECK_CARD), fade)
 	var ids: Array = d["ids"]
+	if d.get("closeup", false):
+		_draw_closeup(d, spot)
+		return
 	var stagger := _draw_stagger(ids.size())
 	var to := _hand_spot(d["p"])
 	for i in ids.size():
@@ -6537,6 +6555,57 @@ func _draw_deck_anim() -> void:
 			draw_rect(r, C_TEXT, false)
 		else:
 			_draw_card_back(r)
+
+
+## Primer plano de la carta robada: sale del mazo dándose vuelta, se agranda en el centro
+## (la mesa se oscurece un poco), se queda un momento y baja achicándose hasta la mano.
+func _draw_closeup(d: Dictionary, spot: Vector2) -> void:
+	var per := CU_IN + CU_HOLD + CU_OUT
+	var t: float = d["t"]
+	var i := mini(int(t / per), d["ids"].size() - 1)
+	var u := t - i * per
+	var id: String = d["ids"][i]
+	var center := Vector2(W / 2.0, BOX_Y / 2.0 + 2.0)
+	var big := 1.45
+	var pos := center
+	var sc := big
+	var sx := 1.0
+	var dim := 1.0
+	if u < CU_IN:
+		var e := u / CU_IN
+		e = e * e * (3.0 - 2.0 * e)
+		pos = spot.lerp(center, e) + Vector2(0, -sin(e * PI) * 10.0)
+		sc = lerpf(0.3, big, e)
+		sx = absf(cos(e * PI))            # se da vuelta en el camino
+		dim = e
+	elif u > CU_IN + CU_HOLD:
+		var e := clampf((u - CU_IN - CU_HOLD) / CU_OUT, 0.0, 1.0)
+		e = e * e
+		pos = center.lerp(_hand_spot(human), e)
+		sc = lerpf(big, 0.3, e)
+		dim = 1.0 - e
+	draw_rect(Rect2(0, 0, W, BOX_Y), Color(0, 0, 0, 0.35 * dim))
+	var size := Vector2(48, 64) * sc
+	var r := Rect2(pos - Vector2(size.x * sx, size.y) / 2.0, Vector2(size.x * sx, size.y))
+	if r.size.x < 1.0:
+		return
+	var face := u >= CU_IN * 0.5
+	if not face:
+		_draw_card_back(r)
+		return
+	draw_rect(Rect2(r.position + Vector2(2, 3) * sc, r.size), Color(0, 0, 0, 0.35))
+	_round_box(r, C_PANEL, C_TEXT)
+	if sx < 0.95:
+		return
+	_draw_card_image(Rect2(r.position + Vector2(3, 3) * sc, Vector2(42, 42) * sc), id)
+	draw_rect(Rect2(r.position.x + 3 * sc, r.position.y + 47 * sc, 42 * sc, 2), _card_chip_color(id))
+	if sc > 0.8:
+		_text_fit(Vector2(r.position.x + 3 * sc, r.position.y + 50 * sc), CardDB.card_name(id), C_TEXT, 42 * sc)
+	# Brillo que cruza la carta cuando llega
+	var g := (u - CU_IN) / 0.3
+	if g > 0.0 and g < 1.0:
+		var gx := r.position.x + r.size.x * g
+		draw_rect(Rect2(gx - 3, r.position.y + 2, 4, r.size.y - 4), Color(1, 1, 1, 0.35 * (1.0 - g)))
 
 
 ## Barajada estilo riffle: dos mitades que se abren y se intercalan, dos veces.
