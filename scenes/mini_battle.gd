@@ -323,7 +323,13 @@ static func _ticks_to(an: Dictionary, frame: int) -> int:
 # ---------------------------------------------------------------------------
 
 static func can_use(att_id: String, def_id: String) -> bool:
-	return available(att_id) and available(def_id)
+	var ok := available(att_id) and available(def_id)
+	if not ok and OS.has_feature("web"):
+		for id in [att_id, def_id]:
+			var f := folder(id)
+			print("pmd: %s carpeta '%s' xml %s idle %s datos %s" % [id, f, has_file(f, "AnimData.xml") if f != "" else false,
+					has_file(f, "Idle-Anim.png") if f != "" else false, str(_data(f)["_xml"]["anims"].keys().slice(0, 3)) if f != "" else "-"])
+	return ok
 
 
 ## Prepara la animación de ataque para verse como mini pelea.
