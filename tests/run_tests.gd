@@ -39,6 +39,7 @@ func _init() -> void:
 	test_special_fx()
 	test_dual_type()
 	test_secret_gifts()
+	test_frlg_to_emerald()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -1322,3 +1323,152 @@ func test_secret_gifts() -> void:
 	c.load_save()
 	check(c.gifts.has("charmander_secreto"), "queda guardado")
 	c.reset()
+
+
+func test_frlg_to_emerald() -> void:
+	print("FireRed & LeafGreen, Team Rocket Returns, Deoxys, Emerald")
+	var fire := id_of("Fire Energy")
+	var water := id_of("Water Energy")
+	var dark := "ex9-86"
+	# Magic Odds (Mr. Mime ex): no recibe daño impar (30), sí par (40)
+	var g := board("ex1-15", "ex6-110")
+	var d := g.opponent_player().active
+	g.deal_attack_damage(g.current_player().active, d, 30, true, {"w": true, "r": true})
+	check(d.damage == 0, "Magic Odds previene 30 (hizo %d)" % d.damage)
+	g.deal_attack_damage(g.current_player().active, d, 40, true, {"w": true, "r": true})
+	check(d.damage == 40, "Magic Odds no previene 40")
+	# Empty Shell (Shedinja): el rival no toma Premios
+	g = board("ex1-15", "ex8-14")
+	var prizes := g.current_player().prizes.size()
+	g.opponent_player().active.damage = 999
+	g._check_knockouts()
+	check(g.current_player().prizes.size() == prizes, "Empty Shell: no se toman Premios")
+	# Buffer (Jumpluff): con cara queda con 10 PS
+	var saved := 0
+	for sd in 12:
+		g = board("ex1-15", "ex7-11", sd + 3)
+		d = g.opponent_player().active
+		g.deal_attack_damage(g.current_player().active, d, 300, true, {"w": true, "r": true})
+		if d.hp_left() == 10:
+			saved += 1
+	check(saved > 0 and saved < 12, "Buffer salva a veces (%d/12)" % saved)
+	# Snorlax (Toss and Turn): se puede usar Dormido y suma 30
+	g = board("ex6-15", "ex1-15")
+	var sn := g.current_player().active
+	sn.energy.append_array([fire, fire, fire])
+	sn.rotation = "asleep"
+	var acts := g.legal_actions().filter(func(a): return a["t"] == "attack")
+	check(acts.size() == 1 and sn.attacks()[acts[0]["a"]]["name"] == "Toss and Turn", "Toss and Turn se usa Dormido")
+	# Dark Marowak (Hard Bone): una opción por Pokémon de la mano; sin Pokémon no hay ataque
+	g = board("ex7-7", "ex1-15")
+	g.current_player().active.energy.append_array([id_of("Fighting Energy"), id_of("Fighting Energy"), fire])
+	g.current_player().hand.clear()
+	check(not g.legal_actions().any(func(a): return a["t"] == "attack" and g.current_player().active.attacks()[a["a"]]["name"] == "Hard Bone"), "Hard Bone necesita un Pokémon en la mano")
+	g.current_player().hand.append(id_of("Mudkip"))
+	acts = g.legal_actions().filter(func(a): return a["t"] == "attack" and g.current_player().active.attacks()[a["a"]]["name"] == "Hard Bone")
+	check(acts.size() == 1 and acts[0]["opt"] == id_of("Mudkip"), "Hard Bone ofrece descartar Mudkip")
+	# Dual Armor (Rocket's Scizor ex con Metal): Oscuro y Metálico
+	g = board("ex7-101", "ex1-15")
+	g.current_player().active.energy.append("ex9-88")
+	Abilities.refresh(g)
+	check(g.current_player().active.is_type("Darkness") and g.current_player().active.is_type("Metal"), "Dual Armor")
+	# Energías nuevas
+	var p := mon("ex7-101", ["ex7-94"])
+	check(Energy.count_type(p, "Darkness") == 1 and Energy.count_type(p, "Metal") == 1 and Energy.total(p) == 1, "Dark Metal Energy da 1 Oscura o Metálica")
+	check(Energy.can_attach("ex7-95", mon("ex7-101")) and not Energy.can_attach("ex7-95", mon(id_of("Mudkip"))), "R Energy solo a Dark/Rocket's")
+	check(Energy.total(mon("ex7-101", ["ex7-95"])) == 2, "R Energy da 2")
+	g = board(id_of("Marshtomp"), "ex1-15")
+	var mt := g.current_player().active
+	mt.cards.push_front(id_of("Mudkip"))
+	mt.energy.append("ex8-95")
+	g.current_player().prizes.append("ex1-1")
+	Abilities.refresh(g)
+	check(Energy.total(mt) == 3, "Scramble Energy da 3 con más Premios (%d)" % Energy.total(mt))
+	# Rocket's Hideout: +20 PS a Dark/Rocket's
+	g = board("ex7-101", "ex1-15")
+	g.set_stadium(g.current_player(), "ex7-87")
+	Abilities.refresh(g)
+	check(g.current_player().active.max_hp() == CardDB.hp("ex7-101") + 20, "Rocket's Hideout suma 20 PS")
+	# Meteor Falls: el evolucionado usa los ataques de su Básico
+	g = board(id_of("Marshtomp"), "ex1-15")
+	g.current_player().active.cards.push_front(id_of("Mudkip"))
+	g.set_stadium(g.current_player(), "ex8-89")
+	Abilities.refresh(g)
+	var names: Array = g.current_player().active.attacks().map(func(a): return a["name"])
+	var mud_atk: String = CardDB.get_card(id_of("Mudkip"))["attacks"][0]["name"]
+	check(mud_atk in names, "Meteor Falls da los ataques del Básico")
+	# Space Center apaga los Poké-Bodies de los Básicos que no son ex (Drowzee se puede dormir;
+	# Mr. Mime ex sigue con Magic Odds)
+	g = board("ex1-15", "ex7-54")
+	check(not Abilities.can_have_condition(g, g.opponent_player().active, "asleep"), "Insomnia")
+	g.set_stadium(g.current_player(), "ex8-91")
+	check(Abilities.can_have_condition(g, g.opponent_player().active, "asleep"), "Space Center apaga Insomnia")
+	g.opponent_player().active = mon("ex6-110")
+	g.deal_attack_damage(g.current_player().active, g.opponent_player().active, 30, true, {"w": true, "r": true})
+	check(g.opponent_player().active.damage == 0, "Space Center no afecta a los ex")
+	# Sunbeam (Solrock en juego): Lunatone tiene 80 PS
+	g = board("ex8-36", "ex1-15")
+	g.current_player().bench[0] = mon("ex8-47")
+	Abilities.refresh(g)
+	check(g.current_player().active.max_hp() == 80, "Sunbeam")
+	# Energy Protection (Metapod): -10 por Energía, máximo 30
+	g = board("ex1-15", "ex6-39")
+	g.opponent_player().active.energy.append_array([fire, fire, fire, fire])
+	g.deal_attack_damage(g.current_player().active, g.opponent_player().active, 50, true, {"w": true, "r": true})
+	check(g.opponent_player().active.damage == 20, "Energy Protection reduce hasta 30")
+	# Dark Raticate (Dark Seed): 5 contadores al final del turno siguiente del rival
+	g = board("ex7-17", "ex1-15")
+	g.current_player().active.energy.append(dark)
+	d = g.opponent_player().active
+	hit(g, "Dark Seed")
+	check(d.flags.has("delayed_counters"), "Dark Seed marca al Defensor")
+	g._end_turn()
+	check(d.damage == 0, "Dark Seed todavía no")
+	g.apply({"t": "end"})
+	check(d.damage == 50, "Dark Seed pone 5 contadores (%d)" % d.damage)
+	# Strange Behavior (Slowbro): mueve contadores a sí mismo, varias veces
+	g = board("ex6-14", "ex1-15")
+	g.current_player().bench[0].damage = 30
+	acts = g.legal_actions().filter(func(a): return a["t"] == "power" and a["n"] == "Strange Behavior")
+	check(acts.size() == 1, "Strange Behavior disponible")
+	g.apply(acts[0])
+	g.apply(g.legal_actions().filter(func(a): return a["t"] == "power" and a["n"] == "Strange Behavior")[0])
+	check(g.current_player().active.damage == 20 and g.current_player().bench[0].damage == 10, "Strange Behavior x2")
+	# Form Change (Deoxys): cambia por otra forma del mazo y la vieja queda arriba
+	g = board("ex8-16", "ex1-15")
+	g.current_player().deck.append("ex8-17")
+	acts = g.legal_actions().filter(func(a): return a["t"] == "power" and a["n"] == "Form Change")
+	check(acts.size() == 1, "Form Change disponible")
+	g.apply(acts[0])
+	check(g.current_player().active.top() == "ex8-17" and g.current_player().deck[-1] == "ex8-16", "Form Change")
+	check(not g.legal_actions().any(func(a): return a["t"] == "power" and a["n"] == "Form Change"), "Form Change una vez por turno")
+	# Legendary Ascent (Articuno ex): al bajarlo, pasa a Activo y se lleva las Agua
+	g = board("ex1-15", "ex1-15")
+	var me := g.current_player()
+	me.active.energy.append_array([water, water, fire])
+	me.hand.clear()
+	me.hand.append("ex6-114")
+	g.apply(g.legal_actions().filter(func(a): return a["t"] == "bench")[0])
+	g.apply({"t": "choose", "i": 0})        # usarlo
+	while g.phase == "choice" and g.pending_prompt().contains("Energy to move"):
+		var ch := g.choice_options()
+		var k := 0
+		for i in ch.size():
+			if ch[i]["id"] != "":
+				k = i
+		g.apply({"t": "choose", "i": k})
+	check(me.active.top() == "ex6-114" and me.active.energy.size() == 2, "Legendary Ascent (%s, %d)" % [me.active.display_name(), me.active.energy.size()])
+	# Wise Aura (Medicham ex Activo): los que no son ex no usan Poké-Powers
+	g = board("ex1-15", "ex9-95")
+	g.current_player().active = mon("ex6-10")      # Pidgeot (Quick Search)
+	check(not g.legal_actions().any(func(a): return a["t"] == "power" and a["n"] == "Quick Search"), "Wise Aura bloquea Quick Search")
+	# Mt. Moon: menos de 70 PS no usan Poké-Powers (Mantine 70 sí)
+	g = board("ex7-45", "ex1-15")
+	g.current_player().bench[0].damage = 10
+	g.set_stadium(g.current_player(), "ex6-94")
+	check(g.legal_actions().any(func(a): return a["t"] == "power" and a["n"] == "Ripples") == (CardDB.hp("ex7-45") >= 70), "Mt. Moon")
+	# Temporada 2004-05: legal hasta la promo 27 y POP 1
+	var r := RuleSet.from_season(1)
+	check(r.is_legal("np-27") and not r.is_legal("np-28") and r.is_legal("pop1-1") and r.is_legal("ex9-1"), "2004-05: np 1-27, POP 1, Emerald")
+	check(not RuleSet.from_season(0).is_legal("np-27") and not RuleSet.from_season(0).is_legal("ex6-1"), "2003-04 no incluye np-27 ni FRLG")
+	check(r.missing_sets().is_empty(), "2004-05 completa")

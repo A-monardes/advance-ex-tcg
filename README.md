@@ -1,7 +1,7 @@
 # Advance EX TCG — Era ADV
 
-Simulador del Pokémon TCG de la **era ADV** (de *ADV Expansion Pack* a *Undone Seal*)
-con estética de Game Boy Advance, hecho en **Godot 4.3**.
+Simulador del Pokémon TCG de la **era ADV** (temporadas 2003-04 y 2004-05: de *Expedition*
+a *EX Emerald*) con estética de Game Boy Advance, hecho en **Godot 4.3**.
 
 El juego está todo en **inglés** (menús, registro, campaña y diálogos), igual que el texto
 de las cartas. Esta documentación y los comentarios del código siguen en castellano.
@@ -15,6 +15,19 @@ de las cartas. Esta documentación y los comentarios del código siguen en caste
 | Rulers of the Heavens | EX Dragon | ex3 |
 | Magma VS Aqua: Two Ambitions | EX Team Magma vs Team Aqua | ex4 |
 | Undone Seal | EX Hidden Legends | ex5 |
+| Flight of Legends | EX FireRed & LeafGreen | ex6 |
+| Rocket Gang Strikes Back | EX Team Rocket Returns | ex7 |
+| Clash of the Blue Sky | EX Deoxys | ex8 |
+| — (solo en inglés) | EX Emerald | ex9 |
+| — | POP Series 1 | pop1 |
+| — | Nintendo Black Star Promos 001–027 | np |
+
+Además están los tres sets e-card que seguían siendo legales en 2003-04 (Expedition,
+Aquapolis y Skyridge: `ecard1`–`ecard3`). Cada temporada usa sus sets y sus reglas:
+**2003-04** (Expedition a Hidden Legends, promos 001–026) y **2004-05** (Ruby & Sapphire a
+Emerald, POP Series 1 y promos 001–027, el formato del Mundial 2005). Todas las cartas
+están programadas: ataques, Poké-Powers, Poké-Bodies, Entrenadores y Energías especiales
+(Pokémon Dark y Rocket's, Pokémon ★, Dark Metal, R, Scramble, Heal Energy...).
 
 Los datos vienen de la base en inglés, así que los textos de las cartas están en inglés.
 

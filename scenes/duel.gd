@@ -2977,7 +2977,7 @@ func _remove_holo_sparkles(src: Image) -> Image:
 
 func _load_card_image_raw(id: String) -> Image:
 	var name := CardDB.card_name(id)
-	var species := name.replace("Team Aqua's ", "").replace("Team Magma's ", "").trim_suffix(" ex")
+	var species := name.replace("Team Aqua's ", "").replace("Team Magma's ", "").replace("Rocket's ", "").trim_suffix(" ex").trim_suffix(" ★")
 	for dir in SPRITE_DIRS:
 		for n in [id, name, species, species.to_lower()]:
 			for ext in ["png", "jpg", "webp"]:
@@ -4318,7 +4318,7 @@ func _start_attack_anim_raw(action: Dictionary, coins_shown: int = 0) -> void:
 		"dur": ANIM_TIME, "impact": ANIM_IMPACT,
 		"poison": str(atk.get("text", "")).contains("Poisoned"),
 		"weak": target != null and target == def.active and not Abilities.ignores_weakness(game, target) \
-				and att.active.types().any(func(ty): return ty in target.data().get("weaknesses", [])),
+				and att.active.types().any(func(ty): return ty in Abilities.weakness_types(game, target)),
 	}
 	# Algunos Pokémon tienen su propia animación (scenes/special_fx.gd), pero solo cuando le
 	# pegan a su rival (Kyogre a Groudon, Zangoose a Seviper…) con un ataque que hace daño.

@@ -67,9 +67,10 @@ static func skip(a: Dictionary) -> void:
 static func species(card_name: String) -> Array:
 	var n := card_name
 	var dark := false
-	for pre in ["Team Aqua's ", "Team Magma's "]:
+	for pre in ["Team Aqua's ", "Team Magma's ", "Rocket's "]:
 		if n.begins_with(pre):
 			n = n.substr(pre.length())
+	n = n.trim_suffix(" ★")
 	if n.begins_with("Dark "):
 		n = n.substr(5)
 		dark = true

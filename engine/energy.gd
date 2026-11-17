@@ -31,6 +31,15 @@ static func units_of_card(card_id: String, holder: PokemonInPlay = null) -> Arra
 			return [["Fighting", "Darkness"], ["Fighting", "Darkness"]]
 		"Boost Energy":
 			return [["Colorless"], ["Colorless"], ["Colorless"]]
+		"Dark Metal Energy":
+			return [["Darkness", "Metal"]]
+		"R Energy":
+			return [["Darkness"], ["Darkness"]]
+		"Scramble Energy":
+			# Si el dueño tiene más Premios que el rival (lo calcula Abilities.refresh): 3 de cualquier tipo.
+			if holder != null and holder.flags.get("scramble_on", false):
+				return [[ANY], [ANY], [ANY]]
+			return [["Colorless"]]
 	return [["Colorless"]]
 
 
@@ -133,6 +142,10 @@ static func can_attach(card_id: String, p: PokemonInPlay) -> bool:
 			return p.name_has("Team Aqua")
 		"Magma Energy":
 			return p.name_has("Team Magma")
+		"R Energy":
+			return p.name_has("Dark") or p.name_has("Rocket's")
+		"Scramble Energy":
+			return p.is_evolved() and not p.is_ex()
 	return true
 
 

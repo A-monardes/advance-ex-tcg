@@ -25,16 +25,18 @@ var doubles := false
 ## Temporada (formato de torneo de ese año) y los sets que eran legales.
 var season := ""
 var legal_sets: Array = []
+## Última Black Star Promo legal en la temporada (0 = todas).
+var np_max := 0
 
 ## Temporadas de la era ADV, cada una con los sets legales y las reglas de ese año.
 ## "sets" en el orden en que salieron; los que todavía no están en el juego se marcan
 ## como "en construcción" en el título.
 const SEASONS := [
 	{"id": "2003-04", "name": "2003-04 · Expedition to Hidden Legends",
-		"sets": ["ecard1", "ecard2", "ecard3", "ex1", "ex2", "ex3", "ex4", "ex5", "np"],
+		"sets": ["ecard1", "ecard2", "ecard3", "ex1", "ex2", "ex3", "ex4", "ex5", "np"], "np_max": 26,
 		"first_player_supporter": true, "coin_winner_chooses": false},
 	{"id": "2004-05", "name": "2004-05 · Ruby & Sapphire to Emerald",
-		"sets": ["ex1", "ex2", "ex3", "ex4", "ex5", "ex6", "ex7", "ex8", "ex9", "np"],
+		"sets": ["ex1", "ex2", "ex3", "ex4", "ex5", "ex6", "ex7", "ex8", "ex9", "pop1", "np"], "np_max": 27,
 		"first_player_supporter": false, "coin_winner_chooses": true},
 ]
 
@@ -60,6 +62,7 @@ static func from_season(i: int) -> RuleSet:
 	r.season = d["id"]
 	r.name = d["name"]
 	r.legal_sets = d["sets"]
+	r.np_max = int(d.get("np_max", 0))
 	r.first_player_supporter = d["first_player_supporter"]
 	r.coin_winner_chooses = d["coin_winner_chooses"]
 	return r
@@ -75,7 +78,12 @@ func missing_sets() -> Array:
 
 ## ¿La carta es legal en esta temporada? (sin temporada, todas)
 func is_legal(id: String) -> bool:
-	return legal_sets.is_empty() or id.split("-")[0] in legal_sets
+	if legal_sets.is_empty():
+		return true
+	var p := id.split("-")
+	if not p[0] in legal_sets:
+		return false
+	return p[0] != "np" or np_max == 0 or int(p[1]) <= np_max
 
 
 ## Las mismas reglas, en batalla doble.

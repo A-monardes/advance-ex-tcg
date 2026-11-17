@@ -442,10 +442,12 @@ func _retreat_actions(me: PlayerState) -> Array:
 func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 	var out: Array = []
 	var a := me.active
-	if a != null and opp.active != null and can_attack(a):
+	if a != null and opp.active != null and (can_attack(a) or a.rotation == "asleep" and _can_attack_ignoring_sleep(a)):
 		var attacks := a.attacks()
 		for i in attacks.size():
 			if not attack_usable(a, attacks[i]):
+				continue
+			if a.rotation == "asleep" and not usable_asleep(attacks[i]):
 				continue
 			var parsed := AttackEffects.parse(a.top(), attacks[i])
 			var targets: Array = [-2]
@@ -488,22 +490,36 @@ func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 								out.append({"t": "attack", "a": i, "tg": tg, "opt": {"gm_card": under, "gm_a": j, "gm_opt": true}})
 				continue
 			if parsed["variable"].get("k", "") == "copy_def":
-				# Copy / Mini-Metronome: una opción por cada ataque del Pokémon Defensor
-				var dcard: String = opp.active.top()
-				var datks: Array = CardDB.get_card(dcard).get("attacks", []) if CardDB.is_pokemon(dcard) else []
-				for j in datks.size():
-					if parsed["variable"].get("needs_energy", false) and not attack_usable(a, datks[j]):
+				# Copy / Metronome: una opción por cada ataque del Pokémon Defensor (Rainbow Moves: de
+				# la Banca del rival; Dark Link: de tus Pokémon "Dark")
+				var srcs: Array = [opp.active.top()]
+				match parsed["variable"].get("src", ""):
+					"opp_bench": srcs = opp.bench.map(func(x): return x.top())
+					"my_dark": srcs = me.all_in_play().filter(func(x): return x != a and x.name_has("Dark")).map(func(x): return x.top())
+				var seen_src := {}
+				for dcard in srcs:
+					if seen_src.has(dcard):
 						continue
-					var ip := AttackEffects.parse(dcard, datks[j])
-					if ip["variable"].get("k", "") in ["copy_def", "genetic_memory"]:
-						continue
-					var its: Array = [-2]
-					if ip["target"] == "any":
-						its = opp.slots()
-					elif ip["target"] == "bench" and not opp.bench.is_empty():
-						its = range(opp.bench.size())
-					for tg in its:
-						out.append({"t": "attack", "a": i, "tg": tg, "opt": {"cp_card": dcard, "cp_a": j}})
+					seen_src[dcard] = true
+					var datks: Array = CardDB.get_card(dcard).get("attacks", []) if CardDB.is_pokemon(dcard) else []
+					for j in datks.size():
+						if parsed["variable"].get("needs_energy", false) and not attack_usable(a, datks[j]):
+							continue
+						var ip := AttackEffects.parse(dcard, datks[j])
+						if ip["variable"].get("k", "") in ["copy_def", "genetic_memory"]:
+							continue
+						var its: Array = [-2]
+						if ip["target"] == "any":
+							its = opp.slots()
+						elif ip["target"] == "bench" and not opp.bench.is_empty():
+							its = range(opp.bench.size())
+						for tg in its:
+							out.append({"t": "attack", "a": i, "tg": tg, "opt": {"cp_card": dcard, "cp_a": j}})
+				continue
+			if parsed["variable"].get("k", "") == "hand_pick":
+				# Dark Marowak (Hard Bone): qué Pokémon de la mano se descarta
+				for c in Trainers._distinct(me.hand, func(c): return CardDB.is_pokemon(c)):
+					out.append({"t": "attack", "a": i, "tg": -2, "opt": c})
 				continue
 			for tg in targets:
 				if parsed["variable"].get("k", "") == "burst_choice":
@@ -528,6 +544,22 @@ func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 	return out
 
 
+## Snorlax (Toss and Turn): ataques que dicen que se pueden usar aunque esté Dormido.
+static func usable_asleep(atk: Dictionary) -> bool:
+	var t := str(atk.get("text", ""))
+	return t.contains("can be used even if") and t.contains("Asleep")
+
+
+func _can_attack_ignoring_sleep(a: PokemonInPlay) -> bool:
+	if not a.attacks().any(func(x): return usable_asleep(x)):
+		return false
+	var r := a.rotation
+	a.rotation = ""
+	var ok := can_attack(a)
+	a.rotation = r
+	return ok
+
+
 func can_attack(a: PokemonInPlay) -> bool:
 	return a.rotation not in ["asleep", "paralyzed"] and a.flags.get("cant_attack", -1) < turn_number \
 			and not Abilities.attack_blocked(self, a) and not a.is_fossil()
@@ -549,6 +581,14 @@ func attack_usable(a: PokemonInPlay, atk: Dictionary) -> bool:
 
 func _can_play_trainer(me: PlayerState, id: String) -> bool:
 	if not Trainers.is_implemented(id):
+		return false
+	if me.flags.get("no_trainers", -1) >= turn_number:          # Psyduck, Electrike
+		return false
+	if me.flags.get("no_items", -1) >= turn_number and not CardDB.is_supporter(id):     # Manectric ex
+		return false
+	if CardDB.is_stadium(id) and Abilities.active_body(self, other(me), "Commanding Aura"):
+		return false
+	if CardDB.is_tm(id) and Abilities.body_anywhere(self, "Mystic Scale"):
 		return false
 	if CardDB.is_supporter(id):
 		if me.supporter_played or Abilities.supporters_blocked(self) or me.flags.get("no_supporter", -1) >= turn_number:
@@ -638,6 +678,7 @@ func _apply(a: Dictionary) -> void:
 			me.bench.append(p)
 			log_msg("Player %d puts %s on the Bench." % [me.index + 1, CardDB.card_name(id)])
 			Abilities.on_basic_played(self, p)
+			Abilities.on_bench_from_hand(self, me, p)
 		"evolve":
 			var me := current_player()
 			var id: String = me.hand[a["h"]]
@@ -661,6 +702,7 @@ func _apply(a: Dictionary) -> void:
 			me.hand.remove_at(a["h"])
 			if CardDB.is_supporter(id):
 				me.supporter_played = true
+				me.turn_flags["supporter_id"] = id      # Magby (Detour)
 			if CardDB.is_stadium(id):
 				me.stadium_played = true
 			log_msg("Player %d plays %s." % [me.index + 1, CardDB.card_name(id)])
@@ -768,7 +810,7 @@ func _end_turn() -> void:
 			me.discard.append(p.tool)
 			p.tool = ""
 		for i in range(p.energy.size() - 1, -1, -1):
-			if CardDB.card_name(p.energy[i]) in ["Aqua Energy", "Magma Energy"]:
+			if CardDB.card_name(p.energy[i]) in ["Aqua Energy", "Magma Energy", "R Energy"]:
 				me.discard.append(p.energy[i])
 				p.energy.remove_at(i)
 		if p.flags.get("discard_tool", -1) == turn_number and p.tool != "":
@@ -780,6 +822,11 @@ func _end_turn() -> void:
 			if ds != null and ds[1] == turn_number:
 				try_condition(p, ds[0])
 				p.flags.erase("delayed_status")
+			var dc = p.flags.get("delayed_counters", null)
+			if dc != null and dc[1] == turn_number:
+				p.damage += 10 * int(dc[0])
+				log_msg("  %d damage counters on %s." % [int(dc[0]), p.display_name()])
+				p.flags.erase("delayed_counters")
 			# Boost Energy se descarta al final del turno en que se unió (y si deja de estar evolucionado).
 			for i in range(p.energy.size() - 1, -1, -1):
 				if CardDB.card_name(p.energy[i]) == "Boost Energy":
@@ -820,8 +867,9 @@ func _checkup_one(p: PlayerState, a: PokemonInPlay) -> void:
 			a.damage += 10 * a.poison
 			log_msg("  %s takes %d Poison damage." % [a.display_name(), 10 * a.poison])
 		if a.burned and not flip("burn"):
-			a.damage += rules.burn_damage
-			log_msg("  %s takes %d Burn damage." % [a.display_name(), rules.burn_damage])
+			var bd := Abilities.burn_damage(self, rules.burn_damage)
+			a.damage += bd
+			log_msg("  %s takes %d Burn damage." % [a.display_name(), bd])
 		if a.rotation == "asleep" and Abilities.wake_up(self, a):
 			a.rotation = ""
 			log_msg("  %s woke up." % a.display_name())
@@ -864,6 +912,8 @@ func _check_knockouts() -> void:
 			var taker := other(p)
 			stats[taker.index]["kos"] += 1
 			var n: int = min(2 if mon.is_ex() else 1, taker.prizes.size())
+			if Abilities.body(self, mon, "Empty Shell"):
+				n = 0
 			for i in n:
 				var prize: String = taker.prizes.pop_back()
 				taker.hand.append(prize)
@@ -1203,9 +1253,9 @@ func deal_attack_damage(attacker: PokemonInPlay, target: PokemonInPlay, base: in
 	var dmg := base + Abilities.pre_wr_bonus(self, attacker, target, is_active)
 	if is_active:
 		if not ignore.get("w", false) and not Abilities.ignores_weakness(self, target) \
-				and attacker.types().any(func(t): return t in target.data().get("weaknesses", [])):
+				and attacker.types().any(func(t): return t in Abilities.weakness_types(self, target)):
 			dmg *= rules.weakness_multiplier
-		if not ignore.get("r", false) and not Abilities.ignores_resistance(self, attacker) \
+		if not ignore.get("r", false) and not Abilities.ignores_resistance(self, attacker, target) \
 				and attacker.types().any(func(t): return t in target.data().get("resistances", [])):
 			dmg -= Abilities.resistance_value(self, rules.resistance_value)
 	dmg = Abilities.post_wr(self, attacker, target, is_active, dmg, ignore.get("fx", false))
@@ -1214,7 +1264,12 @@ func deal_attack_damage(attacker: PokemonInPlay, target: PokemonInPlay, base: in
 	if is_active and sw != null and sw[0] >= turn_number and sw[1] == current and dmg > 0:
 		dmg += int(sw[2])
 	dmg = max(0, dmg)
+	if not ignore.get("fx", false):
+		dmg = Abilities.final_damage(self, attacker, target, dmg)
+	var was_alive := target.hp_left() > 0
 	target.damage += dmg
+	if was_alive and target.hp_left() <= 0 and owner_of(target) != owner_of(attacker):
+		Abilities.on_would_ko(self, attacker, target)
 	log_msg("  %s takes %d damage (%d/%d HP)." % [target.display_name(), dmg, max(0, target.hp_left()), target.max_hp()])
 	var att_pl := owner_of(attacker)
 	if dmg > 0 and att_pl != owner_of(target):

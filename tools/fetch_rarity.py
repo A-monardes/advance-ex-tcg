@@ -8,15 +8,15 @@ OUT = pathlib.Path(__file__).resolve().parent.parent / "data" / "rarezas.json"
 # Las Black Star Promos vienen todas como "Promo": en el juego todas brillan como holo,
 # menos las que solo existen en reverse holo (lista de Elite Fourum), que llevan ese brillo.
 PROMO_REVERSE = {3, 8, 10}
-PROMO_HOLO = set(range(1, 27)) - PROMO_REVERSE
+PROMO_HOLO = set(range(1, 28)) - PROMO_REVERSE
 out = {}
-for s in ["ex1", "ex2", "ex3", "ex4", "ex5", "ecard1", "ecard2", "ecard3", "np"]:
+for s in ["ex1", "ex2", "ex3", "ex4", "ex5", "ex6", "ex7", "ex8", "ex9", "pop1", "ecard1", "ecard2", "ecard3", "np"]:
     with urllib.request.urlopen(BASE + s + ".json") as r:
         for c in json.load(r):
             rar = c.get("rarity", "") or ""
             if s == "np":
                 n = int(c["number"]) if c["number"].isdigit() else 0
-                if not 1 <= n <= 26:
+                if not 1 <= n <= 27:
                     continue
                 rar = "Promo Holo" if n in PROMO_HOLO else ("Promo Reverse" if n in PROMO_REVERSE else "Promo")
                 if rar == "Promo Holo" and c["name"].endswith(" ex"):

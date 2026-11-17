@@ -8,7 +8,7 @@ extends RefCounted
 
 const TOOLS := ["Lum Berry", "Oran Berry", "Balloon Berry", "Buffer Piece", "Strength Charm",
 		"Team Aqua Belt", "Team Magma Belt", "Weakness Guard",
-		"Healing Berry", "Memory Berry", "Time Shard", "Crystal Shard", "Star Piece"]
+		"Healing Berry", "Memory Berry", "Time Shard", "Crystal Shard", "Star Piece", "EXP.ALL"]
 const TMS := ["Team Aqua Technical Machine 01", "Team Magma Technical Machine 01",
 		"Ancient Technical Machine [Ice]", "Ancient Technical Machine [Rock]", "Ancient Technical Machine [Steel]",
 		"Multi Technical Machine 01", "Darkness Cube 01", "Fighting Cube 01", "Fire Cube 01", "Grass Cube 01",
@@ -21,7 +21,8 @@ const SPHERE_TYPES := {"Miracle Sphere α": ["Fire", "Lightning", "Fighting"],
 const STADIUMS := ["High Pressure System", "Low Pressure System", "Team Aqua Hideout", "Team Magma Hideout",
 		"Ancient Tomb", "Desert Ruins", "Island Cave", "Magnetic Storm",
 		"Apricorn Forest", "Pokémon Park", "Undersea Ruins", "Power Plant", "Ancient Ruins", "Mirage Stadium",
-		"Mystery Zone", "Underground Lake"]
+		"Mystery Zone", "Underground Lake",
+		"Mt. Moon", "Rocket's Hideout", "Rocket's Tricky Gym", "Meteor Falls", "Space Center", "Battle Frontier"]
 ## Estadios con una acción "una vez por turno" (aparecen como acción del jugador).
 const STADIUM_ACTIONS := ["Apricorn Forest", "Undersea Ruins", "Power Plant", "Ancient Ruins", "Mystery Zone",
 		"Underground Lake"]
@@ -44,6 +45,11 @@ const OTHERS := [
 	# e-card: Partidarios
 	"Bill's Maintenance", "Mary's Impulse", "Forest Guardian", "Juggler", "Seer", "Traveling Salesman",
 	"Relic Hunter", "Apricorn Maker", "Fisherman",
+	# FireRed & LeafGreen ... Emerald, POP y promos
+	"Celio's Network", "Great Ball", "PokéDex HANDY909", "Prof. Oak's Research", "VS Seeker",
+	"Pokémon Retriever", "Pow! Hand Extension", "Rocket's Admin.", "Rocket's Mission", "Rocket's Poké Ball",
+	"Surprise! Time Machine", "Swoop! Teleporter", "Venture Bomb", "Here Comes Team Rocket!", "Energy Charge",
+	"Professor Cozmo's Discovery", "Mr. Stone's Project", "Scott", "Tropical Tidal Wave",
 ]
 
 
@@ -71,6 +77,8 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 	if n in TOOLS:
 		for s in me.slots():
 			var p := me.slot(s)
+			if n == "EXP.ALL" and (p.is_ex() or p.has_owner()):
+				continue
 			if p.tool == "" and (not n.begins_with("Team Aqua") or p.name_has("Team Aqua")) \
 					and (not n.begins_with("Team Magma") or p.name_has("Team Magma")):
 				out.append({"tg": s})
@@ -190,8 +198,52 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 		"PokéNav":
 			if not me.deck.is_empty():
 				out.append({})
-		"Copycat", "Professor Oak's Research", "Desert Shaman":
+		"Copycat", "Professor Oak's Research", "Prof. Oak's Research", "Desert Shaman", "Rocket's Admin.", \
+				"Here Comes Team Rocket!", "Professor Cozmo's Discovery", "Venture Bomb", "Tropical Tidal Wave":
 			out.append({})
+		"Celio's Network", "Rocket's Poké Ball", "PokéDex HANDY909":
+			if not me.deck.is_empty():
+				out.append({})
+		"Great Ball":
+			if me.bench.size() < g.rules.bench_size and not me.deck.is_empty():
+				out.append({})
+		"VS Seeker":
+			if me.discard.any(func(c): return CardDB.is_supporter(c)):
+				out.append({})
+		"Pokémon Retriever":
+			if me.discard.any(func(c): return CardDB.is_pokemon(c)):
+				out.append({})
+		"Energy Charge":
+			if me.discard.any(func(c): return CardDB.is_energy(c)):
+				out.append({})
+		"Pow! Hand Extension":
+			if me.prizes.size() > opp.prizes.size() and opp.active != null:
+				if not opp.active.energy.is_empty() and not opp.bench.is_empty():
+					out.append({"mode": "move"})
+				for b in opp.bench.size():
+					out.append({"mode": "gust", "b": b})
+		"Rocket's Mission":
+			for pick in _distinct(me.hand, func(_c): return true):
+				out.append({"pick": pick})
+		"Surprise! Time Machine":
+			for s in me.slots():
+				if me.slot(s).is_evolved():
+					out.append({"tg": s})
+		"Swoop! Teleporter":
+			if me.deck.any(func(c): return CardDB.is_basic_pokemon(c) and not CardDB.is_ex(c)):
+				for s in me.slots():
+					var p := me.slot(s)
+					if p.is_basic() and not p.is_ex() and not p.is_fossil():
+						out.append({"tg": s})
+		"Mr. Stone's Project":
+			if me.deck.any(func(c): return _is_basic_card(c)):
+				out.append({"from": "deck"})
+			if me.discard.any(func(c): return _is_basic_card(c)):
+				out.append({"from": "discard"})
+		"Scott":
+			if me.deck.any(func(c): return CardDB.is_supporter(c) or CardDB.is_stadium(c)):
+				out.append({})
+
 		"Professor Elm's Training Method", "Friend Ball", "Oracle", "Underground Expedition":
 			if not me.deck.is_empty():
 				out.append({})
@@ -537,9 +589,149 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 		"Copycat":
 			_hand_to_deck(g, me)
 			me.draw(opp.hand.size())
-		"Professor Oak's Research":
+		"Professor Oak's Research", "Prof. Oak's Research":
 			_hand_to_deck(g, me)
 			me.draw(5)
+		"Celio's Network":
+			_ask_from_deck(g, me, "Celio's Network: Pokémon (not ex)", func(c): return CardDB.is_pokemon(c) and not CardDB.is_ex(c) and not CardDB.is_fossil(c))
+		"Great Ball":
+			var cands := _distinct(me.deck, func(c): return CardDB.is_basic_pokemon(c) and not CardDB.is_ex(c))
+			if cands.is_empty():
+				g.log_msg("  Didn't find anything.")
+				g.shuffle(me.deck)
+			else:
+				g.ask(me.index, "Great Ball: Basic Pokémon to your Bench", _card_options(cands, false), func(o):
+					if me.deck.has(o["id"]) and me.bench.size() < g.rules.bench_size:
+						me.deck.erase(o["id"])
+						me.bench.append(PokemonInPlay.new(o["id"], g.turn_number))
+						g.log_msg("  Puts %s on the Bench." % CardDB.card_name(o["id"]))
+					g.shuffle(me.deck))
+		"PokéDex HANDY909":
+			g.shuffle(me.deck)
+			var top: Array = []
+			for i in mini(6, me.deck.size()):
+				top.append(me.deck.pop_back())
+			_rearrange_top(g, me, top, "PokéDex")
+		"VS Seeker":
+			g.ask(me.index, "VS Seeker: Supporter to your hand", _card_options(_distinct(me.discard, func(c): return CardDB.is_supporter(c)), false), func(o):
+				if me.discard.has(o["id"]):
+					me.discard.erase(o["id"])
+					me.hand.append(o["id"]))
+		"Pokémon Retriever":
+			retriever(g, me, func(c): return CardDB.is_pokemon(c))
+		"Pow! Hand Extension":
+			if prm["mode"] == "gust":
+				if prm["b"] < opp.bench.size():
+					g.switch_active(opp, prm["b"])
+			else:
+				var d := opp.active
+				var opts: Array = []
+				for e in _distinct(d.energy, func(_c): return true):
+					for b in opp.bench.size():
+						opts.append({"label": "%s → %s" % [CardDB.card_name(e).replace(" Energy", ""), opp.bench[b].display_name()], "id": e, "b": b, "opp": true, "ai": 1.0})
+				g.ask(me.index, "Pow! Hand Extension: move an Energy", opts, func(o):
+					if opp.active == d and d.energy.has(o["id"]) and o["b"] < opp.bench.size():
+						d.energy.erase(o["id"])
+						opp.bench[o["b"]].energy.append(o["id"]))
+		"Rocket's Admin.":
+			for pl in [me, opp]:
+				_hand_to_deck(g, pl)
+				pl.draw(pl.prizes.size())
+		"Rocket's Mission":
+			if me.hand.has(prm["pick"]):
+				me.hand.erase(prm["pick"])
+				me.discard.append(prm["pick"])
+				var nm := CardDB.card_name(prm["pick"])
+				me.draw(4 if CardDB.is_pokemon(prm["pick"]) and (nm.contains("Dark") or nm.contains("Rocket's")) else 3)
+		"Rocket's Poké Ball":
+			_ask_from_deck(g, me, "Rocket's Poké Ball: Pokémon with Dark in its name", func(c): return CardDB.is_pokemon(c) and CardDB.card_name(c).contains("Dark"))
+		"Surprise! Time Machine":
+			var t := me.slot(prm["tg"])
+			var c: String = t.cards.pop_back()
+			me.deck.append(c)
+			t.clear_conditions()
+			g.log_msg("  %s goes back into the deck." % CardDB.card_name(c))
+			var nm := t.display_name()
+			var evos := _distinct(me.deck, func(x): return CardDB.evolves_from(x) == nm)
+			if evos.is_empty():
+				g.shuffle(me.deck)
+			else:
+				g.ask(me.index, "Surprise! Time Machine: Evolution card", _card_options(evos, false), func(o):
+					if me.deck.has(o["id"]) and me.all_in_play().has(t):
+						me.deck.erase(o["id"])
+						g.evolve(me, t, o["id"])
+					g.shuffle(me.deck))
+		"Swoop! Teleporter":
+			var t := me.slot(prm["tg"])
+			var cands := _distinct(me.deck, func(c): return CardDB.is_basic_pokemon(c) and not CardDB.is_ex(c))
+			g.ask(me.index, "Swoop! Teleporter: new Basic Pokémon", _card_options(cands, false), func(o):
+				if me.deck.has(o["id"]) and me.all_in_play().has(t) and t.is_basic():
+					me.deck.erase(o["id"])
+					me.discard.append(t.cards[0])
+					t.cards[0] = o["id"]
+					g.log_msg("  %s takes its place." % CardDB.card_name(o["id"]))
+				g.shuffle(me.deck))
+		"Venture Bomb":
+			var pl := opp if g.flip() else me
+			var opts: Array = []
+			for s in pl.slots():
+				var mine := pl == me
+				opts.append({"label": pl.slot(s).display_name(), "s": s, "opp": not mine,
+						"ai": float(pl.slot(s).hp_left()) if mine else (100.0 if pl.slot(s).hp_left() <= 10 else 1.0)})
+			g.ask(me.index, "Venture Bomb: 1 damage counter on...", opts, func(o):
+				var t := pl.slot(o["s"])
+				if t != null:
+					t.damage += 10
+					g.log_msg("  1 damage counter on %s." % t.display_name()))
+		"Here Comes Team Rocket!":
+			for pl in [me, opp]:
+				pl.flags["prizes_face_up"] = true
+			g.log_msg("  Prize cards are now played face up.")
+		"Energy Charge":
+			if g.flip():
+				chain(g, me.index, "Energy Charge: Energy to shuffle into your deck", 2,
+						func(picked):
+							var left: Array = me.discard.duplicate()
+							for c in picked:
+								left.erase(c)
+							return _distinct(left, func(c): return CardDB.is_energy(c)), false,
+						func(id):
+							me.discard.erase(id)
+							me.deck.append(id),
+						func(): g.shuffle(me.deck))
+		"Professor Cozmo's Discovery":
+			if g.flip():
+				for i in mini(3, me.deck.size()):
+					me.hand.append(me.deck.pop_front())
+				g.log_msg("  Draws the bottom 3 cards.")
+			else:
+				me.draw(2)
+		"Mr. Stone's Project":
+			if prm["from"] == "deck":
+				_pick_sequence(g, me, "Mr. Stone's Project: Basic card", 2, func(_p): return _distinct(me.deck, func(c): return Trainers._is_basic_card(c)), [])
+			else:
+				chain(g, me.index, "Mr. Stone's Project: Basic card", 2,
+						func(picked):
+							var left: Array = me.discard.duplicate()
+							for c in picked:
+								left.erase(c)
+							return _distinct(left, func(c): return Trainers._is_basic_card(c)), true,
+						func(id):
+							me.discard.erase(id)
+							me.hand.append(id),
+						func(): pass)
+		"Scott":
+			_pick_sequence(g, me, "Scott: Supporter or Stadium", 3,
+					func(_p): return _distinct(me.deck, func(c): return CardDB.is_supporter(c) or CardDB.is_stadium(c)), [])
+		"Tropical Tidal Wave":
+			var heads := g.flip()
+			var pl := opp if heads else me
+			for x in pl.all_in_play():
+				AttackEffects._strip_trainers(pl, x)
+			if g.stadium != "" and g.stadium_owner == pl.index:
+				g.discard_stadium()
+			g.log_msg("  All Trainer cards %s in play are discarded." % ("the opponent has" if heads else "the player has"))
+
 		"Desert Shaman":
 			_hand_to_deck(g, me)
 			_ask_draw_up_to(g, me, 4, func():
@@ -900,3 +1092,50 @@ static func _bench_as_basic(g: Game, me: PlayerState, card_id: String) -> void:
 		p.damage = 20
 	me.bench.append(p)
 	g.log_msg("  %s goes to the Bench." % CardDB.card_name(card_id))
+
+
+static func _is_basic_card(c: String) -> bool:
+	return CardDB.is_basic_pokemon(c) or CardDB.is_basic_energy(c)
+
+
+## Pokémon Retriever / Dark Aid: 1 carta del descarte a la mano, o 3 al mazo.
+static func retriever(g: Game, me: PlayerState, pred: Callable) -> void:
+	var cands := _distinct(me.discard, pred)
+	if cands.is_empty():
+		return
+	var opts: Array = []
+	for c in cands:
+		opts.append({"label": "To your hand: " + CardDB.card_name(c), "id": c, "ai": _ai_value(c)})
+	if me.discard.filter(pred).size() >= 3:
+		opts.append({"label": "Shuffle 3 into your deck", "id": "", "ai": 0.5})
+	g.ask(me.index, "Choose", opts, func(o):
+		if o["id"] != "":
+			if me.discard.has(o["id"]):
+				me.discard.erase(o["id"])
+				me.hand.append(o["id"])
+			return
+		Trainers.chain(g, me.index, "Card to shuffle into your deck", 3,
+				func(picked):
+					var left: Array = me.discard.duplicate()
+					for c in picked:
+						left.erase(c)
+					return Trainers._distinct(left, pred), false,
+				func(id):
+					me.discard.erase(id)
+					me.deck.append(id),
+				func(): g.shuffle(me.deck)))
+
+
+## Volver a poner cartas arriba del mazo en el orden que quieras (la última elegida, arriba de todo).
+static func _rearrange_top(g: Game, me: PlayerState, cards: Array, what: String) -> void:
+	if cards.size() <= 1:
+		me.deck.append_array(cards)
+		return
+	var opts: Array = []
+	for c in _distinct(cards, func(_c): return true):
+		opts.append({"label": CardDB.card_name(c), "id": c, "ai": -_ai_value(c)})
+	g.ask(me.index, "%s: card to put down first (%d left)" % [what, cards.size()], opts, func(o):
+		var rest: Array = cards.duplicate()
+		rest.erase(o["id"])
+		me.deck.append(o["id"])
+		Trainers._rearrange_top(g, me, rest, what))
