@@ -431,13 +431,13 @@ Los mazos temáticos oficiales de la era, con sus listas originales de 60 cartas
 | EX Dragon | **WindBlast** (Flygon, Ninjask, Magneton) · **FireFang** (Salamence, Camerupt, Crawdaunt) |
 | EX Team Magma vs Team Aqua | **Team Magma** (Groudon, Aggron, Claydol) · **Team Aqua** (Kyogre, Walrein, Lanturn) |
 | EX Hidden Legends | **Wish Maker** (Jirachi, Metagross, Starmie) · **Forest Guardian** (Dark Celebi, Bellossom, Dodrio) |
-| EX Team Rocket Returns | **Jessie** (Dark Tyranitar, Dark Marowak, Dark Arbok) |
+| EX FireRed & LeafGreen | **FireRed** (Charmeleon, Arcanine, Pidgeot) · **LeafGreen** (Ivysaur, Beedrill, Magneton) |
+| EX Team Rocket Returns | **Jessie** (Dark Tyranitar, Dark Marowak, Dark Arbok) · **James** (Dark Dragonite, Dark Weezing, Dark Magneton) |
 | EX Deoxys | **Starcharge** (Deoxys, Shiftry, Metang) · **Jetstream** (Rayquaza, Ludicolo, Manectric) |
 | EX Emerald | **Hydrobloom** (Milotic, Sceptile, Glalie) · **Wildfire** (Blaziken, Manectric, Camerupt) |
 
-Las listas de 2004-05 son las de Serebii (con número de carta) y la tienda TCGsync.
-Faltan FireRed, LeafGreen y James: tienen cartas con dos versiones en el set y hay
-que confirmar cuál trae cada mazo.
+Las listas de 2004-05 salen de Bulbapedia, Serebii (que da el número de cada carta) y la
+tienda TCGsync.
 
 Todas sus cartas están programadas al 100 %. La lista de los Pokémon de cada mazo
 (para poner imágenes) está en `listas/cartas_en_los_mazos.csv`.

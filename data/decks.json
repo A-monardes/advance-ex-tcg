@@ -254,5 +254,33 @@
       ["ex1-91", 2], ["ex9-72", 3], ["ex9-60", 3], ["ex9-69", 4], ["ex9-47", 4],
       ["ex9-57", 4], ["ex9-104", 8], ["ex9-102", 16]
     ]
+  },
+  "FireRed": {
+    "description": "FireRed & LeafGreen theme deck: Charmander grows into Charmeleon, with Arcanine and Pidgeot (Fire, Water and Colorless).",
+    "cards": [
+      ["ex6-10", 1], ["ex6-18", 2], ["ex6-31", 2], ["ex6-45", 2], ["ex6-58", 4],
+      ["ex6-64", 4], ["ex6-66", 3], ["ex6-73", 4], ["ex6-78", 3], ["ex1-90", 2],
+      ["ex6-87", 2], ["ex6-88", 2], ["ex6-93", 3], ["ex6-102", 2], ["ex1-106", 10],
+      ["ex1-108", 14]
+    ]
+  },
+  "LeafGreen": {
+    "description": "FireRed & LeafGreen theme deck: Ivysaur, Beedrill and Magneton outwit the opponent (Grass, Lightning and Colorless).",
+    "cards": [
+      ["ex6-1", 1], ["ex6-27", 2], ["ex6-35", 2], ["ex6-36", 2], ["ex6-55", 4],
+      ["ex6-68", 4], ["ex6-72", 3], ["ex6-77", 3], ["ex6-86", 4], ["ex1-90", 2],
+      ["ex6-87", 2], ["ex6-88", 2], ["ex6-89", 3], ["ex6-101", 2], ["ex1-104", 15],
+      ["ex1-109", 9]
+    ]
+  },
+  "James": {
+    "description": "Team Rocket Returns theme deck: Dark Dragonair finds Dark Dragonite with Evolutionary Light, with Dark Weezing and Dark Magneton (Water, Lightning and Grass).",
+    "cards": [
+      ["ex7-15", 1], ["ex7-1", 1], ["ex7-26", 1], ["ex7-31", 2], ["ex7-39", 1],
+      ["ex7-42", 1], ["ex7-46", 1], ["ex7-52", 4], ["ex7-61", 3], ["ex7-66", 3],
+      ["ex7-68", 3], ["ex7-72", 2], ["ex7-81", 3], ["ex1-90", 2], ["ex1-91", 2],
+      ["ex7-84", 2], ["ex7-88", 2], ["ex7-89", 2], ["ex1-104", 4], ["ex1-106", 13],
+      ["ex1-109", 7]
+    ]
   }
 }
