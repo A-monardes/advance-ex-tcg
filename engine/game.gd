@@ -78,7 +78,8 @@ func _init(deck_a: Array[String], deck_b: Array[String], seed_value: int = 0, ru
 func clone(viewer: int = -1) -> Game:
 	var hide := viewer >= 0
 	var empty: Array[String] = []
-	var c := Game.new(empty, empty, 1, rules)
+	var c := Game.new(empty, empty, 1, rules.copy())
+	c._bench_before_stump = _bench_before_stump
 	c.rng.seed = rng.seed
 	c.rng.state = rng.state
 	if hide:
@@ -401,6 +402,17 @@ func _main_actions() -> Array:
 				with_ctx(c2, func():
 					for prm in Trainers.options(self, me, h):
 						out.append({"t": "trainer", "h": h, "p": prm, "ctx": c2}))
+	# Pokémon Holon's: también se pueden unir como Energía desde la mano
+	if not me.energy_attached:
+		var seen_h := {}
+		for h in me.hand.size():
+			var hid := me.hand[h]
+			if CardDB.is_holon_energy(hid) and not seen_h.has(hid):
+				seen_h[hid] = true
+				for s in me.slots():
+					var hp := me.slot(s)
+					if Energy.can_attach(hid, hp) and hp.flags.get("no_attach", -1) < turn_number and Abilities.can_attach_from_hand(self, hid, hp):
+						out.append({"t": "energy", "h": h, "tg": s})
 	out.append_array(Abilities.power_actions(self, me))
 	if me.active2 != null:
 		# Poké-Powers del segundo Activo: se calculan con él en el lugar del Activo
@@ -465,6 +477,12 @@ func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 					var ok_u: Array = range(opp.bench.size()).filter(func(b): return opp.bench[b].damage == 0)
 					if not ok_u.is_empty():
 						targets = ok_u
+				"any_power", "any_body":
+					var kind: String = "Poké-Power" if parsed["target"] == "any_power" else "Poké-Body"
+					var ok_k: Array = opp.slots().filter(func(s2): return opp.slot(s2).abilities().any(func(ab): return ab["kind"] == kind))
+					if ok_k.is_empty():
+						continue
+					targets = ok_k
 				"any_damaged":
 					var ok_d: Array = opp.slots().filter(func(s2): return opp.slot(s2).damage > 0)
 					if not ok_d.is_empty():
@@ -570,7 +588,7 @@ func can_attack(a: PokemonInPlay) -> bool:
 
 
 func attack_usable(a: PokemonInPlay, atk: Dictionary) -> bool:
-	var cost: Array = atk.get("cost", []).duplicate()
+	var cost: Array = Abilities.attack_cost(self, a, atk)
 	for i in Abilities.extra_attack_cost(self, a):
 		cost.append("Colorless")
 	if not Energy.can_pay(a, cost):
@@ -591,6 +609,8 @@ func _can_play_trainer(me: PlayerState, id: String) -> bool:
 	if me.flags.get("no_items", -1) >= turn_number and not CardDB.is_supporter(id):     # Manectric ex
 		return false
 	if CardDB.is_stadium(id) and Abilities.active_body(self, other(me), "Commanding Aura"):
+		return false
+	if CardDB.is_stadium(id) and stadium_name().contains("Holon") and Abilities.body_in_play(self, other(me), "Delta Block"):
 		return false
 	if CardDB.is_tm(id) and Abilities.body_anywhere(self, "Mystic Scale"):
 		return false
@@ -794,6 +814,9 @@ func _resolve_attack(index: int, target: int, opt) -> void:
 	elif attacker.flags.get("smokescreen", -1) >= turn_number and not flip():
 		log_msg("  The attack failed.")
 		does_nothing = true
+	elif attacker.is_basic() and not attacker.is_fossil() and Abilities.active_body(self, other(me), "Pattern Distraction") and not flip():
+		log_msg("  Pattern Distraction: the attack does nothing.")
+		does_nothing = true
 	attacker.flags["attacked_turn"] = turn_number
 	if atk.get("psymimic", false):
 		attacker.power_used_turn = turn_number
@@ -839,6 +862,14 @@ func _end_turn() -> void:
 			if CardDB.card_name(p.tool) in ["Buffer Piece", "Weakness Guard"] and pl.index != current and p.tool_turn < turn_number:
 				pl.discard.append(p.tool)
 				p.tool = ""
+	if stadium_name() == "Championship Arena" and me.hand.size() >= 8:
+		var extra := me.hand.size() - 7
+		Trainers.chain(self, me.index, "Championship Arena: discard down to 7", extra,
+				func(_p): return Trainers._distinct(me.hand, func(_c): return true), false,
+				func(cid):
+					me.hand.erase(cid)
+					me.discard.append(cid),
+				func(): pass)
 	_checkup()
 	_check_knockouts()
 	if phase == "over":
@@ -1143,7 +1174,9 @@ func evolve(me: PlayerState, p: PokemonInPlay, card_id: String) -> void:
 	p.turn_played = turn_number
 	p.evolved_turn = turn_number
 	p.power_used_turn = -1
+	var keep_burn := p.burned and stadium_name() == "Full Flame"
 	p.clear_conditions()
+	p.burned = keep_burn
 	p.clear_attack_effects()
 	p.type_override = []
 	evolve_log.append({"p": me.index, "mon": p, "from": before, "to": CardDB.card_name(card_id)})
@@ -1174,9 +1207,23 @@ func set_stadium(me: PlayerState, card_id: String) -> void:
 	discard_stadium()
 	stadium = card_id
 	stadium_owner = me.index
+	if CardDB.card_name(card_id) == "Giant Stump":
+		_bench_before_stump = rules.bench_size
+		rules.bench_size = mini(rules.bench_size, 3)
+		for pl in [me, other(me)]:      # primero el que lo jugó
+			while pl.bench.size() > rules.bench_size:
+				var x: PokemonInPlay = pl.bench.pop_back()
+				pl.discard.append_array(x.all_cards())
+				log_msg("  Giant Stump: %s is discarded." % x.display_name())
+
+
+var _bench_before_stump := -1
 
 
 func discard_stadium() -> void:
+	if _bench_before_stump > 0:
+		rules.bench_size = _bench_before_stump
+		_bench_before_stump = -1
 	if stadium != "":
 		players[stadium_owner].discard.append(stadium)
 		log_msg("  %s is discarded." % CardDB.card_name(stadium))

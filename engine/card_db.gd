@@ -97,6 +97,16 @@ static func is_ex(id: String) -> bool:
 	return "ex" in subtypes(id)
 
 
+## Pokémon δ (Delta Species): "que tiene δ en su carta".
+static func is_delta(id: String) -> bool:
+	return card_name(id).contains("δ")
+
+
+## Pokémon Holon's que se pueden unir como Energía desde la mano.
+static func is_holon_energy(id: String) -> bool:
+	return is_pokemon(id) and card_name(id).begins_with("Holon's ")
+
+
 static func is_star(id: String) -> bool:
 	return "Star" in subtypes(id)
 

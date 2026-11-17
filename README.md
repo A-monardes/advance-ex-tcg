@@ -1,7 +1,7 @@
 # Advance EX TCG — Era ADV
 
-Simulador del Pokémon TCG de la **era ADV** (temporadas 2003-04 y 2004-05: de *Expedition*
-a *EX Emerald*) con estética de Game Boy Advance, hecho en **Godot 4.3**.
+Simulador del Pokémon TCG de la **era ADV** (temporadas 2003-04, 2004-05 y 2005-06: de *Expedition*
+a *EX Holon Phantoms*) con estética de Game Boy Advance, hecho en **Godot 4.3**.
 
 El juego está todo en **inglés** (menús, registro, campaña y diálogos), igual que el texto
 de las cartas. Esta documentación y los comentarios del código siguen en castellano.
@@ -19,15 +19,22 @@ de las cartas. Esta documentación y los comentarios del código siguen en caste
 | Rocket Gang Strikes Back | EX Team Rocket Returns | ex7 |
 | Clash of the Blue Sky | EX Deoxys | ex8 |
 | — (solo en inglés) | EX Emerald | ex9 |
-| — | POP Series 1 | pop1 |
-| — | Nintendo Black Star Promos 001–027 | np |
+| Golden Sky, Silvery Ocean | EX Unseen Forces | ex10 |
+| Holon Research Tower | EX Delta Species | ex11 |
+| Mirage Forest | EX Legend Maker | ex12 |
+| Holon Phantom | EX Holon Phantoms | ex13 |
+| — | POP Series 1–3 | pop1–pop3 |
+| — | Nintendo Black Star Promos 001–036 | np |
 
 Además están los tres sets e-card que seguían siendo legales en 2003-04 (Expedition,
 Aquapolis y Skyridge: `ecard1`–`ecard3`). Cada temporada usa sus sets y sus reglas:
 **2003-04** (Expedition a Hidden Legends, promos 001–026) y **2004-05** (Ruby & Sapphire a
-Emerald, POP Series 1 y promos 001–027, el formato del Mundial 2005). Todas las cartas
+Emerald, POP Series 1 y promos 001–027, el formato del Mundial 2005) y **2005-06** (Hidden
+Legends a Holon Phantoms, POP 1–3 y promos 027–033 y 035–036, el formato del Mundial 2006;
+POP 4 no era legal ese año). Todas las cartas
 están programadas: ataques, Poké-Powers, Poké-Bodies, Entrenadores y Energías especiales
-(Pokémon Dark y Rocket's, Pokémon ★, Dark Metal, R, Scramble, Heal Energy...).
+(Pokémon Dark y Rocket's, Pokémon ★, Pokémon δ, Pokémon Holon's que se unen como Energía,
+Dark Metal, R, Scramble, React, δ Rainbow, Heal Energy...).
 
 Los datos vienen de la base en inglés, así que los textos de las cartas están en inglés.
 
@@ -435,9 +442,14 @@ Los mazos temáticos oficiales de la era, con sus listas originales de 60 cartas
 | EX Team Rocket Returns | **Jessie** (Dark Tyranitar, Dark Marowak, Dark Arbok) · **James** (Dark Dragonite, Dark Weezing, Dark Magneton) |
 | EX Deoxys | **Starcharge** (Deoxys, Shiftry, Metang) · **Jetstream** (Rayquaza, Ludicolo, Manectric) |
 | EX Emerald | **Hydrobloom** (Milotic, Sceptile, Glalie) · **Wildfire** (Blaziken, Manectric, Camerupt) |
+| EX Unseen Forces | **Golden Sky** (Ho-Oh, Typhlosion, Magcargo) · **Silvery Ocean** (Lugia, Meganium, Xatu) |
+| EX Delta Species | **Breakthrough** (Crobat δ, Dragonair δ, Holon's Electrode) · **Steeplechase** (Shelgon δ, Umbreon δ, Rapidash) |
+| EX Legend Maker | **Groundbreaker** (Golem, fósiles, Pinsir) · **Shadowquake** (Gengar, Huntail, Gorebyss) |
+| EX Holon Phantoms | **FireMist** (Latias δ, Blaziken, Primeape δ) · **FloodRush** (Latios δ, Bellossom δ, Omanyte δ) |
 
-Las listas de 2004-05 salen de Bulbapedia, Serebii (que da el número de cada carta) y la
-tienda TCGsync.
+Las listas de 2004-05 y 2005-06 salen de Bulbapedia, Serebii (que da el número de cada carta) y la
+tienda TCGsync. En Silvery Ocean, Serebii suma 61 cartas porque incluye un Magcargo que es
+de Golden Sky; acá se dejó afuera.
 
 Todas sus cartas están programadas al 100 %. La lista de los Pokémon de cada mazo
 (para poner imágenes) está en `listas/cartas_en_los_mazos.csv`.

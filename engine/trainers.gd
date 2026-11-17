@@ -8,7 +8,12 @@ extends RefCounted
 
 const TOOLS := ["Lum Berry", "Oran Berry", "Balloon Berry", "Buffer Piece", "Strength Charm",
 		"Team Aqua Belt", "Team Magma Belt", "Weakness Guard",
-		"Healing Berry", "Memory Berry", "Time Shard", "Crystal Shard", "Star Piece", "EXP.ALL"]
+		"Healing Berry", "Memory Berry", "Time Shard", "Crystal Shard", "Star Piece", "EXP.ALL",
+		"Curse Powder", "Energy Root", "Fluffy Berry", "Protective Orb", "Sitrus Berry", "Solid Rage"]
+## Herramientas solo para evolucionados que no sean ex / para los que no sean ex, Dark ni con dueño.
+const TOOLS_EVOLVED := ["Curse Powder", "Protective Orb", "Solid Rage"]
+const TOOLS_PLAIN := ["Energy Root", "Fluffy Berry", "Sitrus Berry"]
+const FOSSIL_MONS := ["Omanyte", "Kabuto", "Aerodactyl", "Aerodactyl ex", "Lileep", "Anorith"]
 const TMS := ["Team Aqua Technical Machine 01", "Team Magma Technical Machine 01",
 		"Ancient Technical Machine [Ice]", "Ancient Technical Machine [Rock]", "Ancient Technical Machine [Steel]",
 		"Multi Technical Machine 01", "Darkness Cube 01", "Fighting Cube 01", "Fire Cube 01", "Grass Cube 01",
@@ -22,10 +27,12 @@ const STADIUMS := ["High Pressure System", "Low Pressure System", "Team Aqua Hid
 		"Ancient Tomb", "Desert Ruins", "Island Cave", "Magnetic Storm",
 		"Apricorn Forest", "Pokémon Park", "Undersea Ruins", "Power Plant", "Ancient Ruins", "Mirage Stadium",
 		"Mystery Zone", "Underground Lake",
-		"Mt. Moon", "Rocket's Hideout", "Rocket's Tricky Gym", "Meteor Falls", "Space Center", "Battle Frontier"]
+		"Mt. Moon", "Rocket's Hideout", "Rocket's Tricky Gym", "Meteor Falls", "Space Center", "Battle Frontier",
+		"Holon Research Tower", "Holon Ruins", "Cursed Stone", "Full Flame", "Giant Stump", "Power Tree", "Strange Cave",
+		"Holon Lake", "Championship Arena"]
 ## Estadios con una acción "una vez por turno" (aparecen como acción del jugador).
 const STADIUM_ACTIONS := ["Apricorn Forest", "Undersea Ruins", "Power Plant", "Ancient Ruins", "Mystery Zone",
-		"Underground Lake"]
+		"Underground Lake", "Holon Ruins", "Power Tree", "Strange Cave"]
 const STADIUM_SLOT := -9     # "lugar" de las acciones de Estadio (no es un Pokémon)
 const OTHERS := [
 	"Energy Removal 2", "Energy Restore", "Energy Switch", "Lady Outing", "Poké Ball", "Pokémon Reversal",
@@ -50,6 +57,9 @@ const OTHERS := [
 	"Pokémon Retriever", "Pow! Hand Extension", "Rocket's Admin.", "Rocket's Mission", "Rocket's Poké Ball",
 	"Surprise! Time Machine", "Swoop! Teleporter", "Venture Bomb", "Here Comes Team Rocket!", "Energy Charge",
 	"Professor Cozmo's Discovery", "Mr. Stone's Project", "Scott", "Tropical Tidal Wave",
+	# Unseen Forces ... Holon Phantoms
+	"Mary's Request", "Holon Farmer", "Holon Lass", "Holon Mentor", "Holon Researcher", "Holon Scientist",
+	"Holon Adventurer", "Fieldworker", "Holon Transceiver", "Holon Fossil",
 ]
 
 
@@ -78,6 +88,10 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 		for s in me.slots():
 			var p := me.slot(s)
 			if n == "EXP.ALL" and (p.is_ex() or p.has_owner()):
+				continue
+			if n in TOOLS_EVOLVED and (not p.is_evolved() or p.is_ex()):
+				continue
+			if n in TOOLS_PLAIN and (p.is_ex() or p.name_has("Dark") or p.has_owner()):
 				continue
 			if p.tool == "" and (not n.begins_with("Team Aqua") or p.name_has("Team Aqua")) \
 					and (not n.begins_with("Team Magma") or p.name_has("Team Magma")):
@@ -242,6 +256,24 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 				out.append({"from": "discard"})
 		"Scott":
 			if me.deck.any(func(c): return CardDB.is_supporter(c) or CardDB.is_stadium(c)):
+				out.append({})
+		"Mary's Request", "Fieldworker":
+			if not me.deck.is_empty():
+				out.append({})
+		"Holon Farmer", "Holon Lass", "Holon Mentor", "Holon Researcher", "Holon Scientist", "Holon Adventurer":
+			# Hay que descartar otra carta de la mano
+			var others: Array = me.hand.duplicate()
+			others.remove_at(hand_idx)
+			for pick in _distinct(others, func(_c): return true):
+				out.append({"pick": pick})
+		"Holon Transceiver":
+			var hs := func(c): return CardDB.is_supporter(c) and CardDB.card_name(c).contains("Holon")
+			if me.deck.any(hs):
+				out.append({"from": "deck"})
+			if me.discard.any(hs):
+				out.append({"from": "discard"})
+		"Holon Fossil":
+			if me.bench.size() < g.rules.bench_size:
 				out.append({})
 
 		"Professor Elm's Training Method", "Friend Ball", "Oracle", "Underground Expedition":
@@ -592,6 +624,50 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 		"Professor Oak's Research", "Prof. Oak's Research":
 			_hand_to_deck(g, me)
 			me.draw(5)
+		"Mary's Request":
+			me.draw(1)
+			if not me.all_in_play().any(func(x): return CardDB.stage(x.top()) == 2):
+				me.draw(2)
+		"Fieldworker":
+			me.draw(3)
+			if not opp.deck.is_empty():
+				g.ask(opp.index, "Fieldworker: draw a card?", [{"label": "Draw a card", "d": true, "ai": 1.0}, {"label": "Don't draw", "d": false, "ai": 0.0}], func(o):
+					if o["d"]:
+						opp.draw(1))
+		"Holon Farmer", "Holon Lass", "Holon Mentor", "Holon Researcher", "Holon Scientist", "Holon Adventurer":
+			if not me.hand.has(prm["pick"]):
+				return
+			me.hand.erase(prm["pick"])
+			me.discard.append(prm["pick"])
+			g.log_msg("  Discards %s." % CardDB.card_name(prm["pick"]))
+			_holon_supporter(g, me, opp, n, prm["pick"])
+		"Holon Transceiver":
+			var hs := func(c): return CardDB.is_supporter(c) and CardDB.card_name(c).contains("Holon")
+			if prm["from"] == "deck":
+				_ask_from_deck(g, me, "Holon Transceiver: Holon Supporter", hs)
+			else:
+				g.ask(me.index, "Holon Transceiver: Holon Supporter", _card_options(_distinct(me.discard, hs), false), func(o):
+					if me.discard.has(o["id"]):
+						me.discard.erase(o["id"])
+						me.hand.append(o["id"]))
+		"Holon Fossil":
+			if g.flip():
+				var cands := _distinct(me.deck, func(c): return CardDB.card_name(c) in FOSSIL_MONS)
+				if cands.is_empty():
+					g.shuffle(me.deck)
+				else:
+					g.ask(me.index, "Holon Fossil: Pokémon for your Bench", _card_options(cands, false), func(o):
+						if me.deck.has(o["id"]) and me.bench.size() < g.rules.bench_size:
+							me.deck.erase(o["id"])
+							me.bench.append(PokemonInPlay.new(o["id"], g.turn_number))
+						g.shuffle(me.deck))
+			else:
+				var cands := _distinct(me.hand, func(c): return CardDB.card_name(c) in FOSSIL_MONS)
+				if not cands.is_empty():
+					g.ask(me.index, "Holon Fossil: Pokémon from your hand to your Bench", _card_options(cands, false), func(o):
+						if me.hand.has(o["id"]) and me.bench.size() < g.rules.bench_size:
+							me.hand.erase(o["id"])
+							me.bench.append(PokemonInPlay.new(o["id"], g.turn_number)))
 		"Celio's Network":
 			_ask_from_deck(g, me, "Celio's Network: Pokémon (not ex)", func(c): return CardDB.is_pokemon(c) and not CardDB.is_ex(c) and not CardDB.is_fossil(c))
 		"Great Ball":
@@ -918,6 +994,17 @@ static func stadium_actions(g: Game, me: PlayerState) -> Array:
 		"Mystery Zone":
 			if me.hand.any(func(c): return CardDB.is_evolution(c)):
 				prms.append({})
+		"Holon Ruins":
+			if not me.deck.is_empty() and me.all_in_play().any(func(x): return CardDB.is_delta(x.top())):
+				prms.append({})
+		"Power Tree":
+			if not me.discard.any(func(c): return CardDB.is_energy(c) and not CardDB.is_basic_energy(c)) \
+					and me.discard.any(func(c): return CardDB.is_basic_energy(c)):
+				prms.append({})
+		"Strange Cave":
+			if not full:
+				for c in _distinct(me.hand, func(c): return CardDB.card_name(c) in FOSSIL_MONS):
+					prms.append({"pick": c})
 		"Underground Lake":
 			if not full:
 				for c in _distinct(me.discard, func(c): return CardDB.card_name(c) in ["Omanyte", "Kabuto"]):
@@ -987,6 +1074,23 @@ static func use_stadium(g: Game, me: PlayerState, n: String, prm: Dictionary) ->
 					me.hand.erase(o["id"])
 					me.deck.append(o["id"])
 					g.shuffle(me.deck))
+		"Holon Ruins":
+			me.draw(1)
+			g.ask(me.index, "Holon Ruins: discard a card", _card_options(me.hand, true).map(func(o):
+					o["ai"] = -float(o["ai"])
+					return o), func(o):
+				if me.hand.has(o["id"]):
+					me.hand.erase(o["id"])
+					me.discard.append(o["id"]))
+		"Power Tree":
+			g.ask(me.index, "Power Tree: basic Energy to your hand", _card_options(_distinct(me.discard, func(c): return CardDB.is_basic_energy(c)), false), func(o):
+				if me.discard.has(o["id"]):
+					me.discard.erase(o["id"])
+					me.hand.append(o["id"]))
+		"Strange Cave":
+			me.hand.erase(prm["pick"])
+			me.bench.append(PokemonInPlay.new(prm["pick"], g.turn_number))
+			g.log_msg("  %s goes to the Bench." % CardDB.card_name(prm["pick"]))
 		"Underground Lake":
 			me.discard.erase(prm["pick"])
 			var np := PokemonInPlay.new(prm["pick"], g.turn_number)
@@ -1139,3 +1243,55 @@ static func _rearrange_top(g: Game, me: PlayerState, cards: Array, what: String)
 		rest.erase(o["id"])
 		me.deck.append(o["id"])
 		Trainers._rearrange_top(g, me, rest, what))
+
+
+## Los Partidarios Holon (después de descartar la carta que piden).
+static func _holon_supporter(g: Game, me: PlayerState, opp: PlayerState, n: String, discarded: String) -> void:
+	match n:
+		"Holon Scientist":
+			me.draw(maxi(0, opp.hand.size() - me.hand.size()))
+		"Holon Adventurer":
+			me.draw(4 if CardDB.is_pokemon(discarded) and CardDB.is_delta(discarded) else 3)
+		"Holon Mentor":
+			_pick_sequence(g, me, "Holon Mentor: Basic Pokémon (100 HP or less)", 3,
+					func(_p): return _distinct(me.deck, func(c): return CardDB.is_basic_pokemon(c) and CardDB.hp(c) <= 100), [])
+		"Holon Researcher":
+			_ask_from_deck(g, me, "Holon Researcher: Metal Energy or δ Pokémon",
+					func(c): return CardDB.card_name(c) == "Metal Energy" or (CardDB.is_pokemon(c) and CardDB.is_delta(c) and not CardDB.is_fossil(c)))
+		"Holon Lass":
+			var n_look := me.prizes.size() + opp.prizes.size()
+			var top: Array = me.deck.slice(maxi(0, me.deck.size() - n_look))
+			g.log_msg("  Looks at the top %d cards." % top.size())
+			chain(g, me.index, "Holon Lass: Energy to your hand", 99,
+					func(picked):
+						var left: Array = top.duplicate()
+						for c in picked:
+							left.erase(c)
+						return _distinct(left, func(c): return CardDB.is_energy(c)), true,
+					func(id):
+						var i := me.deck.rfind(id)
+						if i != -1:
+							me.deck.remove_at(i)
+							me.hand.append(id),
+					func(): g.shuffle(me.deck))
+		"Holon Farmer":
+			chain(g, me.index, "Holon Farmer: basic Energy to your deck", 3,
+					func(picked):
+						var left: Array = me.discard.duplicate()
+						for c in picked:
+							left.erase(c)
+						return _distinct(left, func(c): return CardDB.is_basic_energy(c)), true,
+					func(id):
+						me.discard.erase(id)
+						me.deck.append(id),
+					func():
+						Trainers.chain(g, me.index, "Holon Farmer: Pokémon to your deck", 3,
+								func(picked):
+									var left: Array = me.discard.duplicate()
+									for c in picked:
+										left.erase(c)
+									return Trainers._distinct(left, func(c): return CardDB.is_pokemon(c)), true,
+								func(id):
+									me.discard.erase(id)
+									me.deck.append(id),
+								func(): g.shuffle(me.deck)))

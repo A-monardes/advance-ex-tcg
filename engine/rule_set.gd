@@ -27,6 +27,8 @@ var season := ""
 var legal_sets: Array = []
 ## Última Black Star Promo legal en la temporada (0 = todas).
 var np_max := 0
+## O la lista exacta de promos legales (2005-06: 027-033 y 035-036).
+var np_ok: Array = []
 
 ## Temporadas de la era ADV, cada una con los sets legales y las reglas de ese año.
 ## "sets" en el orden en que salieron; los que todavía no están en el juego se marcan
@@ -37,6 +39,10 @@ const SEASONS := [
 		"first_player_supporter": true, "coin_winner_chooses": false},
 	{"id": "2004-05", "name": "2004-05 · Ruby & Sapphire to Emerald",
 		"sets": ["ex1", "ex2", "ex3", "ex4", "ex5", "ex6", "ex7", "ex8", "ex9", "pop1", "np"], "np_max": 27,
+		"first_player_supporter": false, "coin_winner_chooses": true},
+	{"id": "2005-06", "name": "2005-06 · Hidden Legends to Holon Phantoms",
+		"sets": ["ex5", "ex6", "ex7", "ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "pop1", "pop2", "pop3", "np"],
+		"np_ok": [27, 28, 29, 30, 31, 32, 33, 35, 36],
 		"first_player_supporter": false, "coin_winner_chooses": true},
 ]
 
@@ -63,6 +69,7 @@ static func from_season(i: int) -> RuleSet:
 	r.name = d["name"]
 	r.legal_sets = d["sets"]
 	r.np_max = int(d.get("np_max", 0))
+	r.np_ok = d.get("np_ok", [])
 	r.first_player_supporter = d["first_player_supporter"]
 	r.coin_winner_chooses = d["coin_winner_chooses"]
 	return r
@@ -106,7 +113,11 @@ func _printed_legal(id: String) -> bool:
 	var p := id.split("-")
 	if not p[0] in legal_sets:
 		return false
-	return p[0] != "np" or np_max == 0 or int(p[1]) <= np_max
+	if p[0] != "np":
+		return true
+	if not np_ok.is_empty():
+		return int(p[1]) in np_ok
+	return np_max == 0 or int(p[1]) <= np_max
 
 
 ## Las cartas del mazo que no son legales en la temporada (sin repetir).
@@ -116,6 +127,16 @@ func illegal_cards(deck: Array) -> Array:
 		if not is_legal(str(id)) and not out.has(id):
 			out.append(id)
 	return out
+
+
+## Copia independiente (la IA simula en copias de la partida; Giant Stump cambia el tamaño de la Banca).
+func copy() -> RuleSet:
+	var r := RuleSet.new()
+	for prop in get_property_list():
+		if prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE and not str(prop["name"]).begins_with("_"):
+			var v = get(prop["name"])
+			r.set(prop["name"], v.duplicate() if v is Array or v is Dictionary else v)
+	return r
 
 
 ## Las mismas reglas, en batalla doble.

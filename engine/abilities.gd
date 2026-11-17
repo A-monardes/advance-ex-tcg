@@ -30,6 +30,14 @@ const POWERS := [
 	"Psychic Trace", "Wishing Star", "Swing Dance", "Super Connectivity", "Form Change", "Happy Dance",
 	"Smooth Over", "Night Vision", "Fan Action", "Magnetic Reversal", "Distortion", "Dragon Boost",
 	"Lightning Burst",
+	# Unseen Forces, Delta Species, Legend Maker, Holon Phantoms, POP 2-3, promos
+	"3-D Reset", "Item Search", "Snappy Move", "Makeover", "Energy Evolution", "Blissful Support", "Devo Flash",
+	"Golden Wing", "Nurture and Heal", "Bursting Up", "Darker Ring", "Night Cry", "Shuffle", "Final Sting",
+	"Delta Charge", "Delta Heal", "Delta Control", "Delta Switch", "Metal Navigation", "Prize Shift", "Duplicate",
+	"Prowl", "Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Reactive Shift", "Shadow Curse",
+	"Support Navigation", "Type Change", "Evolutionary Fan", "Nectar Pod", "Reactive Generator", "Reactive Recharge",
+	"Emerge", "Power Circulation", "Shady Move", "Emerge Charge", "Delta Supply", "Dragon Curse", "Primal Light",
+	"Delta Support", "Splash Back", "Psychic Vision", "Driving Howl", "Time Reversal",
 ]
 const BODIES := [
 	"Withering Dust", "Protective Dust", "Intimidating Fang", "Lazy", "Rough Skin", "Natural Remedy",
@@ -57,17 +65,32 @@ const BODIES := [
 	"Carefree", "Aqua Lift", "Moonglow", "Intimidating Pattern", "Hard Protection", "Sunbeam",
 	"Vigorous Aura", "Commanding Aura", "Dragon Lift", "Blaze", "Green Essence", "Electro-guard",
 	"Feathery", "Mist", "Cursed Glare", "Magma Armor", "Dark Hole", "Wise Aura", "Mystic Scale", "Rai-shield",
+	# Unseen Forces ... Holon Phantoms
+	"Lonesome", "Healing Aroma", "Spiral Swirl", "Burning Aura", "Intimidating Ring", "Stages of Evolution",
+	"Thick Fat", "Extra-tight", "Overpowering Fang", "Silver Sparkle", "Danger Perception", "Delta Aura",
+	"Delta Guard", "Delta Moon", "Binding Aura", "Delta Storm", "Body Odor", "Reversal Aura", "Beacon Protection",
+	"Shining Horn", "Extra Protection", "Reactive Protection", "Ancient Shell", "Stench", "Reactive Lift",
+	"Rear Sensor", "Reactive Booster", "Sol Shade", "Ancient Fang", "Luna Shade", "Pattern Distraction", "Deadlock",
+	"Ancient Protection", "Reactive Colors", "Paranoid", "Reactive Aroma", "Reactive Healing", "Reactive Shield",
+	"Ancient Tentacles", "Fire Remedy", "Versatile", "Icy Aura", "Delta Reactor", "Dual Aura", "Delta Reserve",
+	"Hydro Barrier", "Fellowship", "Clear Body", "Delta Block", "Synchronized Lift",
 ]
 const REPEATABLE := ["Energy Trans", "Call for Power", "Metal Juncture", "Energy Connect", "Energy Return",
-		"Water Cyclone", "Strange Behavior", "Energy Rain", "Dark Trance"]
+		"Water Cyclone", "Strange Behavior", "Energy Rain", "Dark Trance", "3-D Reset", "Reactive Shift"]
 const ON_EVOLVE := ["Loose Shell", "Healing Shower"]
 ## "Cuando jugás X de tu mano para evolucionar..." (se resuelven en on_evolve_from_hand).
 const EVOLVE_TRIGGER := ["Energy Recharge", "Venom Spray", "Manipulate", "Flame Vapor", "Streaming Mantle",
-		"Attract Energy", "Froth"]
+		"Attract Energy", "Froth", "Blissful Support", "Devo Flash", "Bursting Up", "Darker Ring", "Prowl",
+		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge"]
+## Se activan con el Pokémon en la Banca o el Activo (los demás de EVOLVE_TRIGGER, solo en el Activo).
+const EVOLVE_ANYWHERE := ["Attract Energy", "Blissful Support", "Devo Flash", "Bursting Up", "Prowl",
+		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge", "Darker Ring"]
+const FOSSIL_LINE := ["Omanyte", "Omastar", "Kabuto", "Kabutops", "Kabutops ex"]
 # no se activan desde el menú (Psymimic aparece como ataques copiados)
 const TRIGGERED := ["Energy Grounding", "Psymimic", "Energy Recharge", "Venom Spray", "Manipulate",
 		"Flame Vapor", "Streaming Mantle", "Attract Energy", "Froth", "Legendary Ascent", "Dragon Boost",
-		"Lightning Burst"]
+		"Lightning Burst", "Energy Evolution", "Golden Wing", "Delta Switch", "Shadow Curse", "Support Navigation",
+		"Reactive Recharge", "Time Reversal"]
 const NIDOS := ["Nidoran ♀", "Nidorina", "Nidoqueen", "Nidoran ♂", "Nidorino", "Nidoking"]
 const DISCARD_FOSSIL := "Discard fossil"
 const CASTFORMS := ["Castform", "Sunny Castform", "Rain Castform", "Snow-cloud Castform"]
@@ -112,7 +135,27 @@ static func body(g: Game, p: PokemonInPlay, ability_name: String) -> bool:
 		return false
 	if _stadium_silences(g, p):
 		return false
+	if _bodies_silenced(g, p):
+		return false
 	return ability_name == "Toxic Gas" or not toxic_gas(g)
+
+
+## Overpowering Fang (Feraligatr ex Activo), Dual Aura (Latias δ + Latios), Energy Root.
+static func _bodies_silenced(g: Game, p: PokemonInPlay) -> bool:
+	if CardDB.card_name(p.tool) == "Energy Root":
+		return true
+	if not p.is_ex():
+		for pl in g.players:
+			if pl.actives().any(func(x): return x.has_ability("Overpowering Fang")):
+				return true
+	if p.is_evolved() and not p.is_ex():
+		for pl in g.players:
+			for x in pl.all_in_play():
+				if x.has_ability("Dual Aura"):
+					var partner := "Latios" if x.display_name().begins_with("Latias") else "Latias"
+					if pl.all_in_play().any(func(y): return y.display_name().begins_with(partner)):
+						return true
+	return false
 
 
 ## Space Center (Básicos sin ex ni dueño) y Battle Frontier (evolucionados Incoloros,
@@ -148,6 +191,22 @@ static func power_blocked(g: Game, me: PlayerState, p: PokemonInPlay) -> bool:
 		return true
 	if not p.is_ex() and g.players.any(func(pl): return active_body(g, pl, "Wise Aura")):
 		return true
+	if _bodies_silenced(g, p) or g.players.any(func(pl): return active_body(g, pl, "Stench")):
+		return true
+	if p.is_basic() and active_body(g, g.other(me), "Intimidating Ring"):
+		return true
+	if me.is_active(p) and p.is_basic() and not p.is_ex() and body_anywhere(g, "Rear Sensor"):
+		return true
+	for pair in [["Sol Shade", "Solrock", "Fire"], ["Luna Shade", "Lunatone", "Colorless"]]:
+		if not p.is_ex() and p.is_type(pair[2]):
+			for pl in g.players:
+				if body_in_play(g, pl, pair[0]) and pl.all_in_play().any(func(x): return x.display_name() == pair[1]):
+					return true
+	if not CardDB.is_delta(p.top()):
+		for pl in g.players:
+			for x in pl.all_in_play():
+				if body(g, x, "Delta Reserve") and x.energy.any(func(e): return CardDB.card_name(e).begins_with("Holon Energy")):
+					return true
 	return p.has_special_condition() or toxic_gas(g) or active_body(g, g.other(me), "Lazy") \
 			or p.flags.get("no_powers", -1) >= g.turn_number or me.flags.get("no_powers", -1) >= g.turn_number
 
@@ -166,7 +225,7 @@ static func power_actions(g: Game, me: PlayerState) -> Array:
 			continue
 		for ab in p.abilities():
 			var n: String = ab["name"]
-			if ab["kind"] != "Poké-Power" or n not in POWERS or n in TRIGGERED:
+			if ab["kind"] != "Poké-Power" or n not in POWERS or n in TRIGGERED or n in EVOLVE_TRIGGER:
 				continue
 			if power_blocked(g, me, p):
 				continue
@@ -496,6 +555,114 @@ static func _options(g: Game, me: PlayerState, s: int, p: PokemonInPlay, n: Stri
 			if me.is_active(p):
 				for b in opp.bench.size():
 					out.append({"b": b})
+		# --- Unseen Forces ... Holon Phantoms ---
+		"3-D Reset":
+			for t in me.slots():
+				if me.slot(t).tool != "":
+					out.append({"tg": t})
+		"Item Search":
+			if me.deck.any(func(c): return CardDB.is_pokemon_tool(c)):
+				out.append({})
+		"Snappy Move":
+			if not me.is_active(p) and s >= 0 and not me.turn_flags.get("snappy", false):
+				out.append({})
+		"Makeover":
+			for t in me.slots():
+				var x := me.slot(t)
+				if not x.is_ex():
+					for e in _distinct(x.energy, func(c): return CardDB.is_basic_energy(c)):
+						if me.discard.any(func(c): return CardDB.is_basic_energy(c)):
+							out.append({"tg": t, "id": e})
+		"Nurture and Heal":
+			if me.hand.any(func(c): return CardDB.card_name(c) == "Grass Energy"):
+				for t in me.slots():
+					out.append({"tg": t})
+		"Night Cry":
+			if not me.is_active(p) and s >= 0 and me.deck.any(func(c): return CardDB.is_pokemon(c) and (CardDB.card_name(c).contains("Dark") or CardDB.card_name(c).contains("Rocket's"))):
+				out.append({})
+		"Shuffle", "Duplicate":
+			if not me.turn_flags.get(n, false) and p.is_basic():
+				var cur := p.top()
+				for c in _distinct(me.deck, func(c): return CardDB.card_name(c) == p.display_name() and c != cur):
+					out.append({"pick": c})
+		"Final Sting":
+			if opp.active != null:
+				out.append({})
+		"Delta Charge":
+			if not me.bench.is_empty() and me.discard.any(func(c): return CardDB.card_name(c) == "Lightning Energy"):
+				for b in me.bench.size():
+					out.append({"tg": b})
+		"Delta Heal":
+			if not me.turn_flags.get("delta_heal", false) and me.all_in_play().any(func(x): return x.damage > 0 and CardDB.is_delta(x.top())):
+				out.append({})
+		"Delta Control", "Primal Light":
+			if not me.deck.is_empty():
+				out.append({})
+		"Metal Navigation":
+			if me.deck.any(func(c): return CardDB.card_name(c) == "Metal Energy"):
+				out.append({})
+		"Prize Shift":
+			var faceup: Array = me.flags.get("faceup_prizes", [])
+			if me.prizes.size() > faceup.size():
+				for c in _distinct(me.hand, func(_c): return true):
+					out.append({"pick": c})
+		"Reactive Shift":
+			for a in me.slots():
+				if me.slot(a).energy.any(func(e): return CardDB.card_name(e) == "React Energy"):
+					for b in me.slots():
+						if b != a:
+							out.append({"from": a, "to": b})
+		"Type Change":
+			if opp.active != null:
+				out.append({})
+		"Nectar Pod":
+			for b in opp.bench.size():
+				if CardDB.stage(opp.bench[b].top()) == 2:
+					out.append({"b": b})
+		"Reactive Generator":
+			if not p.energy.any(func(e): return CardDB.card_name(e) == "React Energy") and me.deck.any(func(c): return CardDB.card_name(c) == "React Energy"):
+				out.append({})
+		"Emerge":
+			if me.is_active(p) and me.deck.any(func(c): return CardDB.evolves_from(c) == p.display_name()):
+				out.append({})
+		"Power Circulation":
+			if me.discard.any(func(c): return CardDB.is_basic_energy(c)):
+				out.append({})
+		"Shady Move":
+			if me.is_active(p):
+				var all_s: Array = []
+				for pl in [me, opp]:
+					for t in pl.slots():
+						all_s.append([pl.index, t])
+				for a in all_s:
+					if g.players[a[0]].slot(a[1]).damage > 0:
+						for b in all_s:
+							if b != a:
+								out.append({"fp": a[0], "fs": a[1], "tp": b[0], "ts": b[1]})
+		"Delta Supply":
+			for c in _distinct(me.hand, func(c): return CardDB.is_basic_energy(c) or CardDB.card_name(c) == "δ Rainbow Energy"):
+				for t in me.slots():
+					if CardDB.is_delta(me.slot(t).top()):
+						out.append({"tg": t, "id": c})
+		"Dragon Curse":
+			if me.is_active(p):
+				for t in opp.slots():
+					if CardDB.is_delta(opp.slot(t).top()):
+						out.append({"tg": t})
+		"Delta Support":
+			if CardDB.card_name(me.turn_flags.get("supporter_id", "")).contains("Holon"):
+				for c in _distinct(me.discard, func(c): return CardDB.is_basic_energy(c) or CardDB.card_name(c) == "δ Rainbow Energy"):
+					out.append({"pick": c})
+		"Splash Back":
+			if opp.bench.size() >= 4:
+				for b in opp.bench.size():
+					out.append({"b": b})
+		"Psychic Vision":
+			if not me.is_active(p) and s >= 0:
+				out.append({})
+		"Driving Howl":
+			if opp.active != null and not opp.bench.is_empty():
+				out.append({})
 	return out
 
 
@@ -960,6 +1127,146 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 		"Magnetic Reversal":
 			if g.flip() and prm["b"] < opp.bench.size():
 				g.switch_active(opp, prm["b"])
+		# --- Unseen Forces ... Holon Phantoms ---
+		"3-D Reset":
+			var t := me.slot(prm["tg"])
+			me.hand.append(t.tool)
+			g.log_msg("  %s returns to the hand." % CardDB.card_name(t.tool))
+			t.tool = ""
+		"Item Search":
+			Trainers._ask_from_deck(g, me, "Item Search: Pokémon Tool", func(c): return CardDB.is_pokemon_tool(c))
+		"Snappy Move":
+			me.turn_flags["snappy"] = true
+			me.draw(1)
+			var cards := p.all_cards()
+			me.bench.erase(p)
+			for c in cards:
+				if c != p.cards[0]:
+					me.discard.append(c)
+			me.deck.insert(0, p.cards[0])
+			g.log_msg("  Aipom goes to the bottom of the deck.")
+		"Makeover":
+			var t := me.slot(prm["tg"])
+			t.energy.erase(prm["id"])
+			var cands := _distinct(me.discard, func(c): return CardDB.is_basic_energy(c))
+			me.discard.append(prm["id"])
+			g.ask(me.index, "Makeover: basic Energy to attach", Trainers._card_options(cands, false), func(o):
+				if o["id"] in me.discard and me.all_in_play().has(t):
+					me.discard.erase(o["id"])
+					t.energy.append(o["id"]))
+		"Nurture and Heal":
+			var e := _take(me.hand, func(c): return CardDB.card_name(c) == "Grass Energy")
+			var t := me.slot(prm["tg"])
+			t.energy.append(e)
+			t.damage = max(0, t.damage - 10)
+			on_energy_from_hand(g, me, t, e)
+		"Night Cry":
+			Trainers._ask_from_deck(g, me, "Night Cry: Dark or Rocket's Pokémon", func(c): return CardDB.is_pokemon(c) and (CardDB.card_name(c).contains("Dark") or CardDB.card_name(c).contains("Rocket's")))
+		"Shuffle", "Duplicate":
+			me.turn_flags[n] = true
+			me.deck.erase(prm["pick"])
+			var old: String = p.cards[0]
+			p.cards[0] = prm["pick"]
+			g.shuffle(me.deck)
+			me.deck.append(old)
+			g.log_msg("  Switches with another %s; the old card goes on top of the deck." % p.display_name())
+		"Final Sting":
+			p.damage = p.max_hp()
+			var d := opp.active
+			g.try_condition(d, "paralyzed")
+			g.try_condition(d, "poisoned")
+			if d.poison > 0:
+				d.poison = 2
+		"Delta Charge":
+			var e := _take(me.discard, func(c): return CardDB.card_name(c) == "Lightning Energy")
+			me.bench[prm["tg"]].energy.append(e)
+		"Delta Heal":
+			me.turn_flags["delta_heal"] = true
+			for x in me.all_in_play():
+				if CardDB.is_delta(x.top()):
+					x.damage = max(0, x.damage - 10)
+		"Delta Control":
+			var top: Array = []
+			for i in mini(4, me.deck.size()):
+				top.append(me.deck[me.deck.size() - 1 - i])
+			g.ask(me.index, "Delta Control: choose 1 card", Trainers._card_options(top, true), func(o):
+				var i := me.deck.rfind(o["id"])
+				if i != -1:
+					me.deck.remove_at(i)
+					me.hand.append(o["id"])
+				for j in mini(3, me.deck.size()):
+					me.deck.insert(0, me.deck.pop_back()))
+		"Primal Light":
+			Trainers._ask_from_deck(g, me, "Primal Light: basic Energy", func(c): return CardDB.is_basic_energy(c))
+		"Metal Navigation":
+			var e := _take(me.deck, func(c): return CardDB.card_name(c) == "Metal Energy")
+			p.energy.append(e)
+			g.shuffle(me.deck)
+		"Prize Shift":
+			var faceup: Array = me.flags.get("faceup_prizes", [])
+			var down: Array = []
+			for i in me.prizes.size():
+				if not faceup.has(me.prizes[i]):
+					down.append(i)
+			var k: int = down[g.rng.randi_range(0, down.size() - 1)]
+			var took: String = me.prizes[k]
+			me.hand.erase(prm["pick"])
+			me.prizes[k] = prm["pick"]
+			faceup.append(prm["pick"])
+			me.flags["faceup_prizes"] = faceup
+			me.hand.append(took)
+			g.log_msg("  Puts %s as a face-up Prize card and takes a Prize card." % CardDB.card_name(prm["pick"]))
+		"Reactive Shift":
+			_move_energy(me.slot(prm["from"]), me.slot(prm["to"]), func(e): return CardDB.card_name(e) == "React Energy", 1)
+		"Type Change":
+			p.type_override = opp.active.types().duplicate()
+			p.flags["type_until"] = g.turn_number
+		"Nectar Pod", "Splash Back":
+			if prm["b"] < opp.bench.size():
+				if n == "Nectar Pod":
+					g.switch_active(opp, prm["b"])
+				else:
+					g.return_to_hand(opp, opp.bench[prm["b"]])
+		"Reactive Generator":
+			var e := _take(me.deck, func(c): return CardDB.card_name(c) == "React Energy")
+			p.energy.append(e)
+			g.shuffle(me.deck)
+		"Emerge":
+			if g.flip():
+				var evo := _take(me.deck, func(c): return CardDB.evolves_from(c) == p.display_name())
+				if evo != "":
+					g.evolve(me, p, evo)
+				g.shuffle(me.deck)
+		"Power Circulation":
+			var cands := _distinct(me.discard, func(c): return CardDB.is_basic_energy(c))
+			g.ask(me.index, "Power Circulation: basic Energy for the top of your deck", Trainers._card_options(cands, false), func(o):
+				if o["id"] in me.discard:
+					me.discard.erase(o["id"])
+					me.deck.append(o["id"])
+					if me.all_in_play().has(p):
+						p.damage += 10)
+		"Shady Move":
+			var from: PokemonInPlay = g.players[prm["fp"]].slot(prm["fs"])
+			var to: PokemonInPlay = g.players[prm["tp"]].slot(prm["ts"])
+			from.damage -= 10
+			to.damage += 10
+			g.log_msg("  Moves 1 damage counter from %s to %s." % [from.display_name(), to.display_name()])
+		"Delta Supply":
+			var t := me.slot(prm["tg"])
+			me.hand.erase(prm["id"])
+			t.energy.append(prm["id"])
+			on_energy_from_hand(g, me, t, prm["id"])
+		"Dragon Curse":
+			var t := opp.slot(prm["tg"])
+			if t != null:
+				t.damage += 20
+		"Delta Support":
+			me.discard.erase(prm["pick"])
+			me.hand.append(prm["pick"])
+		"Psychic Vision":
+			g.log_msg("  Opponent's hand: " + ", ".join(opp.hand.map(func(c): return CardDB.card_name(c))))
+		"Driving Howl":
+			g.queue_choice(opp.index, "switch")
 
 
 static func _energy_options(p: PokemonInPlay) -> Array:
@@ -1043,6 +1350,8 @@ static func prevents_damage(g: Game, attacker: PokemonInPlay, target: PokemonInP
 		return true
 	if body(g, target, "Hard Protection") and g.owner_of(attacker) == owner and fired(g, target, "Hard Protection"):
 		return true
+	if body(g, target, "Extra-tight") and attacker.is_ex() and g.owner_of(attacker) != owner and fired(g, target, "Extra-tight"):
+		return true
 	if not is_active:
 		if body(g, target, "Submerge"):
 			return true
@@ -1068,6 +1377,8 @@ static func blocks_effects(g: Game, attacker: PokemonInPlay, target: PokemonInPl
 	if _shielded(g, attacker, target):
 		return true
 	if g.owner_of(attacker) != g.owner_of(target):
+		if stages(g, target, "Jynx") or holon(target, "Holon Energy WP", "Water"):
+			return true
 		if body(g, target, "Darkness Veil") and Energy.count_type(target, "Darkness") > 0 and fired(g, target, "Darkness Veil"):
 			return true
 		if body(g, target, "Dragon Aura") and target.energy.any(func(e): return CardDB.card_name(e) == "Fire Energy") \
@@ -1089,7 +1400,29 @@ static func _shielded(g: Game, attacker: PokemonInPlay, target: PokemonInPlay) -
 		return true
 	if body(g, target, "Fast Protection") and attacker.is_basic() and fired(g, target, "Fast Protection"):
 		return true
+	var owner := g.owner_of(target)
+	if body(g, target, "Beacon Protection") and attacker.name_has("Dark") and owner.all_in_play().any(func(x): return x.display_name() == "Volbeat") \
+			and fired(g, target, "Beacon Protection"):
+		return true
+	if body(g, target, "Extra Protection") and attacker.is_ex() and owner.all_in_play().any(func(x): return x.display_name() == "Illumise") \
+			and fired(g, target, "Extra Protection"):
+		return true
+	if attacker.is_ex() and target.display_name() == "Tentacruel" and owner.all_in_play().any(func(x): return body(g, x, "Reactive Shield") \
+			and x.energy.any(func(e): return CardDB.card_name(e) == "React Energy")):
+		return true
 	return false
+
+
+## Efectos de las Holon Energy (FF, GL, WP): solo si el Pokémon no es ex y tiene la básica que corresponde.
+static func holon(p: PokemonInPlay, holon_name: String, basic: String) -> bool:
+	if p == null or p.is_ex():
+		return false
+	return p.energy.any(func(e): return CardDB.card_name(e) == holon_name) and p.energy.any(func(e): return CardDB.card_name(e) == basic + " Energy")
+
+
+## "Stages of Evolution": cada carta tiene un efecto distinto (y solo si está evolucionada).
+static func stages(g: Game, p: PokemonInPlay, who: String) -> bool:
+	return p.is_evolved() and p.display_name() == who and body(g, p, "Stages of Evolution")
 
 
 ## Fluff (Jumpluff): si ya tenía daño, una moneda por ataque; con cara se previene todo.
@@ -1128,7 +1461,24 @@ static func pre_wr_bonus(g: Game, attacker: PokemonInPlay, target: PokemonInPlay
 				bonus += 40
 		if tgt_owner.is_active(target) and g.players.any(func(pl): return active_body(g, pl, "Vigorous Aura")):
 			bonus += 10
+	var w = attacker.flags.get("weaken", null)
+	if w != null and w[1] >= g.turn_number:
+		bonus -= int(w[0])
 	if att_owner != tgt_owner:
+		if body(g, attacker, "Danger Perception") and attacker.hp_left() <= 60 and is_active and fired(g, attacker, "Danger Perception"):
+			bonus += 40
+		if stages(g, attacker, "Hitmonlee"):
+			bonus += 20
+		if is_active and body(g, attacker, "Reversal Aura") and att_owner.prizes.size() > tgt_owner.prizes.size():
+			bonus += 20
+		if is_active and body(g, attacker, "Ancient Fang") and att_owner.all_in_play().any(func(x): return x.display_name() in ["Kabuto", "Kabutops", "Kabutops ex"]):
+			bonus += 20
+		if is_active and body(g, attacker, "Paranoid") and attacker.rotation == "confused":
+			bonus += 50
+		if is_active and CardDB.is_delta(attacker.top()) and g.stadium_name().contains("Holon") and body_in_play(g, att_owner, "Delta Reactor"):
+			bonus += 10
+		if is_active and CardDB.card_name(attacker.tool) == "Solid Rage" and att_owner.prizes.size() > tgt_owner.prizes.size():
+			bonus += 20
 		if attacker.is_ex() and active_body(g, tgt_owner, "Lazy Aura") and fired_pl(g, tgt_owner, "Lazy Aura"):
 			bonus -= 30
 		if active_body(g, tgt_owner, "Intimidating Pattern") and fired_pl(g, tgt_owner, "Intimidating Pattern"):
@@ -1141,6 +1491,15 @@ static func weakness_types(g: Game, target: PokemonInPlay) -> Array:
 	var w: Array = target.data().get("weaknesses", []).duplicate()
 	if w.is_empty():
 		return w
+	if target.flags.get("no_weakness", -1) >= g.turn_number or stages(g, target, "Jynx") or holon(target, "Holon Energy FF", "Fire") \
+			or CardDB.card_name(target.tool) == "Protective Orb":
+		return []
+	var tow := g.owner_of(target)
+	if tow != null:
+		if target.is_type("Water") and tow.all_in_play().any(func(x): return body(g, x, "Hydro Barrier") and x.energy.any(func(e): return CardDB.card_name(e).begins_with("Holon Energy"))):
+			return []
+		if target.display_name() in FOSSIL_LINE and body_in_play(g, tow, "Ancient Protection"):
+			return []
 	var owner := g.owner_of(target)
 	if owner != null:
 		if owner.is_active(target) and body_in_play(g, owner, "Dragon Veil"):
@@ -1175,6 +1534,10 @@ static func ignores_resistance(g: Game, attacker: PokemonInPlay, target: Pokemon
 	if body_anywhere(g, "Withering Dust"):
 		return true
 	if target != null and g.owner_of(target) != null and active_body(g, g.other(g.owner_of(target)), "Tropical Motion"):
+		return true
+	if holon(attacker, "Holon Energy FF", "Fighting"):
+		return true
+	if attacker.display_name() in FOSSIL_LINE and g.owner_of(attacker) != null and body_in_play(g, g.owner_of(attacker), "Ancient Tentacles"):
 		return true
 	return g.stadium_name() == "Magnetic Storm" and (attacker.is_type("Psychic") or attacker.is_type("Fighting"))
 
@@ -1239,6 +1602,18 @@ static func post_wr(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, is_
 		dmg -= 30
 	if opp_attack and body(g, target, "Rai-shield") and attacker.is_ex() and fired(g, target, "Rai-shield"):
 		dmg -= 30
+	if opp_attack and stages(g, target, "Electabuzz") and attacker.special_energy_count() > 0:
+		dmg -= 40
+	if body(g, target, "Thick Fat") and (attacker.is_type("Fire") or attacker.is_type("Water")) and fired(g, target, "Thick Fat"):
+		dmg -= 30
+	if opp_attack and body(g, target, "Reversal Aura") and att_owner.is_active(attacker) and tgt_owner.prizes.size() > att_owner.prizes.size():
+		dmg -= 20
+	if opp_attack and body(g, target, "Reactive Protection"):
+		dmg -= 10 * target.energy.filter(func(e): return CardDB.card_name(e) == "React Energy").size()
+	if body(g, target, "Ancient Shell") and tgt_owner.all_in_play().any(func(x): return x.display_name() in ["Omanyte", "Omastar"]):
+		dmg -= 20
+	if opp_attack and attacker.is_ex() and holon(target, "Holon Energy GL", "Lightning"):
+		dmg -= 10
 	if target.flags.get("reduce_until", -1) >= g.turn_number:
 		dmg -= int(target.flags.get("reduce_by", 0))
 	return dmg
@@ -1259,6 +1634,14 @@ static func after_damaged(g: Game, attacker: PokemonInPlay, target: PokemonInPla
 		g.try_condition(attacker, "poisoned")
 	if body(g, target, "Fire Veil") and fired(g, target, "Fire Veil"):
 		g.try_condition(attacker, "burned")
+	if stages(g, target, "Hitmontop"):
+		attacker.damage += 20
+		g.log_msg("  Stages of Evolution: 2 damage counters on %s." % attacker.display_name())
+	if body(g, target, "Silver Sparkle") and fired(g, target, "Silver Sparkle") and g.flip() and not attacker.energy.is_empty():
+		var att_owner := g.owner_of(attacker)
+		var e: String = attacker.energy.pop_back()
+		att_owner.hand.append(e)
+		g.log_msg("  Silver Sparkle: %s returns to the opponent's hand." % CardDB.card_name(e))
 	if body(g, target, "Spiny") and fired(g, target, "Spiny"):
 		var h := 0
 		while g.flip():
@@ -1286,8 +1669,14 @@ static func on_would_ko(g: Game, attacker: PokemonInPlay, target: PokemonInPlay)
 		target.damage = target.max_hp() - 10
 		g.log_msg("  Buffer: %s holds on with 10 HP!" % target.display_name())
 		return
+	_ko_powers(g, owner, attacker, target)
 	if owner == null or not owner.is_active(target):
 		return
+	if body(g, target, "Spiral Swirl") and fired(g, target, "Spiral Swirl"):
+		g.try_condition(attacker, "confused")
+	if CardDB.card_name(target.tool) == "Curse Powder" and target.is_evolved() and not target.is_ex():
+		attacker.damage += 30
+		g.log_msg("  Curse Powder: 3 damage counters on %s." % attacker.display_name())
 	if body(g, target, "Dark Scale") and fired(g, target, "Dark Scale"):
 		attacker.damage += 30
 		g.log_msg("  Dark Scale: 3 damage counters on %s." % attacker.display_name())
@@ -1298,7 +1687,7 @@ static func on_would_ko(g: Game, attacker: PokemonInPlay, target: PokemonInPlay)
 
 ## Quemadura entre turnos: Fiery Aura (Rapidash Activo) la sube a 4 contadores.
 static func burn_damage(g: Game, base: int) -> int:
-	if g.players.any(func(pl): return active_body(g, pl, "Fiery Aura") and fired_pl(g, pl, "Fiery Aura")):
+	if g.stadium_name() == "Full Flame" or g.players.any(func(pl): return active_body(g, pl, "Fiery Aura") and fired_pl(g, pl, "Fiery Aura")):
 		return 40
 	return base
 
@@ -1321,11 +1710,13 @@ static func can_have_condition(g: Game, p: PokemonInPlay, cond: String) -> bool:
 	if cond == "poisoned" and body(g, p, "Poison Resistance") and fired(g, p, "Poison Resistance"):
 		return false
 	var immune := {"Insomnia": ["asleep"], "Self-control": ["paralyzed"], "Carefree": ["confused"],
-			"Magma Armor": ["asleep", "paralyzed"]}
+			"Magma Armor": ["asleep", "paralyzed"], "Clear Body": ["asleep", "confused", "paralyzed", "poisoned", "burned"]}
 	for nm in immune:
 		if cond in immune[nm] and body(g, p, nm) and fired(g, p, nm):
 			return false
 	if body(g, p, "Dark and Clear") and Energy.count_type(p, "Darkness") > 0 and fired(g, p, "Dark and Clear"):
+		return false
+	if holon(p, "Holon Energy GL", "Grass"):
 		return false
 	var owner := g.owner_of(p)
 	if owner != null and owner.is_active(p) and Energy.count_type(p, "Grass") > 0 and body_in_play(g, owner, "Green Essence") \
@@ -1366,6 +1757,15 @@ static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
 		return 0
 	if not p.is_ex() and not _is_baby(p.top()) and body_in_play(g, me, "Dragon Lift"):
 		return 0
+	if CardDB.card_name(p.tool) == "Fluffy Berry" or holon(p, "Holon Energy WP", "Psychic"):
+		return 0
+	if p.is_type("Water") and not p.is_ex() and me.all_in_play().any(func(x): return body(g, x, "Reactive Lift") and x.energy.any(func(e): return CardDB.card_name(e) == "React Energy")):
+		return 0
+	if body(g, p, "Synchronized Lift"):
+		var need := ["Articuno ex", "Moltres ex", "Zapdos ex"]
+		need.erase(p.display_name())
+		if need.all(func(nm): return me.all_in_play().any(func(x): return x.display_name() == nm)):
+			return 0
 	var cost := p.base_retreat_cost()
 	if body(g, p, "Extreme Speed"):
 		cost -= p.energy.size()
@@ -1379,6 +1779,8 @@ static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
 		cost += 1
 	if me.is_active(p) and active_body(g, g.other(me), "Sticky Goo"):
 		cost += 2
+	if me.is_active(p) and g.other(me).all_in_play().any(func(x): return stages(g, x, "Wobbuffet")):
+		cost += 1
 	if me.is_active(p) and not p.is_ex() and not _is_baby(p.top()) and me.bench.any(func(x): return body(g, x, "Retreat Aid")):
 		cost -= 2
 	match g.stadium_name():
@@ -1406,6 +1808,16 @@ static func can_retreat(g: Game, me: PlayerState, p: PokemonInPlay) -> bool:
 
 
 static func attack_blocked(g: Game, p: PokemonInPlay) -> bool:
+	var own := g.owner_of(p)
+	if own != null:
+		var opp := g.other(own)
+		if p.is_basic() and not p.is_fossil():
+			if active_body(g, opp, "Intimidating Ring"):
+				return true
+			if opp.all_in_play().size() == 1 and body(g, opp.all_in_play()[0], "Shining Horn"):
+				return true
+		if p.display_name() == "Dunsparce" and active_body(g, opp, "Deadlock"):
+			return true
 	if body(g, p, "Power Saver"):
 		var team := "Team Magma" if p.name_has("Team Magma") else "Team Aqua"
 		var count := 0
@@ -1433,7 +1845,10 @@ static func supporters_blocked(g: Game) -> bool:
 
 
 static func items_blocked(g: Game, me: PlayerState) -> bool:
-	return active_body(g, g.other(me), "Block Dust")
+	var opp := g.other(me)
+	if body_in_play(g, opp, "Lonesome") and opp.all_in_play().size() < me.all_in_play().size():
+		return true
+	return active_body(g, opp, "Block Dust")
 
 
 static func tools_blocked(g: Game, me: PlayerState) -> bool:
@@ -1441,7 +1856,8 @@ static func tools_blocked(g: Game, me: PlayerState) -> bool:
 
 
 static func evolve_active_blocked(g: Game, me: PlayerState) -> bool:
-	return active_body(g, g.other(me), "Primal Vibes") or active_body(g, g.other(me), "Primal Stare")
+	return active_body(g, g.other(me), "Primal Vibes") or active_body(g, g.other(me), "Primal Stare") \
+			or body_in_play(g, g.other(me), "Binding Aura")
 
 
 ## Primal Aura (Kabutops Activo, de cualquiera): nadie evoluciona Pokémon de la Banca.
@@ -1461,6 +1877,8 @@ static func can_attach_from_hand(g: Game, card_id: String, p: PokemonInPlay) -> 
 	var owner := g.owner_of(p)
 	if owner != null and owner.is_active(p) and not CardDB.is_basic_energy(card_id) and n not in ["Darkness Energy", "Metal Energy"] \
 			and active_body(g, g.other(owner), "Cursed Glare"):
+		return false
+	if owner != null and p.rotation == "asleep" and body_in_play(g, g.other(owner), "Binding Aura"):
 		return false
 	return true
 
@@ -1508,6 +1926,40 @@ static func on_energy_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, card
 		var m := RegEx.create_from_string("and (\\d+) damage counter").search(_ability_text(p, "Saturation"))
 		p.clear_conditions()
 		p.damage = max(0, p.damage - 10 * (int(m.get_string(1)) if m != null else 1))
+	var opp_pl := g.other(me)
+	if not CardDB.is_basic_energy(card_id) and body_in_play(g, opp_pl, "Delta Moon") and not me.turn_flags.get("delta_moon", false):
+		me.turn_flags["delta_moon"] = true
+		p.damage += 10
+		g.log_msg("  Delta Moon: 1 damage counter on %s." % p.display_name())
+	if n == "React Energy" and body(g, p, "Reactive Healing") and fired(g, p, "Reactive Healing"):
+		p.damage = 0
+	if n == "Fire Energy" and body(g, p, "Fire Remedy") and fired(g, p, "Fire Remedy"):
+		p.damage = max(0, p.damage - 10)
+		p.clear_conditions()
+	if n == "Cyclone Energy" and me.is_active(p) and opp_pl.active != null and not opp_pl.bench.is_empty():
+		g.log_msg("  Cyclone Energy: the opponent switches the Defending Pokémon.")
+		g.queue_choice(opp_pl.index, "switch")
+	if CardDB.is_holon_energy(card_id) and Energy.units_of_card(card_id).size() == 2:
+		# Holon's Electrode/Magneton/Castform: se devuelve a la mano otra Energía de ese Pokémon
+		var others: Array = _distinct(p.energy, func(e): return e != card_id)
+		if not others.is_empty():
+			g.ask(me.index, "%s: Energy to return to your hand" % CardDB.card_name(card_id), Trainers._card_options(others, false).map(func(o):
+					o["ai"] = -float(o["ai"])
+					return o), func(o):
+				if p.energy.has(o["id"]):
+					p.energy.erase(o["id"])
+					me.hand.append(o["id"]))
+	if p.has_ability("Energy Evolution") and not power_blocked(g, me, p) and (CardDB.is_energy(card_id) or CardDB.is_holon_energy(card_id)):
+		var et := CardDB.basic_energy_type(card_id) if CardDB.is_basic_energy(card_id) else ""
+		var evos := _distinct(me.deck, func(c): return CardDB.evolves_from(c) == p.display_name() and (et == "" or et in CardDB.types(c)))
+		if not evos.is_empty() and et != "":
+			var opts := Trainers._card_options(evos, false)
+			opts.append({"label": "Don't evolve", "id": "", "ai": 0.0})
+			g.ask(me.index, "Energy Evolution: evolve %s?" % p.display_name(), opts, func(o):
+				if o["id"] != "" and me.deck.has(o["id"]) and me.all_in_play().has(p):
+					me.deck.erase(o["id"])
+					g.evolve(me, p, o["id"])
+					g.shuffle(me.deck))
 	if n == "Darkness Energy" and p.has_ability("Lightning Burst") and not power_blocked(g, me, p) \
 			and g.other(me).active != null and not g.other(me).bench.is_empty():
 		var opp := g.other(me)
@@ -1552,7 +2004,7 @@ static func on_evolve_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, slot
 		var n: String = ab["name"]
 		if ab["kind"] != "Poké-Power" or n not in EVOLVE_TRIGGER or power_blocked(g, me, p):
 			continue
-		if n != "Attract Energy" and not PlayerState.is_active_slot(slot):
+		if n not in EVOLVE_ANYWHERE and not PlayerState.is_active_slot(slot):
 			continue
 		if n == "Froth":
 			g.log_msg("%s uses Froth." % p.display_name())
@@ -1604,6 +2056,78 @@ static func _evolve_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String)
 						pl.deck.append(e)
 				g.shuffle(pl.deck)
 			g.log_msg("  Both players discard the top 3 cards and shuffle 3 basic Energy into their decks.")
+		"Blissful Support":
+			Trainers.chain(g, me.index, "Blissful Support: Pokémon to heal (discards its Energy)", 99,
+					func(picked):
+						var out: Array = []
+						for x in me.all_in_play():
+							if x.damage > 0 and x not in picked:
+								out.append(x)
+						return out, true,
+					func(x):
+						me.discard.append_array(x.energy)
+						x.energy.clear()
+						x.damage = 0
+						g.log_msg("  %s is healed." % x.display_name()),
+					func(): pass)
+		"Devo Flash":
+			var opts: Array = []
+			for b in opp.bench.size():
+				if opp.bench[b].is_evolved():
+					opts.append({"label": opp.bench[b].display_name(), "b": b, "opp": true, "ai": float(CardDB.stage(opp.bench[b].top()))})
+			if not opts.is_empty():
+				g.ask(me.index, "Devo Flash: Pokémon to devolve", opts, func(o):
+					if o["b"] < opp.bench.size() and opp.bench[o["b"]].is_evolved():
+						var x: PokemonInPlay = opp.bench[o["b"]]
+						opp.hand.append(x.cards.pop_back())
+						x.clear_conditions())
+		"Bursting Up":
+			var n_f := opp.bench.size()
+			var fires: Array = me.slots().filter(func(sl): return me.slot(sl).is_type("Fire"))
+			if n_f > 0 and not fires.is_empty():
+				var opts: Array = []
+				for sl in fires:
+					opts.append({"label": me.slot(sl).display_name(), "s": sl, "ai": 1.0 if sl == -1 else 0.5})
+				g.ask(me.index, "Bursting Up: Fire Pokémon to attach up to %d Fire Energy" % n_f, opts, func(o):
+					var t := me.slot(o["s"])
+					for i in n_f:
+						var e := _take(me.deck, func(c): return CardDB.card_name(c) == "Fire Energy")
+						if e == "" or t == null:
+							break
+						t.energy.append(e)
+					g.shuffle(me.deck))
+		"Darker Ring":
+			if opp.active != null and not opp.bench.is_empty():
+				var opts: Array = []
+				for b in opp.bench.size():
+					opts.append({"label": opp.bench[b].display_name(), "b": b, "opp": true, "ai": float(-opp.bench[b].hp_left())})
+				g.ask(me.index, "Darker Ring: new Defending Pokémon", opts, func(o):
+					if o["b"] < opp.bench.size():
+						g.switch_active(opp, o["b"]))
+		"Prowl":
+			Trainers._ask_from_deck(g, me, "Prowl: any card", func(_c): return true)
+		"Evolutionary Flame":
+			if opp.active != null:
+				g.try_condition(opp.active, "burned")
+				g.try_condition(opp.active, "confused")
+		"Evolutionary Thunder":
+			for x in opp.all_in_play():
+				x.damage += 10
+		"Evolutionary Swirl":
+			Trainers._hand_to_deck(g, opp)
+			Trainers._ask_draw_up_to(g, opp, 4, func(): pass)
+		"Evolutionary Fan":
+			var opts: Array = []
+			for x in me.all_in_play():
+				if x.is_evolved() and x != p and not x.display_name().begins_with("Shiftry"):
+					opts.append({"label": x.display_name(), "mon": x, "ai": float(x.damage)})
+			if not opts.is_empty():
+				opts.append({"label": "Don't return any", "mon": null, "ai": 0.0})
+				g.ask(me.index, "Evolutionary Fan: Pokémon to return to your hand", opts, func(o):
+					if o["mon"] != null and me.all_in_play().has(o["mon"]) and (me.all_in_play().size() > 1):
+						g.return_to_hand(me, o["mon"]))
+		"Emerge Charge":
+			attach_from_pile(g, me, me.discard, 2, func(c): return CardDB.is_energy(c), func(x): return x == p, "Emerge Charge", false)
 		"Attract Energy":
 			Trainers.chain(g, me.index, "Attract Energy: basic Energy to move", 99,
 					func(_picked):
@@ -1687,6 +2211,10 @@ static func between_turns(g: Game) -> void:
 					if p.damage >= 20:
 						p.damage -= 20
 						_discard_tool(pl, p, g)
+				"Sitrus Berry":
+					if p.damage >= 30:
+						p.damage -= 30
+						_discard_tool(pl, p, g)
 				"Team Aqua Belt", "Team Magma Belt":
 					if pl.is_active(p):
 						var nm := p.display_name()
@@ -1707,6 +2235,41 @@ static func between_turns(g: Game) -> void:
 				p.damage -= 10
 			if pl.is_active(p) and p.rotation == "asleep" and body(g, p, "Rest Up") and p.damage > 0 and fired(g, p, "Rest Up"):
 				p.damage = max(0, p.damage - 20)
+	# Unseen Forces ... Holon Phantoms
+	var once_aroma := [false, false]
+	for pl in g.players:
+		var opp2 := g.other(pl)
+		if active_body(g, pl, "Healing Aroma") and fired_pl(g, pl, "Healing Aroma"):
+			for q in g.players:
+				for x in q.all_in_play():
+					if not x.is_ex():
+						x.damage = max(0, x.damage - 10)
+		if active_body(g, pl, "Burning Aura") and fired_pl(g, pl, "Burning Aura"):
+			for q in g.players:
+				for x in q.actives():
+					x.damage += 10
+		if active_body(g, pl, "Delta Storm") and fired_pl(g, pl, "Delta Storm"):
+			for x in opp2.all_in_play():
+				if x.is_ex():
+					x.damage += 10
+		if active_body(g, pl, "Body Odor") and fired_pl(g, pl, "Body Odor"):
+			for x in opp2.all_in_play():
+				if x.abilities().any(func(ab): return ab["kind"] == "Poké-Body"):
+					x.damage += 10
+		if active_body(g, pl, "Icy Aura") and fired_pl(g, pl, "Icy Aura"):
+			for q in g.players:
+				for x in q.actives():
+					if not x.is_type("Water"):
+						x.damage += 10
+		if not once_aroma[pl.index] and pl.all_in_play().any(func(x): return body(g, x, "Reactive Aroma") and x.energy.any(func(e): return CardDB.card_name(e) == "React Energy")):
+			once_aroma[pl.index] = true
+			for x in pl.all_in_play():
+				if not x.is_ex() and x.energy.any(func(e): return CardDB.card_name(e) == "React Energy"):
+					x.damage = max(0, x.damage - 10)
+		if g.stadium_name() == "Cursed Stone":
+			for x in pl.all_in_play():
+				if x.abilities().any(func(ab): return ab["kind"] == "Poké-Power"):
+					x.damage += 10
 	# Poké-Bodies del Activo que actúan entre turnos
 	for pl in g.players:
 		var opp := g.other(pl)
@@ -1775,6 +2338,16 @@ static func refresh(g: Game) -> void:
 				p.hp_bonus = 10
 			if g.stadium_name() == "Rocket's Hideout" and (p.name_has("Dark") or p.name_has("Rocket's")):
 				p.hp_bonus += 20
+			if stages(g, p, "Hitmonchan"):
+				p.hp_bonus += 30
+			if CardDB.card_name(p.tool) == "Energy Root":
+				p.hp_bonus += 20
+			var tn := CardDB.card_name(p.tool)
+			if tn in ["Curse Powder", "Protective Orb", "Solid Rage"] and (p.is_basic() or p.is_ex()) \
+					or tn in ["Energy Root", "Fluffy Berry", "Sitrus Berry"] and (p.is_ex() or p.name_has("Dark") or p.has_owner()):
+				_discard_tool(pl, p, g)
+			p.flags["react_boost"] = p.display_name() in ["Huntail", "Gorebyss"] and pl.all_in_play().any(func(x): return body(g, x, "Reactive Booster"))
+			p.flags["delta_rainbow"] = CardDB.is_delta(p.top())
 			if p.display_name() == "Lunatone" and body_in_play(g, pl, "Sunbeam"):
 				p.hp_bonus = maxi(p.hp_bonus, 80 - CardDB.hp(p.top()))
 			if p.energy.any(func(e): return CardDB.card_name(e) == "Scramble Energy"):
@@ -1792,6 +2365,8 @@ static func refresh(g: Game) -> void:
 					if CardDB.is_basic_energy(e):
 						ts[CardDB.basic_energy_type(e)] = true
 				p.type_override = ts.keys() if not ts.is_empty() else []
+			if body(g, p, "Reactive Colors") and p.energy.any(func(e): return CardDB.card_name(e) == "React Energy"):
+				p.type_override = ["Grass", "Fire", "Water", "Lightning", "Psychic", "Fighting"]
 			if body(g, p, "Dual Armor"):
 				var need := "Metal" if p.display_name().contains("Scizor") else "Grass"
 				var both: Array = ["Darkness", "Metal"] if need == "Metal" else ["Grass", "Darkness"]
@@ -1801,8 +2376,10 @@ static func refresh(g: Game) -> void:
 			var modes: Array = []
 			if body(g, p, "Dark Aura"):
 				modes.append("all:Darkness")
-			if body(g, p, "Energy Flame"):
+			if body(g, p, "Energy Flame") or stages(g, p, "Magmar"):
 				modes.append("all:Fire")
+			if g.stadium_name() == "Holon Research Tower" and CardDB.is_delta(p.top()):
+				modes.append("basic+:Metal")
 			if body(g, p, "Rare Metal"):
 				modes.append("basic:Metal")
 			if body(g, p, "Prismatic Body"):
@@ -1843,6 +2420,24 @@ static func _stadium_attacks(g: Game, pl: PlayerState, p: PokemonInPlay) -> Arra
 	var out: Array = []
 	if not pl.is_active(p):
 		return out
+	# Versatile (Mew ex): los ataques de todos los Pokémon en juego; Fellowship (Bellossom δ): los de su familia
+	var shares := body(g, p, "Versatile")
+	var family := body(g, p, "Fellowship")
+	if shares or family:
+		var seen := {}
+		for q in g.players:
+			if family and q != pl:
+				continue
+			for x in q.all_in_play():
+				if x == p or seen.has(x.top()):
+					continue
+				if family and x.display_name() not in ["Oddish", "Gloom", "Vileplume", "Vileplume ex", "Bellossom"] and not x.display_name().begins_with("Bellossom"):
+					continue
+				seen[x.top()] = true
+				for atk in CardDB.get_card(x.top()).get("attacks", []):
+					var copy: Dictionary = atk.duplicate()
+					copy["src"] = x.top()
+					out.append(copy)
 	match g.stadium_name():
 		"Meteor Falls":
 			if p.is_evolved() and not p.is_ex():
@@ -1853,6 +2448,12 @@ static func _stadium_attacks(g: Game, pl: PlayerState, p: PokemonInPlay) -> Arra
 							var copy: Dictionary = atk.duplicate()
 							copy["src"] = c
 							out.append(copy)
+		"Holon Lake":
+			if CardDB.is_delta(p.top()):
+				for atk in CardDB.get_card(g.stadium).get("attacks", []):
+					var copy: Dictionary = atk.duplicate()
+					copy["src"] = g.stadium
+					out.append(copy)
 		"Rocket's Tricky Gym":
 			if p.name_has("Dark") or p.name_has("Rocket's"):
 				for atk in CardDB.get_card(g.stadium).get("attacks", []):
@@ -1867,7 +2468,17 @@ static func _stadium_attacks(g: Game, pl: PlayerState, p: PokemonInPlay) -> Arra
 static func on_bench_from_hand(g: Game, me: PlayerState, p: PokemonInPlay) -> void:
 	for ab in p.abilities():
 		var n: String = ab["name"]
-		if ab["kind"] != "Poké-Power" or n not in ["Legendary Ascent", "Dragon Boost"] or power_blocked(g, me, p):
+		if ab["kind"] != "Poké-Power" or power_blocked(g, me, p):
+			continue
+		if n in ["Delta Switch", "Support Navigation", "Time Reversal"]:
+			var opts2 := [{"label": "Use " + n, "use": true, "ai": 1.0}, {"label": "Don't use it", "use": false, "ai": 0.0}]
+			g.ask(me.index, "%s: use %s?" % [p.display_name(), n], opts2, func(o):
+				if not o["use"]:
+					return
+				g.log_msg("%s uses %s." % [p.display_name(), n])
+				Abilities._bench_power(g, me, p, n))
+			continue
+		if n not in ["Legendary Ascent", "Dragon Boost"]:
 			continue
 		var etype := ""
 		var m := RegEx.create_from_string("basic (\\w+) Energy").search(str(ab["text"]))
@@ -1936,3 +2547,105 @@ static func attach_from_pile(g: Game, me: PlayerState, pile: Array[String], n: i
 			t.energy.append(o["id"])
 			g.log_msg("  Attaches %s to %s." % [CardDB.card_name(o["id"]), t.display_name()])
 		Abilities.attach_from_pile(g, me, pile, n - 1, pred, target_ok, what, shuffle_after))
+
+
+## Golden Wing, Shadow Curse y Reactive Recharge: Poké-Powers que se usan cuando el ataque
+## del rival lo va a dejar Fuera de Combate (el jugador elige si usarlos).
+static func _ko_powers(g: Game, owner: PlayerState, attacker: PokemonInPlay, target: PokemonInPlay) -> void:
+	if owner == null or power_blocked(g, owner, target):
+		return
+	var opp := g.other(owner)
+	for nm in ["Golden Wing", "Shadow Curse", "Reactive Recharge"]:
+		if not target.has_ability(nm):
+			continue
+		var energies: Array = target.energy.duplicate() if nm == "Golden Wing" else target.energy.filter(func(e): return CardDB.card_name(e) == "React Energy")
+		if nm != "Shadow Curse" and (energies.is_empty() or owner.all_in_play().size() < 2):
+			continue
+		var opts := [{"label": "Use " + nm, "use": true, "ai": 1.0}, {"label": "Don't use it", "use": false, "ai": 0.0}]
+		g.ask(owner.index, "%s: use %s?" % [target.display_name(), nm], opts, func(o):
+			if not o["use"]:
+				return
+			g.log_msg("%s uses %s." % [target.display_name(), nm])
+			if nm == "Shadow Curse":
+				var opts2: Array = []
+				for sl in opp.slots():
+					opts2.append({"label": opp.slot(sl).display_name(), "s": sl, "opp": true, "ai": 100.0 if opp.slot(sl).hp_left() <= 30 else 1.0})
+				g.ask(owner.index, "Shadow Curse: 3 damage counters on...", opts2, func(o2):
+					var t := opp.slot(o2["s"])
+					if t != null:
+						t.damage += 30)
+				return
+			var limit := 2 if nm == "Golden Wing" else 99
+			Abilities._rescue_energy(g, owner, target, energies, limit))
+
+
+## Mueve Energías de un Pokémon que va a quedar KO a tus otros Pokémon, de a una.
+static func _rescue_energy(g: Game, me: PlayerState, from: PokemonInPlay, left_cards: Array, limit: int) -> void:
+	if limit <= 0 or left_cards.is_empty():
+		return
+	var opts: Array = []
+	for e in _distinct(left_cards, func(_c): return true):
+		for x in me.all_in_play():
+			if x != from:
+				opts.append({"label": "%s → %s" % [CardDB.card_name(e).replace(" Energy", ""), x.display_name()], "id": e, "mon": x, "ai": 1.0})
+	if opts.is_empty():
+		return
+	opts.append({"label": "Done", "id": "", "mon": null, "ai": 0.0})
+	g.ask(me.index, "Move Energy before the Knock Out", opts, func(o):
+		if o["id"] == "":
+			return
+		# Si el KO ya se procesó, las Energías están en la pila de descarte (el objeto viejo conserva copias).
+		var src_pile: Array = from.energy if me.all_in_play().has(from) and from.energy.has(o["id"]) else me.discard
+		if src_pile.has(o["id"]) and me.all_in_play().has(o["mon"]):
+			src_pile.erase(o["id"])
+			o["mon"].energy.append(o["id"])
+		var rest: Array = left_cards.duplicate()
+		rest.erase(o["id"])
+		Abilities._rescue_energy(g, me, from, rest, limit - 1))
+
+
+## Delta Switch (Mewtwo δ): mover Energías básicas entre tus otros Pokémon, de a una.
+static func _shuffle_energy(g: Game, me: PlayerState, except: PokemonInPlay) -> void:
+	var opts: Array = []
+	for a in me.all_in_play():
+		for e in _distinct(a.energy, func(c): return CardDB.is_basic_energy(c)):
+			for b in me.all_in_play():
+				if b != a and b != except:
+					opts.append({"label": "%s: %s → %s" % [CardDB.card_name(e).replace(" Energy", ""), a.display_name(), b.display_name()],
+							"id": e, "a": a, "b": b, "ai": 0.0})
+	if opts.is_empty():
+		return
+	opts.push_front({"label": "Done", "id": "", "ai": 1.0})
+	g.ask(me.index, "Delta Switch: move a basic Energy", opts, func(o):
+		if o["id"] == "":
+			return
+		if o["a"].energy.has(o["id"]):
+			o["a"].energy.erase(o["id"])
+			o["b"].energy.append(o["id"])
+		Abilities._shuffle_energy(g, me, except))
+
+
+## Costo de un ataque después de efectos (Delta Aura de Latias δ / Latios δ).
+static func attack_cost(g: Game, p: PokemonInPlay, atk: Dictionary) -> Array:
+	var cost: Array = atk.get("cost", []).duplicate()
+	if body(g, p, "Delta Aura"):
+		var partner := "Latios" if p.display_name().begins_with("Latias") else "Latias"
+		var own := g.owner_of(p)
+		var txt := _ability_text(p, "Delta Aura")
+		if own != null and txt.contains(str(atk.get("name", ""))) and own.all_in_play().any(func(x): return x.display_name().begins_with(partner)):
+			cost = ["Lightning", "Metal", "Colorless"]
+	return cost
+
+
+static func _bench_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String) -> void:
+	match n:
+		"Support Navigation":
+			Trainers._ask_from_deck(g, me, "Support Navigation: Supporter", func(c): return CardDB.is_supporter(c))
+		"Time Reversal":
+			if not me.discard.is_empty():
+				g.ask(me.index, "Time Reversal: card for the top of your deck", Trainers._card_options(Trainers._distinct(me.discard, func(_c): return true), false), func(o2):
+					if me.discard.has(o2["id"]):
+						me.discard.erase(o2["id"])
+						me.deck.append(o2["id"]))
+		"Delta Switch":
+			_shuffle_energy(g, me, p)

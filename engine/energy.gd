@@ -11,6 +11,11 @@ const BASIC_TYPES := ["Grass", "Fire", "Water", "Lightning", "Psychic", "Fightin
 static func units_of_card(card_id: String, holder: PokemonInPlay = null) -> Array:
 	if CardDB.is_basic_energy(card_id):
 		return [[CardDB.basic_energy_type(card_id)]]
+	if CardDB.is_holon_energy(card_id):
+		# Holon's Magnemite/Voltorb: Incolora; Holon's Electrode/Magneton/Castform: 2 de cualquier tipo
+		if CardDB.card_name(card_id) in ["Holon's Magnemite", "Holon's Voltorb"]:
+			return [["Colorless"]]
+		return [[ANY], [ANY]]
 	match CardDB.card_name(card_id):
 		"Rainbow Energy":
 			return [[ANY]]
@@ -35,6 +40,15 @@ static func units_of_card(card_id: String, holder: PokemonInPlay = null) -> Arra
 			return [["Darkness", "Metal"]]
 		"R Energy":
 			return [["Darkness"], ["Darkness"]]
+		"δ Rainbow Energy":
+			if holder != null and holder.flags.get("delta_rainbow", false):
+				return [[ANY]]
+			return [["Colorless"]]
+		"React Energy":
+			# Reactive Booster (Gorebyss): en Huntail y Gorebyss da 2 de cualquier tipo
+			if holder != null and holder.flags.get("react_boost", false):
+				return [[ANY], [ANY]]
+			return [["Colorless"]]
 		"Scramble Energy":
 			# Si el dueño tiene más Premios que el rival (lo calcula Abilities.refresh): 3 de cualquier tipo.
 			if holder != null and holder.flags.get("scramble_on", false):
@@ -65,6 +79,10 @@ static func _convert(card_id: String, us: Array, mode: String) -> Array:
 		for u in us:
 			out.append([mode.substr(4)])
 		return out
+	if mode.begins_with("basic+:"):      # Holon Research Tower: las básicas dan su tipo y también Metal
+		if not CardDB.is_basic_energy(card_id):
+			return us
+		return [[CardDB.basic_energy_type(card_id), mode.substr(7)]]
 	if mode.begins_with("basic:"):
 		if not CardDB.is_basic_energy(card_id):
 			return us
@@ -131,6 +149,8 @@ static func _match(req: Array, i: int, u: Array, used: Array) -> bool:
 
 
 static func can_attach(card_id: String, p: PokemonInPlay) -> bool:
+	if CardDB.is_holon_energy(card_id):
+		return units_of_card(card_id).size() == 1 or not p.energy.is_empty()
 	if p.is_fossil():
 		return true
 	match CardDB.card_name(card_id):

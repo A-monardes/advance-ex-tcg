@@ -40,6 +40,7 @@ func _init() -> void:
 	test_dual_type()
 	test_secret_gifts()
 	test_frlg_to_emerald()
+	test_holon()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -1485,3 +1486,47 @@ func test_frlg_to_emerald() -> void:
 	frlg.assign(Decks.get_deck("Blaze"))
 	frlg[0] = "ex6-105"
 	check(not Game.validate_deck(frlg, RuleSet.from_season(0)).is_empty(), "Charizard ex de FRLG no es legal en 2003-04")
+
+
+func test_holon() -> void:
+	print("Unseen Forces, Delta Species, Legend Maker, Holon Phantoms")
+	# δ Rainbow Energy: cualquier tipo solo en Pokémon δ
+	var g := board("ex13-1", "ex1-15")
+	var arm := g.current_player().active
+	arm.energy.append("ex13-98")
+	Abilities.refresh(g)
+	check(Energy.count_type(arm, "Water") == 1, "δ Rainbow da cualquier tipo a un δ")
+	g = board(id_of("Mudkip"), "ex1-15")
+	var mk := g.current_player().active
+	mk.energy.append("ex13-98")
+	Abilities.refresh(g)
+	check(Energy.count_type(mk, "Water") == 0 and Energy.total(mk) == 1, "δ Rainbow da Incolora a un no-δ")
+	# Holon's Castform se puede unir como Energía
+	g = board(id_of("Mudkip"), "ex1-15")
+	g.current_player().active.energy.append(id_of("Water Energy"))   # solo va a un Pokémon con Energía
+	g.current_player().hand.append("ex13-44")
+	check(g.legal_actions().any(func(a): return a["t"] == "energy" and g.current_player().hand[a["h"]] == "ex13-44"), "Holon's Castform aparece como Energía")
+	# Golden Wing (Ho-Oh ex): mover Energías sin duplicar cartas
+	g = board("ex1-15", "ex10-104")
+	var opp := g.opponent_player()
+	var ho := opp.active
+	ho.energy.append_array([id_of("Fire Energy"), id_of("Fire Energy")])
+	opp.bench.append(mon(id_of("Mudkip")))
+	var before: int = opp.discard.size() + opp.all_in_play().reduce(func(s, x): return s + x.all_cards().size(), 0)
+	g.deal_attack_damage(g.current_player().active, ho, 999, true, {"w": true, "r": true})
+	g._check_knockouts()
+	var guard := 0
+	while g.has_pending_choices() and guard < 20:
+		g.apply(g.legal_actions()[0])
+		guard += 1
+	var after: int = opp.discard.size() + opp.all_in_play().reduce(func(s, x): return s + x.all_cards().size(), 0)
+	check(after == before, "Golden Wing no duplica cartas (%d → %d)" % [before, after])
+	# Formato 2005-06: promos 34 fuera, Holon Phantoms dentro, Base de RS fuera
+	var idx := -1
+	for i in RuleSet.SEASONS.size():
+		if RuleSet.SEASONS[i]["id"] == "2005-06":
+			idx = i
+	check(idx >= 0, "existe la temporada 2005-06")
+	var r := RuleSet.from_season(idx)
+	check(r.is_legal("ex13-1") and r.is_legal("np-35") and not r.is_legal("np-34"), "legalidad de promos 2005-06")
+	check(not r.is_legal("ex4-1") and r.is_legal("ex5-1"), "Team Magma vs Team Aqua fuera, Hidden Legends dentro")

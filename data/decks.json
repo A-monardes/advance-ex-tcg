@@ -282,5 +282,77 @@
       ["ex7-84", 2], ["ex7-88", 2], ["ex7-89", 2], ["ex1-104", 4], ["ex1-106", 13],
       ["ex1-109", 7]
     ]
+  },
+  "Golden Sky": {
+    "description": "Unseen Forces theme deck: Ho-Oh, Typhlosion and Magcargo burn through with Fire and Fighting Energy.",
+    "cards": [
+      ["ex10-17", 1], ["ex10-20", 1], ["ex10-27", 1], ["ex10-41", 1], ["ex10-44", 1],
+      ["ex10-86", 1], ["ex10-45", 2], ["ex10-70", 2], ["ex10-82", 2], ["ex10-84", 2],
+      ["ex10-89", 2], ["ex10-94", 2], ["ex10-95", 2], ["ex10-54", 4], ["ex10-73", 4],
+      ["ex10-79", 4], ["ex10-61", 4], ["ex1-105", 11], ["ex1-108", 13]
+    ]
+  },
+  "Silvery Ocean": {
+    "description": "Unseen Forces theme deck: Lugia and Meganium lead Grass and Psychic Pokémon, with Fluffy Berry and Protective Orb.",
+    "cards": [
+      ["ex10-9", 1], ["ex10-29", 1], ["ex10-32", 1], ["ex10-39", 1], ["ex10-49", 1],
+      ["ex10-86", 1], ["ex10-35", 2], ["ex10-85", 2], ["ex10-89", 2], ["ex10-90", 2],
+      ["ex10-94", 2], ["ex10-95", 2], ["ex10-64", 3], ["ex10-75", 3], ["ex10-51", 4],
+      ["ex10-74", 4], ["ex10-63", 4], ["ex1-107", 6], ["ex1-104", 18]
+    ]
+  },
+  "Breakthrough": {
+    "description": "Delta Species theme deck: Crobat δ, Dragonair δ and Holon's Electrode with Grass, Lightning and Metal Energy.",
+    "cards": [
+      ["ex11-2", 1], ["ex11-21", 1], ["ex11-32", 1], ["ex11-92", 1], ["ex11-43", 2],
+      ["ex11-41", 2], ["ex11-74", 2], ["ex11-90", 2], ["ex11-95", 2], ["ex11-99", 2],
+      ["ex11-101", 2], ["ex11-102", 2], ["ex11-107", 2], ["ex11-88", 4], ["ex11-71", 4],
+      ["ex11-72", 4], ["ex11-65", 4], ["ex1-104", 10], ["ex1-109", 12]
+    ]
+  },
+  "Steeplechase": {
+    "description": "Delta Species theme deck: Shelgon δ, Umbreon δ and Rapidash race ahead with Fire and Metal Energy.",
+    "cards": [
+      ["ex11-17", 1], ["ex11-25", 1], ["ex11-32", 1], ["ex11-92", 1], ["ex11-53", 2],
+      ["ex11-52", 2], ["ex11-77", 2], ["ex11-89", 2], ["ex11-95", 2], ["ex11-99", 2],
+      ["ex11-101", 2], ["ex11-102", 2], ["ex11-107", 2], ["ex11-57", 4], ["ex11-80", 4],
+      ["ex11-86", 4], ["ex11-78", 4], ["ex1-108", 22]
+    ]
+  },
+  "Groundbreaker": {
+    "description": "Legend Maker theme deck: Golem and fossil Pokémon dig in with Grass, Fighting and React Energy.",
+    "cards": [
+      ["ex1-104", 10], ["ex1-105", 13], ["ex12-53", 4], ["ex12-49", 4], ["ex12-78", 4],
+      ["ex12-80", 4], ["ex12-56", 3], ["ex12-34", 2], ["ex12-29", 2], ["ex12-47", 2],
+      ["ex12-73", 2], ["ex12-82", 2], ["ex11-101", 2], ["ex11-102", 2], ["ex12-6", 1],
+      ["ex12-24", 1], ["ex12-26", 1], ["ex12-77", 1]
+    ]
+  },
+  "Shadowquake": {
+    "description": "Legend Maker theme deck: Gengar haunts the field alongside Water Pokémon, with React Energy and Power Tree.",
+    "cards": [
+      ["ex12-5", 1], ["ex12-18", 1], ["ex12-17", 1], ["ex12-76", 1], ["ex12-35", 2],
+      ["ex12-43", 2], ["ex12-46", 2], ["ex12-73", 2], ["ex12-82", 2], ["ex11-101", 2],
+      ["ex10-94", 2], ["ex12-64", 3], ["ex12-52", 4], ["ex12-51", 4], ["ex12-65", 4],
+      ["ex12-66", 4], ["ex1-107", 9], ["ex1-106", 14]
+    ]
+  },
+  "FireMist": {
+    "description": "Holon Phantoms theme deck: Latias δ and Blaziken with Mankey δ and Exeggcute δ, on Fire and Fighting Energy.",
+    "cards": [
+      ["ex13-20", 1], ["ex13-25", 1], ["ex13-21", 1], ["ex13-87", 1], ["ex13-50", 2],
+      ["ex13-75", 2], ["ex13-39", 2], ["ex13-55", 2], ["ex13-85", 2], ["ex10-94", 2],
+      ["ex11-101", 2], ["ex11-90", 2], ["ex13-70", 4], ["ex13-65", 4], ["ex13-83", 4],
+      ["ex13-60", 4], ["ex1-105", 11], ["ex1-108", 13]
+    ]
+  },
+  "FloodRush": {
+    "description": "Holon Phantoms theme deck: Latios δ, Bellossom δ and fossil Omanyte δ on Water and Psychic Energy.",
+    "cards": [
+      ["ex13-19", 1], ["ex13-34", 1], ["ex13-22", 1], ["ex13-87", 1], ["ex13-42", 2],
+      ["ex13-74", 2], ["ex13-38", 2], ["ex13-85", 2], ["ex13-89", 2], ["ex10-64", 2],
+      ["ex11-101", 2], ["ex11-99", 2], ["ex13-73", 4], ["ex13-62", 4], ["ex13-59", 4],
+      ["ex13-92", 4], ["ex1-106", 11], ["ex1-107", 13]
+    ]
   }
 }
