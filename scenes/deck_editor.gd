@@ -23,6 +23,7 @@ var deck_name := ""
 var counts := {}            # id -> copias en el mazo que se está editando
 var tab := 0
 var search := ""
+var searching := false      # F: escribiendo en el buscador (las letras no hacen sus acciones)
 var typed := ""             # nombre mientras se escribe
 var msg := ""               # aviso breve (p.ej. "máximo 4 copias")
 var _pool: Array = []       # todas las cartas que se pueden usar
@@ -51,6 +52,7 @@ func open_collection(state) -> void:
 	camp_menu = -1
 	confirm_delete = false
 	search = ""
+	searching = false
 	msg = ""
 
 
@@ -65,6 +67,7 @@ func _start_camp_edit(slot: int) -> void:
 	cursor = 0
 	scroll = 0
 	search = ""
+	searching = false
 	msg = ""
 
 
@@ -197,6 +200,7 @@ func _start_edit(name: String) -> void:
 	cursor = 0
 	scroll = 0
 	search = ""
+	searching = false
 	msg = ""
 
 
@@ -346,6 +350,9 @@ func _list_input(k: int, accept: bool, back: bool) -> void:
 
 
 func _edit_input(event: InputEventKey, k: int, back: bool) -> void:
+	if searching:
+		_search_input(event, k)
+		return
 	var cards := _tab_cards()
 	var id: String = cards[cursor] if cursor < cards.size() else ""
 	match k:
@@ -395,17 +402,37 @@ func _edit_input(event: InputEventKey, k: int, back: bool) -> void:
 				else:
 					open()
 			return
-		_:
-			# Escribir letras busca por nombre (menos las teclas que ya tienen uso)
-			var ch := char(event.unicode) if event.unicode >= 32 else ""
-			if ch != "" and ch.to_lower() not in ["z", "x", "c"] and search.length() < 20:
-				search += ch
-				cursor = 0
-				scroll = 0
+		KEY_F, KEY_SLASH:
+			if not event.echo:
+				searching = true            # F abre el buscador; Enter lo cierra y deja el filtro
 	if cursor < scroll:
 		scroll = cursor
 	if cursor >= scroll + ROWS:
 		scroll = cursor - ROWS + 1
+
+
+## Escribiendo en el buscador: todas las letras van al texto. Enter (o las flechas) dejan
+## de escribir y el filtro queda; Escape lo borra.
+func _search_input(event: InputEventKey, k: int) -> void:
+	match k:
+		KEY_ENTER, KEY_KP_ENTER:
+			searching = false
+		KEY_ESCAPE:
+			searching = false
+			search = ""
+		KEY_UP, KEY_DOWN, KEY_TAB:
+			searching = false
+			_edit_input(event, k, false)
+			return
+		KEY_BACKSPACE:
+			search = search.left(-1)
+		_:
+			var ch := char(event.unicode) if event.unicode >= 32 else ""
+			if ch == "" or search.length() >= 20:
+				return
+			search += ch
+	cursor = 0
+	scroll = 0
 
 
 func _rename_input(event: InputEventKey, k: int) -> void:
@@ -585,9 +612,9 @@ func _draw_edit() -> void:
 	var errs := Game.validate_deck(deck)
 	# Encabezado: nombre, búsqueda y cantidad
 	d._frame(Rect2(0, 0, d.W, 22))
-	d._text_fit(Vector2(9, 5), "★ " + deck_name, d.C_TEXT, 110 if search != "" else 180)
-	if search != "":
-		d._text_fit(Vector2(122, 5), "Search: " + search + "_", Color("#c03028"), 74)
+	d._text_fit(Vector2(9, 5), "★ " + deck_name, d.C_TEXT, 110 if (search != "" or searching) else 180)
+	if search != "" or searching:
+		d._text_fit(Vector2(122, 5), "Search: " + search + ("_" if searching else ""), Color("#c03028") if searching else d.C_DIM, 74)
 	var cnt := "%d/60" % total
 	d._text(Vector2(d.W - 9 - d._text_w(cnt), 5), cnt,
 			d.C_HP_OK.darkened(0.35) if errs.is_empty() else (d.C_TEXT if total < 60 else d.C_HP_LOW))
@@ -675,4 +702,4 @@ func _draw_edit() -> void:
 	if status == "":
 		status = "Valid deck: ready to use." if errs.is_empty() else errs[0]
 	d._text_fit(Vector2(9, 132), status, d.C_HP_LOW if msg != "" or not errs.is_empty() else d.C_HP_OK.darkened(0.35), 222)
-	d._text_scroll(Vector2(9, 143), "◀▶ remove/add · Tab tab · type to search · C card · X done", d.C_DIM, 222, "ed_keys")
+	d._text_scroll(Vector2(9, 143), ("Type the name · Enter done · Esc clear" if searching else "◀▶ remove/add · Tab tab · F search · C card · X done"), d.C_DIM, 222, "ed_keys")
