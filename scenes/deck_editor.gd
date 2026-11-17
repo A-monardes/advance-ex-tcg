@@ -143,9 +143,29 @@ func _tab_cards() -> Array:
 		3:
 			ids = _pool.filter(func(id): return CardDB.is_energy(id))
 	if search != "":
-		var s := search.to_lower()
-		ids = ids.filter(func(id): return CardDB.card_name(id).to_lower().contains(s))
+		ids = ids.filter(func(id): return _matches(id, search))
 	return _sorted(ids)
+
+
+## El buscador encuentra por nombre, por código de carta o de set ("ex2", "ecard1-33", "np")
+## y por nombre del set ("Sandstorm", "Aquapolis").
+func _matches(id: String, query: String) -> bool:
+	var q := query.strip_edges().to_lower()
+	if q == "":
+		return true
+	if CardDB.card_name(id).to_lower().contains(q):
+		return true
+	# Código: tiene que traer un número, un guion o ser "np" (así "ex" sigue buscando los
+	# Pokémon-ex por nombre). "ex1" es el set entero; "ex1-1" encuentra 1, 10, 11...
+	var code_like := q == "np" or q.contains("-") or RegEx.create_from_string("\\d").search(q) != null
+	if code_like:
+		var lid := id.to_lower()
+		var set_code := lid.split("-")[0]
+		if q.contains("-") and set_code == q.split("-")[0] and lid.begins_with(q):
+			return true
+		if not q.contains("-") and set_code == q:
+			return true
+	return q.length() >= 4 and str(CardDB.get_card(id).get("set", "")).to_lower().contains(q)
 
 
 func _copies_by_name(id: String) -> int:
@@ -702,4 +722,4 @@ func _draw_edit() -> void:
 	if status == "":
 		status = "Valid deck: ready to use." if errs.is_empty() else errs[0]
 	d._text_fit(Vector2(9, 132), status, d.C_HP_LOW if msg != "" or not errs.is_empty() else d.C_HP_OK.darkened(0.35), 222)
-	d._text_scroll(Vector2(9, 143), ("Type the name · Enter done · Esc clear" if searching else "◀▶ remove/add · Tab tab · F search · C card · X done"), d.C_DIM, 222, "ed_keys")
+	d._text_scroll(Vector2(9, 143), ("Name, code (ex2, ecard1-33) or set · Enter done · Esc clear" if searching else "◀▶ remove/add · Tab tab · F search · C card · X done"), d.C_DIM, 222, "ed_keys")
