@@ -15,7 +15,7 @@ extends Node
 
 signal listo(id: String)
 
-const DIR := "user://arte2"      # arte2: el recorte e-card cambió (versión con la curva)
+const DIR := "user://arte3"      # arte3: el recorte e-card cambió (ahora conserva el marco amarillo)
 const OWN_DIR := "res://mundo/propios/arte"
 const OWN_CARDS := "res://mundo/propios/cartas"
 const SOURCES := [
@@ -231,10 +231,7 @@ func crop(card: Image, id: String) -> Image:
 	var rect := Rect2i(int(g[0]), int(g[1]), int(g[2] - g[0]), int(g[3] - g[1]))
 	if kind != "Energy" and not ecard:       # e-card: sin marco plateado, va la medida tal cual
 		rect = _detect(card, g)
-	var out := card.get_region(rect)
-	if ecard:
-		_mask_curve(out)
-	return out
+	return card.get_region(rect)      # e-card: el amarillo de la curva izquierda queda en la imagen
 
 
 ## e-card: el recuadro del arte tiene el lado izquierdo curvo, con el amarillo del marco

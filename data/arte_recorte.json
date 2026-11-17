@@ -1,5 +1,5 @@
 {
-  "_ayuda": "Dónde está el recuadro del arte en la carta escaneada, en proporciones (0 a 1): [izquierda, arriba, derecha, abajo]. El juego busca el marco plateado cerca de esta medida y la usa si no lo encuentra. Si el arte sale corrido, ajustá estos números y borrá la carpeta arte de los datos del juego (user://arte) para que se recorte de nuevo. Las claves 'ecard ...' son para Expedition, Aquapolis y Skyridge: se toma el recuadro entero y el amarillo de la curva izquierda queda transparente.",
+  "_ayuda": "Dónde está el recuadro del arte en la carta escaneada, en proporciones (0 a 1): [izquierda, arriba, derecha, abajo]. El juego busca el marco plateado cerca de esta medida y la usa si no lo encuentra. Si el arte sale corrido, ajustá estos números y borrá la carpeta arte de los datos del juego (user://arte) para que se recorte de nuevo. Las claves 'ecard ...' son para Expedition, Aquapolis y Skyridge: se toma el recuadro entero, con el amarillo de la curva izquierda.",
   "Pokémon": [
     0.075,
     0.095,
