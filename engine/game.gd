@@ -39,6 +39,8 @@ var body_events: Array = []     # [PokemonInPlay, nombre]: Poké-Bodies que actu
 var coin_log: Array[bool] = []  # todas las monedas tiradas (para la animación)
 var coin_reasons: Array[String] = []
 var deck_log: Array = []        # [{"k": "shuffle"|"draw", "p", "ids"}] para las animaciones
+var checkup_log: Array = []     # [{"p", "mon", "kind", "dmg"}] daño de veneno/quemadura entre turnos (para la mesa)
+var checkup_mark := -1           # cuántos body_events había al empezar el chequeo (los de antes son del ataque)
 var ko_log: Array = []          # [{"p", "slot", "id", "name"}] Pokémon fuera de combate, para la animación
 var prize_log: Array = []       # [{"p", "id", "n", "of", "left"}] Premios tomados, para la animación
 var evolve_log: Array = []      # [{"p", "mon", "from", "to"}] para la animación   # motivo de cada moneda: "", "burn", "sleep"
@@ -887,6 +889,7 @@ func _end_turn() -> void:
 func _checkup() -> void:
 	# Cómo estaba cada Activo justo antes del chequeo (la mini batalla separa así lo que
 	# le hizo el ataque, como Rough Skin, del veneno o la quemadura de entre turnos)
+	checkup_mark = body_events.size()
 	for p in players:
 		for a in p.actives():
 			a.flags["pre_checkup"] = [turn_number, a.damage, a.conditions_text()]
@@ -901,10 +904,12 @@ func _checkup_one(p: PlayerState, a: PokemonInPlay) -> void:
 		if a.poison > 0:
 			a.damage += 10 * a.poison
 			log_msg("  %s takes %d Poison damage." % [a.display_name(), 10 * a.poison])
+			checkup_log.append({"p": p.index, "mon": a, "kind": "poison", "dmg": 10 * a.poison})
 		if a.burned and not flip("burn"):
 			var bd := Abilities.burn_damage(self, rules.burn_damage)
 			a.damage += bd
 			log_msg("  %s takes %d Burn damage." % [a.display_name(), bd])
+			checkup_log.append({"p": p.index, "mon": a, "kind": "burn", "dmg": bd})
 		if a.rotation == "asleep" and Abilities.wake_up(self, a):
 			a.rotation = ""
 			log_msg("  %s woke up." % a.display_name())

@@ -184,6 +184,9 @@ var power_anim := {}          # Poké-Power: el Pokémon sale con su sprite de P
 var _last_power := {}         # el último Poder mostrado (si se repite en el turno, va la versión corta)
 var supporter_table := [{}, {}]   # Supporter jugado este turno por cada jugador: {"id", "turn"}
 var ko_anim: Array = []       # [{"p", "slot", "id", "name", "t"}]
+var check_anim: Array = []    # daño de veneno/quemadura entre turnos, después del ataque: [{"p", "mon", "kind", "dmg", "t"}]
+var checkup_seen := 0
+var hp_hold := {}             # Pokémon -> PS que se siguen mostrando hasta que se vea su daño de veneno/quemadura
 var ko_seen := 0
 var banner := {}              # cartel de cambio de turno: {"p", "turn", "t"}
 var rival_intro := {}         # presentación del rival al empezar un duelo de la campaña: {"t", "rival", "me"}
@@ -316,6 +319,9 @@ func _begin_duel(mine: Array[String], theirs: Array[String], level: int, intro_l
 	hp_shown = {}
 	ko_anim = []
 	ko_seen = game.ko_log.size()
+	check_anim = []
+	checkup_seen = game.checkup_log.size()
+	hp_hold = {}
 	ex_shine = {}
 	ex_seen = {}
 	rival_sprite = ""
@@ -466,6 +472,8 @@ func _process(delta_real: float) -> void:
 		_update_evo(delta)
 	elif not anim.is_empty():
 		_update_anim(delta)
+	elif not check_anim.is_empty():
+		_update_check(delta)
 	elif not ko_anim.is_empty():
 		_update_ko(delta)
 	elif not move_anim.is_empty():
@@ -547,6 +555,7 @@ func _apply_now(action: Dictionary, coins_shown: int = 0) -> void:
 	var before := _snapshot()
 	var start := game.coin_log.size()
 	game.body_events.clear()
+	game.checkup_mark = -1
 	game.apply(action)
 	_collect_body_events()
 	if coins_shown > 0:
@@ -770,7 +779,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			BattleScene.skip(anim)     # Z saltea la escena de batalla
 		return
-	if not anim.is_empty() or not energy_anim.is_empty() or not ko_anim.is_empty() or not move_anim.is_empty():
+	if not anim.is_empty() or not energy_anim.is_empty() or not ko_anim.is_empty() or not check_anim.is_empty() or not move_anim.is_empty():
 		return
 	if _banner_showing():
 		if accept and not event.echo:
@@ -1198,6 +1207,7 @@ func _draw_screen() -> void:
 			_outline(_card_rect(pl.index), C_LINE if pl == me else Color("#c87060"))
 	_draw_moves()
 	_draw_anim()
+	_draw_check()
 	_draw_ko()
 	_draw_evo()
 	_draw_ex_shine()
@@ -1847,11 +1857,22 @@ var _body_pops: Array = []     # en cola: [jugador, nombre]
 var _body_pop := {}            # el que se ve: {"p", "name", "t"}
 
 
-func _collect_body_events() -> void:
-	for ev in game.body_events:
+func _collect_body_events(attack: bool = false) -> void:
+	var mark: int = game.checkup_mark if game.checkup_mark >= 0 else game.body_events.size()
+	for i in game.body_events.size():
+		var ev: Array = game.body_events[i]
+		var early := attack and i < mark      # actuó con el golpe (no en el chequeo de después)
+		if early and anim.get("scene", false) and (ev[0] == anim.get("def_mon") or ev[0] == anim.get("att_mon_s")):
+			# En la pelea se ve junto al golpe, al lado de su Pokémon (aunque haya quedado KO)
+			var who: int = anim["def"] if ev[0] == anim.get("def_mon") else anim["att"]
+			var lst: Array = anim.get("bodies", [])
+			if not lst.has([who, str(ev[1])]):
+				lst.append([who, str(ev[1])])
+			anim["bodies"] = lst
+			continue
 		for pl in game.players:
 			if pl.active == ev[0] or pl.active2 == ev[0]:
-				var item := [pl.index, str(ev[1])]
+				var item := [pl.index, str(ev[1]), early]
 				if not _body_pops.has(item) and not (_body_pop.get("p", -1) == item[0] and _body_pop.get("name", "") == item[1]):
 					_body_pops.append(item)
 	game.body_events.clear()
@@ -1859,7 +1880,9 @@ func _collect_body_events() -> void:
 
 ## Avanza (se espera a que terminen el ataque y los KO, así se ve junto al resultado).
 func _update_body_pop(delta: float) -> void:
-	if _body_pop.is_empty() and (not anim.is_empty() or not ko_anim.is_empty() or not power_anim.is_empty() \
+	var early: bool = not anim.is_empty() and anim.get("applied", false) and not anim.get("waiting", false) \
+			and not _body_pops.is_empty() and _body_pops[0].size() > 2 and _body_pops[0][2]
+	if _body_pop.is_empty() and not early and (not anim.is_empty() or not ko_anim.is_empty() or not check_anim.is_empty() or not power_anim.is_empty() \
 			or not banner.is_empty() or not prize_anim.is_empty()):
 		return
 	if _body_pop.is_empty():
@@ -3231,7 +3254,7 @@ func _draw_textbox() -> void:
 	if game.phase == "main" and game.actor() == human and menu_level == "root" and not menu_items.is_empty() \
 			and trainer_anim.is_empty() and power_anim.is_empty() and anim.is_empty() and not _deck_showing() and not board_view \
 			and not _prize_showing() and energy_anim.is_empty() and evo_anim.is_empty() and coin_anim.is_empty() \
-			and ko_anim.is_empty() and move_anim.is_empty():
+			and ko_anim.is_empty() and check_anim.is_empty() and move_anim.is_empty():
 		_draw_command_menu()
 		return
 	_frame(box)
@@ -3260,6 +3283,12 @@ func _draw_textbox() -> void:
 	if _deck_showing():
 		_draw_deck_text(x, y, tw)
 		return
+	if not check_anim.is_empty() and anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty():
+		var ck: Dictionary = check_anim[0]
+		var whose := "" if ck["p"] == human else "Foe "
+		_text_scroll(Vector2(x, y), "%s%s is hurt by %s!" % [whose, ck["mon"].display_name(), "poison" if ck["kind"] == "poison" else "its burn"], C_TEXT, tw, "chk")
+		_text(Vector2(x, y + LINE), "%d damage (%s)" % [ck["dmg"], "Poisoned" if ck["kind"] == "poison" else "Burned"], C_DIM)
+		return
 	if not ko_anim.is_empty() and anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty():
 		_text_scroll(Vector2(x, y), "%s was" % ko_anim[0]["name"], C_TEXT, tw, "ko")
 		_text(Vector2(x, y + LINE), "Knocked Out!", C_TEXT)
@@ -3284,7 +3313,7 @@ func _draw_textbox() -> void:
 		var rest := ("%d left." if mine else "%d left.") % left if left > 0 else ("No Prize cards left!" if mine else "No Prize cards left!")
 		_text(Vector2(x, y + LINE * 2), rest, C_DIM)
 		return
-	if not move_anim.is_empty() and anim.is_empty() and ko_anim.is_empty() and coin_anim.is_empty() \
+	if not move_anim.is_empty() and anim.is_empty() and ko_anim.is_empty() and check_anim.is_empty() and coin_anim.is_empty() \
 			and trainer_anim.is_empty() and evo_anim.is_empty():
 		var lines: Array = move_anim[0]["text"]
 		for i in lines.size():
@@ -4528,8 +4557,10 @@ func _update_anim(delta: float) -> void:
 		var before := _snapshot()
 		var start := game.coin_log.size()
 		game.body_events.clear()
+		game.checkup_mark = -1
+		var turn0 := game.turn_number
 		game.apply(anim["action"])
-		_collect_body_events()
+		_collect_body_events(true)
 		if anim.get("coins_shown", 0) > 0:
 			coins_seen = start + int(anim["coins_shown"])     # ya se vieron antes del ataque
 		_check_energy(before["energy"])
@@ -4545,8 +4576,15 @@ func _update_anim(delta: float) -> void:
 		if own and _check_coins():
 			anim["waiting"] = true     # primero se ven las monedas, después el golpe
 		if mon != null:
-			anim["dmg"] = maxi(0, anim["hp_before"] - maxi(0, mon.hp_left()))
-			if not game.players[anim["def"]].all_in_play().has(mon):     # quedó KO
+			# Si después del ataque hubo chequeo entre turnos, el golpe es lo que había justo
+			# antes (el veneno y la quemadura se ven aparte, después)
+			var hp_after := mon.hp_left()
+			var ck = mon.flags.get("pre_checkup", [])
+			var checked: bool = ck is Array and ck.size() == 3 and int(ck[0]) == turn0
+			if checked:
+				hp_after = mon.max_hp() - int(ck[1])
+			anim["dmg"] = maxi(0, anim["hp_before"] - maxi(0, hp_after))
+			if not game.players[anim["def"]].all_in_play().has(mon) and (not checked or hp_after <= 0):     # quedó KO con el golpe
 				anim["dmg"] = anim["hp_before"]
 				anim["ko"] = true
 		if anim.get("mini", false):
@@ -6209,7 +6247,7 @@ func _draw_energy_anim() -> void:
 
 func _prize_showing() -> bool:
 	return not prize_anim.is_empty() and anim.is_empty() and energy_anim.is_empty() \
-			and coin_anim.is_empty() and evo_anim.is_empty() and ko_anim.is_empty() and move_anim.is_empty()
+			and coin_anim.is_empty() and evo_anim.is_empty() and ko_anim.is_empty() and check_anim.is_empty() and move_anim.is_empty()
 
 
 func _update_prize(delta: float) -> void:
@@ -6417,7 +6455,7 @@ func _draw_stagger(n: int) -> float:
 
 
 func _deck_showing() -> bool:
-	return not deck_anim.is_empty() and anim.is_empty() and energy_anim.is_empty() \
+	return not deck_anim.is_empty() and anim.is_empty() and check_anim.is_empty() and energy_anim.is_empty() \
 			and coin_anim.is_empty() and evo_anim.is_empty() and prize_anim.is_empty() and move_anim.is_empty()
 
 
@@ -6761,11 +6799,14 @@ func _hp_shake(m: PokemonInPlay) -> Vector2:
 
 
 func _update_hp(delta: float) -> void:
+	_collect_checkup()
 	var alive := {}
 	for pl in game.players:
 		for m in pl.all_in_play():
 			alive[m] = true
 			var target := float(clampi(m.hp_left(), 0, m.max_hp()))
+			if hp_hold.has(m):
+				target = maxf(target, minf(float(hp_hold[m]), float(m.max_hp())))
 			var cur: float = hp_shown.get(m, target)
 			if cur > target and not hp_drop_t.has(m):
 				hp_drop_t[m] = Time.get_ticks_msec() / 1000.0
@@ -6779,6 +6820,79 @@ func _update_hp(delta: float) -> void:
 		for m in hp_shown.keys():
 			if not alive.has(m):
 				hp_shown.erase(m)
+	for m in hp_hold.keys():
+		if not alive.has(m):
+			hp_hold.erase(m)
+
+
+## Daño de veneno y quemadura del chequeo entre turnos: se ve aparte, después del ataque
+## (la barra de PS se queda donde la dejó el golpe hasta que le toca).
+func _collect_checkup() -> void:
+	if game.checkup_log.size() <= checkup_seen:
+		return
+	var batch: Array = game.checkup_log.slice(checkup_seen)
+	checkup_seen = game.checkup_log.size()
+	if not animations_on:
+		return
+	for e in batch:
+		var m: PokemonInPlay = e["mon"]
+		if not hp_hold.has(m):
+			var total := 0
+			for e2 in batch:
+				if e2["mon"] == m:
+					total += int(e2["dmg"])
+			hp_hold[m] = clampi(m.hp_left(), 0, m.max_hp()) + total
+		var d: Dictionary = e.duplicate()
+		d["t"] = 0.0
+		check_anim.append(d)
+
+
+const CHECK_TIME := 1.1
+
+
+func _update_check(delta: float) -> void:
+	var c: Dictionary = check_anim[0]
+	if float(c["t"]) == 0.0:
+		var m: PokemonInPlay = c["mon"]
+		if hp_hold.has(m):
+			hp_hold[m] = int(hp_hold[m]) - int(c["dmg"])
+			if int(hp_hold[m]) <= m.hp_left():
+				hp_hold.erase(m)
+		snd.play("hit_Psychic" if c["kind"] == "poison" else "hit_Fire")
+	c["t"] = float(c["t"]) + delta / CHECK_TIME
+	if float(c["t"]) >= 1.0:
+		check_anim.pop_front()
+		if check_anim.is_empty():
+			ai_timer = AI_DELAY
+			_rebuild_menu()
+
+
+## El Activo titila del color del estado y sube el número ("-10" violeta o naranja).
+func _draw_check() -> void:
+	if check_anim.is_empty() or not anim.is_empty() or not coin_anim.is_empty() or not evo_anim.is_empty():
+		return
+	var c: Dictionary = check_anim[0]
+	var m: PokemonInPlay = c["mon"]
+	var pl: PlayerState = game.players[c["p"]]
+	var r := Rect2()
+	if _dbl():
+		r = _dbl_card_rect(pl.index, 1 if pl.active2 == m else 0)
+	else:
+		r = _card_rect(pl.index)
+	var t: float = c["t"]
+	var col := Color("#b058e0") if c["kind"] == "poison" else Color("#f87830")
+	if t < 0.45 and int(t * 18.0) % 2 == 0:
+		draw_rect(r, Color(col, 0.45))
+	var txt := "-%d" % int(c["dmg"])
+	var sc := 1.5 + (sin(clampf(t * 5.0, 0.0, 1.0) * PI) * 0.5 if t < 0.2 else 0.0)
+	var w: float = _text_w(txt) * sc
+	var p := r.get_center() + Vector2(-w / 2.0, -4.0 - minf(t, 0.6) * 14.0)
+	var tc := Color("#fcd0ff") if c["kind"] == "poison" else Color("#ffe8a8")
+	tc.a = clampf((1.0 - t) * 4.0, 0.0, 1.0)
+	draw_rect(Rect2(p.round() + Vector2(-3, 0), Vector2(w + 6, 12.0 * sc)), Color(col.darkened(0.6), 0.8 * tc.a))
+	draw_set_transform(_base_off + p.round(), 0, Vector2(sc, sc))
+	_text(Vector2.ZERO, txt, tc)
+	draw_set_transform(_base_off)
 
 
 # ===========================================================================
@@ -6990,7 +7104,7 @@ func _update_ko(delta: float) -> void:
 
 
 func _draw_ko() -> void:
-	if ko_anim.is_empty() or not anim.is_empty() or not coin_anim.is_empty() or not evo_anim.is_empty():
+	if ko_anim.is_empty() or not check_anim.is_empty() or not anim.is_empty() or not coin_anim.is_empty() or not evo_anim.is_empty():
 		return
 	var k: Dictionary = ko_anim[0]
 	var t: float = k["t"]
@@ -7098,7 +7212,7 @@ func _draw_ex_ko_banner(u: float, from: Vector2) -> void:
 
 ## Nada se está animando en la mesa (para el brillo de los ex y el balanceo del Activo).
 func _board_idle() -> bool:
-	return anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty() and ko_anim.is_empty() \
+	return anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty() and ko_anim.is_empty() and check_anim.is_empty() \
 			and move_anim.is_empty() and energy_anim.is_empty() and prize_anim.is_empty() and trainer_anim.is_empty() \
 			and power_anim.is_empty() and banner.is_empty() and rival_intro.is_empty() and deck_anim.is_empty() and vs_anim.is_empty() and intro == ""
 
@@ -7224,7 +7338,7 @@ func _idle_bob(pl: PlayerState) -> Vector2:
 
 func _banner_showing() -> bool:
 	return not banner.is_empty() and anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty() \
-			and ko_anim.is_empty() and energy_anim.is_empty() and prize_anim.is_empty() and move_anim.is_empty()
+			and ko_anim.is_empty() and check_anim.is_empty() and energy_anim.is_empty() and prize_anim.is_empty() and move_anim.is_empty()
 
 
 ## Presentación del rival: franja roja con su nombre desde la derecha, azul con el tuyo desde
@@ -7682,7 +7796,7 @@ func _update_music() -> void:
 		snd.music("battle")
 		return
 	# Fin de la partida: cuando terminan las animaciones pendientes (el último Premio, el KO)
-	if over_sound_done or not (anim.is_empty() and ko_anim.is_empty() and prize_anim.is_empty() and coin_anim.is_empty()):
+	if over_sound_done or not (anim.is_empty() and ko_anim.is_empty() and check_anim.is_empty() and prize_anim.is_empty() and coin_anim.is_empty()):
 		return
 	over_sound_done = true
 	var won: bool = game.winner == human
@@ -7980,7 +8094,7 @@ func _draw_pause() -> void:
 # ===========================================================================
 
 func _results_showing() -> bool:
-	return mode == "duel" and game != null and game.phase == "over" and anim.is_empty() and ko_anim.is_empty() \
+	return mode == "duel" and game != null and game.phase == "over" and anim.is_empty() and ko_anim.is_empty() and check_anim.is_empty() \
 			and prize_anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty() and energy_anim.is_empty() \
 			and trainer_anim.is_empty() and move_anim.is_empty() and power_anim.is_empty()
 

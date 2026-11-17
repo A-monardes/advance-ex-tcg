@@ -158,6 +158,8 @@ static func draw(d, a: Dictionary) -> void:
 	var fc := FRONT_POS + Vector2(32, 34)
 	var bc := BACK_POS + Vector2(32, 30)
 	_draw_attack_fx(d, a, s, bc if me_att else fc, fc if me_att else bc)
+	if a.get("applied", false) and s >= IMPACT:
+		MiniBattle.draw_bodies(d, a, s - IMPACT, fc if me_att else bc, bc if me_att else fc)
 	var landed: bool = a.get("applied", false) and int(a.get("dmg", 0)) > 0
 	if landed and s >= IMPACT and s < IMPACT + (0.12 if _big(a) else 0.07):
 		d.draw_rect(Rect2(0, 0, d.W, 112), Color(1, 1, 1, 0.7 if _big(a) else 0.5))

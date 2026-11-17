@@ -430,6 +430,9 @@ static func on_applied(a: Dictionary) -> void:
 		need = maxf(need, float(a["m_impact"]) + HEAL_DELAY + SpecialFX.fx_count(cure) * FX_FRAME + 0.2)
 	if int(a.get("m_recoil", 0)) > 0 or not a.get("m_att_conds", []).is_empty():
 		need = maxf(need, float(a["m_impact"]) + RECOIL_DELAY + 1.1)
+	var nb: int = a.get("bodies", []).size()
+	if nb > 0:
+		need = maxf(need, float(a["m_impact"]) + BODY_SHOW + BODY_STAGGER * (nb - 1) + 0.2)
 	if a.get("ko", false):
 		need += T_FAINT
 	var new := maxf(old, need + T_OUT)
@@ -639,6 +642,8 @@ static func draw(d, a: Dictionary) -> void:
 			_draw_status(d, a, after, dpos["c"])
 		elif not a.get("m_heal_only", false):
 			_draw_miss(d, after, dpos["c"])
+		# Poké-Bodies que actuaron con el golpe (Rough Skin, Safeguard...): su nombre al lado
+		draw_bodies(d, a, after, dpos.get("c", gd), apos.get("c", ga))
 		# El atacante se cura: efecto encima suyo y "+20" en verde
 		if int(a.get("m_healed", 0)) > 0 and apos.has("c"):
 			_draw_heal(d, a, after - HEAL_DELAY, apos["c"])
@@ -650,6 +655,36 @@ static func draw(d, a: Dictionary) -> void:
 				rk2 -= 0.5
 			if not a.get("m_att_conds", []).is_empty() and rk2 >= 0.0:
 				_draw_status(d, a, rk2, apos["c"], a["m_att_conds"])
+
+
+const BODY_SHOW := 1.5        # lo que se ve el cartel de cada Poké-Body
+const BODY_STAGGER := 0.35    # si actuaron varios, uno después del otro
+
+
+## Cartel con el nombre del Poké-Body debajo del Pokémon que lo tiene, desde el golpe.
+## (También lo usa la escena de batalla de GBA.)
+static func draw_bodies(d, a: Dictionary, after: float, def_c: Vector2, att_c: Vector2) -> void:
+	var list: Array = a.get("bodies", [])
+	var used := {}
+	for i in list.size():
+		var k := after - BODY_STAGGER * i
+		if k < 0.0 or k > BODY_SHOW:
+			continue
+		var who: int = list[i][0]
+		var c: Vector2 = def_c if who == int(a["def"]) else att_c
+		var row: int = used.get(who, 0)
+		used[who] = row + 1
+		var txt: String = str(list[i][1])
+		var w: float = d._text_w(txt) + 8.0
+		var slide := minf(k / 0.15, 1.0)
+		var alpha := clampf((BODY_SHOW - k) / 0.25, 0.0, 1.0) * slide
+		var p := c + Vector2(-w / 2.0, 14.0 + 12.0 * row + (1.0 - slide) * 6.0)
+		p.x = clampf(p.x, 2.0, d.W - 2.0 - w)
+		p.y = clampf(p.y, 2.0, d.BOX_Y - 13.0)
+		var r := Rect2(p.round(), Vector2(w, 11))
+		d.draw_rect(r, Color(0.10, 0.16, 0.30, 0.9 * alpha))
+		d.draw_rect(r, Color(0.55, 0.80, 1.0, alpha), false)
+		d._text(r.position + Vector2(4, 0), txt, Color(0.85, 0.95, 1.0, alpha))
 
 
 static func _draw_heal(d, a: Dictionary, k: float, c: Vector2) -> void:
