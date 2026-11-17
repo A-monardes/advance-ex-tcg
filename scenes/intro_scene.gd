@@ -248,12 +248,12 @@ func draw() -> void:
 func _birch() -> Texture2D:
 	if not _tried_birch:
 		_tried_birch = true
-		var img: Image = ImgLoad.load(BIRCH_PATH) if FileAccess.file_exists(BIRCH_PATH) else null
+		var img: Image = ImgLoad.load(BIRCH_PATH) if ImgLoad.exists(BIRCH_PATH) else null
 		if img != null:
 			_birch_tex = ImageTexture.create_from_image(img)
 			_cell = Vector2(img.get_width(), img.get_height())
 			_feet = _cell.y - 1
-			var info = JSON.parse_string(FileAccess.get_file_as_string(BIRCH_JSON)) if FileAccess.file_exists(BIRCH_JSON) else null
+			var info = JSON.parse_string(FileAccess.get_file_as_string(BIRCH_JSON)) if ImgLoad.exists(BIRCH_JSON) else null
 			if info is Dictionary and info.has("celda"):
 				_cell = Vector2(info["celda"][0], info["celda"][1])
 				_feet = float(info.get("pies", _cell.y - 1))

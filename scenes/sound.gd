@@ -247,7 +247,7 @@ func _load_track(base: String, looping: bool) -> AudioStream:
 	var offset := 0.0
 	for d in DIRS:
 		var jp: String = d + "musica/" + base + ".json"
-		if FileAccess.file_exists(jp):
+		if ImgLoad.exists(jp):
 			var info = JSON.parse_string(FileAccess.get_file_as_string(jp))
 			if info is Dictionary:
 				offset = float(info.get("loop_offset", 0.0))
@@ -280,7 +280,7 @@ func _load_file(base: String) -> AudioStream:
 				var res = load(path)       # importado por el editor de Godot
 				if res is AudioStream:
 					return res
-			if FileAccess.file_exists(path):
+			if ImgLoad.exists(path):
 				var s := _load_raw(path, e)
 				if s != null:
 					return s

@@ -119,7 +119,7 @@ func enter(id: String) -> void:
 	if bg_name != "":
 		for dir_path in ["res://mundo/propios", "user://mundo/propios", "res://mundo/fondos", "user://mundo/fondos"]:
 			var p := "%s/%s.png" % [dir_path, bg_name]
-			if _bg == null and FileAccess.file_exists(p):
+			if _bg == null and ImgLoad.exists(p):
 				_bg = _load_tex(p)
 	_build_front()
 	_setup_wind()
@@ -231,7 +231,7 @@ func _is_ground(ch: String) -> bool:
 
 
 func _load_tex(path: String) -> Texture2D:
-	if not FileAccess.file_exists(path):
+	if not ImgLoad.exists(path):
 		return null
 	var img := ImgLoad.load(path)
 	if img == null or img.is_empty():
@@ -273,7 +273,7 @@ func _has_sprite(id: String) -> bool:
 	if not _sprites.has("?" + id):
 		var ok := false
 		for dir_path in ["res://mundo/propios", "user://mundo/propios", "res://mundo/personajes", "user://mundo/personajes"]:
-			ok = ok or FileAccess.file_exists("%s/%s.png" % [dir_path, id])
+			ok = ok or ImgLoad.exists("%s/%s.png" % [dir_path, id])
 		_sprites["?" + id] = ok
 	return _sprites["?" + id]
 
@@ -295,7 +295,7 @@ func _sprite(id: String) -> Texture2D:
 		var tex: Texture2D = null
 		for dir_path in ["res://mundo/propios", "user://mundo/propios", "res://mundo/personajes", "user://mundo/personajes"]:
 			var p := "%s/%s.png" % [dir_path, id]
-			if tex == null and FileAccess.file_exists(p):
+			if tex == null and ImgLoad.exists(p):
 				tex = _load_sprite(p)
 		if tex == null and id != "ayudante":
 			tex = _sprite("ayudante")      # si falta, un personaje genérico
@@ -764,7 +764,7 @@ func _held_dir() -> String:
 ## Al llegar a una casilla: salida o un rival que te ve. Devuelve true si pasó algo.
 func _after_step() -> bool:
 	var ex := _exit_at(pos)
-	if not ex.is_empty() and FileAccess.file_exists("res://data/mapas/%s.json" % str(ex.get("mapa", ""))):
+	if not ex.is_empty() and ImgLoad.exists("res://data/mapas/%s.json" % str(ex.get("mapa", ""))):
 		var to: Array = ex.get("a", [])
 		var go := func():
 			enter(str(ex["mapa"]))
@@ -1062,7 +1062,7 @@ func _setup_wind() -> void:
 	if _flower_tex == null:
 		for dir_path in ["res://mundo/propios/ui", "user://mundo/propios/ui"]:
 			var p := "%s/flor.png" % dir_path
-			if _flower_tex == null and FileAccess.file_exists(p):
+			if _flower_tex == null and ImgLoad.exists(p):
 				_flower_tex = _load_tex(p)
 	for y in mh:
 		for x in mw:

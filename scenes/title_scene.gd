@@ -16,7 +16,7 @@ var _anims := {}     # "especie|anim" -> {tex, w, h, durs, total, rows, sh: {fil
 
 ## Elige una escena al azar entre las que tienen su fondo. false si no hay ninguna.
 func pick() -> bool:
-	var j = JSON.parse_string(FileAccess.get_file_as_string(DATA)) if FileAccess.file_exists(DATA) else null
+	var j = JSON.parse_string(FileAccess.get_file_as_string(DATA)) if ImgLoad.exists(DATA) else null
 	if not (j is Dictionary):
 		return false
 	var ok: Array = []

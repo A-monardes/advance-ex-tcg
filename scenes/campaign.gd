@@ -412,7 +412,7 @@ func pack_art(set_id: String, big: bool) -> Texture2D:
 		var tex: Texture2D = null
 		for dir_path in ["res://mundo/propios", "user://mundo/propios"]:
 			var p := "%s/sobre_%s.png" % [dir_path, key]
-			if tex == null and FileAccess.file_exists(p):
+			if tex == null and ImgLoad.exists(p):
 				var img := ImgLoad.load(p)
 				if img != null and not img.is_empty():
 					tex = ImageTexture.create_from_image(img)

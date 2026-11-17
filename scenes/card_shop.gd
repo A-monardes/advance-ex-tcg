@@ -79,7 +79,7 @@ func _find_tex(name: String) -> Texture2D:
 		return null
 	for dir_path in ["res://mundo/propios", "user://mundo/propios", "res://mundo/fondos", "user://mundo/fondos"]:
 		var p := "%s/%s.png" % [dir_path, name]
-		if FileAccess.file_exists(p):
+		if ImgLoad.exists(p):
 			var img := ImgLoad.load(p)
 			if img != null and not img.is_empty():
 				return ImageTexture.create_from_image(img)
@@ -91,7 +91,7 @@ func _find_json(name: String) -> Dictionary:
 		return {}
 	for dir_path in ["res://mundo/propios", "user://mundo/propios", "res://mundo/fondos", "user://mundo/fondos"]:
 		var p := "%s/%s.json" % [dir_path, name]
-		if FileAccess.file_exists(p):
+		if ImgLoad.exists(p):
 			var v = JSON.parse_string(FileAccess.get_file_as_string(p))
 			if v is Dictionary:
 				return v

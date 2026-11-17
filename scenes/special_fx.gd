@@ -174,7 +174,7 @@ static func fx(name: String) -> Texture2D:
 		var tex: Texture2D = null
 		for dir_path in FX_DIRS:
 			var p = "%s/%s.png" % [dir_path, name]
-			if tex == null and FileAccess.file_exists(p):
+			if tex == null and ImgLoad.exists(p):
 				var img = ImgLoad.load(p)
 				if img != null and not img.is_empty() and img.get_height() > 0:
 					tex = ImageTexture.create_from_image(img)
@@ -196,7 +196,7 @@ static func fx_cell(name: String) -> Vector2:
 			cell = Vector2(tex.get_height(), tex.get_height())
 			for dir_path in FX_DIRS:
 				var p = "%s/%s.json" % [dir_path, name.trim_suffix("@gris")]
-				if FileAccess.file_exists(p):
+				if ImgLoad.exists(p):
 					var j = JSON.parse_string(FileAccess.get_file_as_string(p))
 					if j is Dictionary and j.get("celda", []) is Array and j["celda"].size() == 2:
 						cell = Vector2(float(j["celda"][0]), float(j["celda"][1]))

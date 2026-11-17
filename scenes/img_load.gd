@@ -3,6 +3,12 @@ class_name ImgLoad
 ## user:// y dentro del paquete del juego exportado (donde no hay archivos sueltos en el
 ## disco y Image.load_from_file con una ruta del sistema no los encuentra).
 
+## ¿Existe el archivo? En el juego exportado las imágenes y sonidos del proyecto no quedan
+## como archivo suelto (Godot guarda la versión importada): también cuenta esa.
+static func exists(path: String) -> bool:
+	return FileAccess.file_exists(path) or (path.begins_with("res://") and ResourceLoader.exists(path))
+
+
 static func load(path: String) -> Image:
 	if not FileAccess.file_exists(path):
 		return _imported(path)

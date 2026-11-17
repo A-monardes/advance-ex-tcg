@@ -117,6 +117,7 @@ var snd                      # sonido (scenes/sound.gd)
 var arte: ArteHD             # arte de las cartas en alta (ficha y galería)
 var pmd_web: PmdWeb          # versión web: baja los sprites de PMD que hacen falta
 var gallery_id := ""         # carta en la vista de galería ("" = cerrada)
+var sq_edit := false         # en la galería (solo desde el editor): ajustando el cuadrado chico
 var _hd_tex := {}            # clave -> Texture2D del arte grande (banner y galería)
 var sfx_level := 2           # volumen de efectos: 0 apagado … 3 alto
 var music_level := 2         # volumen de la música
@@ -1436,7 +1437,7 @@ func _ui_tex(name: String) -> Texture2D:
 		var tex: Texture2D = null
 		for dir in UI_DIRS:
 			var p: String = "%s/%s.png" % [dir, name]
-			if tex == null and FileAccess.file_exists(p):
+			if tex == null and ImgLoad.exists(p):
 				var img := ImgLoad.load(p)
 				if img != null and not img.is_empty():
 					tex = ImageTexture.create_from_image(img)
@@ -1586,7 +1587,7 @@ func _stage_tex(name: String) -> Texture2D:
 	if not _stage_cache.has(name):
 		var path := "%s/%s.png" % [STADIUM_DIR, name.to_lower().replace("'", "").replace(" ", "_")]
 		var tex: Texture2D = null
-		if FileAccess.file_exists(path):
+		if ImgLoad.exists(path):
 			tex = ImageTexture.create_from_image(_table_image(path))
 		_stage_cache[name] = tex
 	return _stage_cache[name]
@@ -1622,7 +1623,7 @@ func _table_image(path_override := "") -> Image:
 	if path_override != "":
 		path = path_override
 	var pic: Image = null
-	if path != "" and FileAccess.file_exists(path):
+	if path != "" and ImgLoad.exists(path):
 		pic = ImgLoad.load(path)
 	if pic != null and not pic.is_empty():
 		pic.convert(Image.FORMAT_RGB8)
@@ -2927,7 +2928,7 @@ func _load_card_image_raw(id: String) -> Image:
 		for n in [id, name, species, species.to_lower()]:
 			for ext in ["png", "jpg", "webp"]:
 				var path := "%s/%s.%s" % [dir, n, ext]
-				if FileAccess.file_exists(path):
+				if ImgLoad.exists(path):
 					var img := ImgLoad.load(path)
 					if img != null and not img.is_empty():
 						return img
@@ -2947,11 +2948,8 @@ func _load_card_image_raw(id: String) -> Image:
 ## y: lo mismo de arriba a abajo; zoom: más de 1 acerca). Los cuadrados propios no se tocan.
 var _sq_adjust = null
 
-func _square_crop(id: String, img: Image) -> Image:
-	var w := img.get_width()
-	var h := img.get_height()
-	if w <= h * 1.15 and h <= w * 1.15:
-		return img
+## Dónde cae el cuadrado chico dentro del arte: Rect2i en píxeles del arte.
+func _square_rect(id: String, w: int, h: int) -> Rect2i:
 	if _sq_adjust == null:
 		var raw := FileAccess.get_file_as_string("res://data/recorte_cuadrado.json")
 		var parsed = JSON.parse_string(raw) if raw != "" else null
@@ -2962,7 +2960,113 @@ func _square_crop(id: String, img: Image) -> Image:
 	var cy := float(adj.get("y", 0.5)) * h
 	var x0 := clampi(int(cx - side / 2.0), 0, w - side)
 	var y0 := clampi(int(cy - side / 2.0), 0, h - side)
-	return img.get_region(Rect2i(x0, y0, side, side))
+	return Rect2i(x0, y0, side, side)
+
+
+## Galería, tecla S (solo desde el editor de Godot): ajustar el cuadrado chico de la carta.
+## Flechas lo mueven, Q/W lo agrandan o achican, Z guarda en data/recorte_cuadrado.json,
+## X cancela, R vuelve al centro.
+func _sq_edit_keys(k: int, accept: bool, back: bool) -> bool:
+	var id := gallery_id
+	var cur: Dictionary = (_sq_adjust if _sq_adjust is Dictionary else {}).get(id, {}).duplicate()
+	var step := 0.02
+	match k:
+		KEY_LEFT: cur["x"] = float(cur.get("x", 0.5)) - step
+		KEY_RIGHT: cur["x"] = float(cur.get("x", 0.5)) + step
+		KEY_UP: cur["y"] = float(cur.get("y", 0.5)) - step
+		KEY_DOWN: cur["y"] = float(cur.get("y", 0.5)) + step
+		KEY_W: cur["zoom"] = minf(4.0, float(cur.get("zoom", 1.0)) * 1.1)
+		KEY_Q: cur["zoom"] = maxf(1.0, float(cur.get("zoom", 1.0)) / 1.1)
+		KEY_R: cur = {}
+		_:
+			if accept:
+				_sq_save()
+				sq_edit = false
+				snd.play("ok")
+				return true
+			if back:
+				_sq_adjust = null         # se vuelve a leer el archivo: descarta lo no guardado
+				_forget_square(id)
+				sq_edit = false
+				snd.play("back")
+				return true
+			return false
+	# que el centro no quede donde el cuadrado se saldría del arte
+	var img := arte.image(id)
+	if img != null:
+		var w := img.get_width()
+		var h := img.get_height()
+		var half := mini(w, h) / maxf(1.0, float(cur.get("zoom", 1.0))) / 2.0
+		cur["x"] = snappedf(clampf(float(cur.get("x", 0.5)), half / w, 1.0 - half / w), 0.001)
+		cur["y"] = snappedf(clampf(float(cur.get("y", 0.5)), half / h, 1.0 - half / h), 0.001)
+		cur["zoom"] = snappedf(float(cur.get("zoom", 1.0)), 0.01)
+	if _sq_adjust == null:
+		_square_rect(id, 1, 1)
+	if cur.is_empty():
+		_sq_adjust.erase(id)
+	else:
+		_sq_adjust[id] = cur
+	_forget_square(id)
+	snd.play("cursor")
+	return true
+
+
+func _forget_square(id: String) -> void:
+	for cache in [_sprites, _art]:
+		for key in cache.keys():
+			if str(key).begins_with(id + "|"):
+				cache.erase(key)
+
+
+func _sq_save() -> void:
+	var out := {}
+	var raw = JSON.parse_string(FileAccess.get_file_as_string("res://data/recorte_cuadrado.json"))
+	if raw is Dictionary and raw.has("_ayuda"):
+		out["_ayuda"] = raw["_ayuda"]
+	var keys: Array = _sq_adjust.keys().filter(func(x): return x != "_ayuda")
+	keys.sort()
+	for key in keys:
+		out[key] = _sq_adjust[key]
+	var f := FileAccess.open("res://data/recorte_cuadrado.json", FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(out, "  ") + "\n")
+
+
+func _draw_sq_edit(id: String, img: Image, r: Rect2) -> void:
+	var f := r.size.x / img.get_width()
+	var sq := _square_rect(id, img.get_width(), img.get_height())
+	var box := Rect2(r.position + Vector2(sq.position) * f, Vector2(sq.size) * f)
+	var shade := Color(0, 0, 0, 0.55)
+	draw_rect(Rect2(r.position, Vector2(box.position.x - r.position.x, r.size.y)), shade)
+	draw_rect(Rect2(Vector2(box.end.x, r.position.y), Vector2(r.end.x - box.end.x, r.size.y)), shade)
+	draw_rect(Rect2(Vector2(box.position.x, r.position.y), Vector2(box.size.x, box.position.y - r.position.y)), shade)
+	draw_rect(Rect2(Vector2(box.position.x, box.end.y), Vector2(box.size.x, r.end.y - box.end.y)), shade)
+	draw_rect(box, Color("#f8d030"), false, 1.0)
+	var y := 134.0
+	var own := _has_own_square(id)
+	_text(Vector2(8, y), "Arrows move · Q/W size · R reset", Color("#a0a8b8"))
+	_text(Vector2(8, y + 12), "Z save · X cancel" + ("  (sprites/ has its own!)" if own else ""), Color("#e8c060") if own else Color("#a0a8b8"))
+	var prev := _card_texture(id, 32)
+	if prev != null:
+		draw_texture_rect(prev, Rect2(W - 40, y - 4, 32, 32), false)
+
+
+## ¿Hay un cuadrado propio en sprites/ para esta carta? (ese manda sobre el ajuste)
+func _has_own_square(id: String) -> bool:
+	for d in SPRITE_DIRS:
+		for n in [id, CardDB.card_name(id)]:
+			var pth := "%s/%s.png" % [d, n]
+			if ImgLoad.exists(pth) or ResourceLoader.exists(pth):
+				return true
+	return false
+
+
+func _square_crop(id: String, img: Image) -> Image:
+	var w := img.get_width()
+	var h := img.get_height()
+	if w <= h * 1.15 and h <= w * 1.15:
+		return img
+	return img.get_region(_square_rect(id, w, h))
 
 
 ## Imagen cuadrada de la carta (menús, fichas), reducida a paleta de GBA.
@@ -4939,7 +5043,7 @@ func _load_coins() -> void:
 	for dir_path in ["res://mundo/propios/monedas", "user://mundo/propios/monedas"]:
 		for n in range(1, 100):
 			var p := "%s/moneda_%02d.png" % [dir_path, n]
-			if not FileAccess.file_exists(p):
+			if not ImgLoad.exists(p):
 				break
 			var heads := _load_png(p)
 			var tails := _load_png(p.replace(".png", "_cruz.png"))
@@ -4950,7 +5054,7 @@ func _load_coins() -> void:
 
 
 func _load_png(path: String) -> Texture2D:
-	if not FileAccess.file_exists(path):
+	if not ImgLoad.exists(path):
 		return null
 	var img := ImgLoad.load(path)
 	if img == null or img.is_empty():
@@ -5587,6 +5691,12 @@ func _info_input(k: int) -> void:
 ## Teclas con la ficha de una carta abierta (y la galería encima, si está).
 func _info_keys(k: int, accept: bool, back: bool, echo: bool) -> void:
 	if gallery_id != "":
+		if sq_edit and _sq_edit_keys(k, accept, back):
+			return
+		if k == KEY_S and not echo and OS.has_feature("editor"):
+			sq_edit = true
+			snd.play("ok")
+			return
 		if (accept or back or k == KEY_C) and not echo:
 			_close_gallery()
 			snd.play("back")
@@ -5705,6 +5815,7 @@ func _open_gallery(id: String) -> void:
 
 func _close_gallery() -> void:
 	gallery_id = ""
+	sq_edit = false
 
 
 ## Cuántos píxeles de pantalla mide cada píxel del juego (escala entera).
@@ -5753,6 +5864,9 @@ func _draw_gallery() -> void:
 		var r := _gallery_rect(img)
 		draw_rect(r.grow(1), Color("#d8d8e0"), false, 1.0)
 		draw_texture(_gallery_tex(id, img, r), r.position)
+		if sq_edit:
+			_draw_sq_edit(id, img, r)
+			return
 	else:
 		var box := Rect2(W / 2.0 - 32, 30, 64, 64)
 		_draw_card_image(box, id)
@@ -6182,7 +6296,7 @@ func _load_back() -> void:
 	_back_loaded = true
 	for dir_path in ["res://mundo/propios", "user://mundo/propios"]:
 		var p := "%s/dorso_carta.png" % dir_path
-		if not FileAccess.file_exists(p):
+		if not ImgLoad.exists(p):
 			continue
 		var img := ImgLoad.load(p)
 		if img == null or img.is_empty():
@@ -6386,7 +6500,7 @@ func _energy_texture(type: String, size: int) -> Texture2D:
 		for n in ["energy_" + en, "energia_" + ENERGY_FILE_ES.get(type, en)]:
 			for ext in ["png", "jpg", "webp"]:
 				var path := "%s/%s.%s" % [dir, n, ext]
-				if tex == null and FileAccess.file_exists(path):
+				if tex == null and ImgLoad.exists(path):
 					var img := ImgLoad.load(path)
 					if img != null and not img.is_empty():
 						# Sin reducir la paleta: los íconos son chiquitos y conviene que se lean bien.
@@ -6411,7 +6525,7 @@ func _type_symbol(type: String, size: int) -> Texture2D:
 	var en := type.to_lower()
 	for dir in ["res://mundo/propios/tipos", "user://mundo/propios/tipos"] + SPRITE_DIRS:
 		var path := "%s/energy_%s.png" % [dir, en]
-		if tex != null or not FileAccess.file_exists(path):
+		if tex != null or not ImgLoad.exists(path):
 			continue
 		var img := ImgLoad.load(path)
 		if img == null or img.is_empty():
@@ -6637,7 +6751,7 @@ func _draw_stadium_background(id: String) -> void:
 			for n in [id, name]:
 				for ext in ["png", "jpg", "webp"]:
 					var path := "%s/%s.%s" % [dir, n, ext]
-					if tex == null and FileAccess.file_exists(path):
+					if tex == null and ImgLoad.exists(path):
 						var img := ImgLoad.load(path)
 						if img != null and not img.is_empty():
 							img.convert(Image.FORMAT_RGBA8)
@@ -6750,7 +6864,7 @@ func _load_pixel_font() -> Font:
 	f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
 	f.fallbacks = [ThemeDB.fallback_font]
 	for path in CUSTOM_FONT_PATHS:
-		if FileAccess.file_exists(path):
+		if ImgLoad.exists(path):
 			var c := FontFile.new()
 			if c.load_bitmap_font(path) == OK:
 				c.fixed_size = FONT_SIZE

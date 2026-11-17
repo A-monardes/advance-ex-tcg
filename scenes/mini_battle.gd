@@ -56,14 +56,14 @@ const USER_DIR := "user://pmd"
 
 static func path(sp: String, file: String) -> String:
 	var r := "%s/%s/%s" % [DIR, sp, file]
-	if FileAccess.file_exists(r) or ResourceLoader.exists(r):
+	if ImgLoad.exists(r) or ResourceLoader.exists(r):
 		return r
 	return "%s/%s/%s" % [USER_DIR, sp, file]
 
 
 static func has_file(sp: String, file: String) -> bool:
 	var p := path(sp, file)
-	return FileAccess.file_exists(p) or ResourceLoader.exists(p)
+	return ImgLoad.exists(p) or ResourceLoader.exists(p)
 
 
 ## La especie ya bajada en la web: se olvida lo que se había armado sin ella.
@@ -693,7 +693,7 @@ static func _draw_stream(d, a: Dictionary, s: float, src: Vector2, dst: Vector2)
 ## El golpe sobre el defensor: un efecto por tipo, más fuerte desde 50 de daño.
 static func _load_fams() -> Dictionary:
 	if _fams.is_empty():
-		var j = JSON.parse_string(FileAccess.get_file_as_string(FAMS_PATH)) if FileAccess.file_exists(FAMS_PATH) else null
+		var j = JSON.parse_string(FileAccess.get_file_as_string(FAMS_PATH)) if ImgLoad.exists(FAMS_PATH) else null
 		_fams = j if j is Dictionary else {"familias": {}}
 	return _fams
 

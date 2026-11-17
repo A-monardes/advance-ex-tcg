@@ -18,7 +18,7 @@ const PARALLEL := 6
 
 
 func _ready() -> void:
-	var j = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST)) if FileAccess.file_exists(MANIFEST) else null
+	var j = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST)) if ImgLoad.exists(MANIFEST) else null
 	if j is Dictionary:
 		_files = j
 	if OS.has_feature("web"):
@@ -55,7 +55,7 @@ func want_cards(ids: Array) -> void:
 func want(sp: String) -> void:
 	for f in _files.get(sp, []):
 		var item := [sp, str(f)]
-		if not FileAccess.file_exists("%s/%s/%s" % [MiniBattle.USER_DIR, sp, f]) and not item in _queue \
+		if not ImgLoad.exists("%s/%s/%s" % [MiniBattle.USER_DIR, sp, f]) and not item in _queue \
 				and not item in _busy.values():
 			_queue.append(item)
 	_next()

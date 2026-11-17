@@ -104,7 +104,7 @@ static func _load(path: String) -> Texture2D:
 	if _tex.has(path):
 		return _tex[path]
 	var tex: Texture2D = null
-	if FileAccess.file_exists(path):
+	if ImgLoad.exists(path):
 		var img := ImgLoad.load(path)
 		if img != null:
 			tex = ImageTexture.create_from_image(img)

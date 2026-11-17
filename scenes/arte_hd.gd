@@ -54,18 +54,18 @@ func image(id: String) -> Image:
 	var img: Image = null
 	for ext in ["png", "jpg", "webp"]:
 		var own := "%s/%s.%s" % [OWN_DIR, id, ext]
-		if FileAccess.file_exists(own):
+		if ImgLoad.exists(own):
 			img = ImgLoad.load(own)
 			break
 	if img == null:
 		for ext in ["png", "jpg", "webp"]:
 			var whole := "%s/%s.%s" % [OWN_CARDS, id, ext]
-			if FileAccess.file_exists(whole):
+			if ImgLoad.exists(whole):
 				var card := ImgLoad.load(whole)
 				if card != null:
 					img = crop(card, id)
 				break
-	if img == null and FileAccess.file_exists(_path(id)):
+	if img == null and ImgLoad.exists(_path(id)):
 		img = Image.load_from_file(_path(id))
 	if img != null:
 		img.convert(Image.FORMAT_RGBA8)
@@ -102,9 +102,9 @@ func has_art(id: String) -> bool:
 		return true
 	for base in [OWN_DIR, OWN_CARDS]:
 		for ext in ["png", "jpg", "webp"]:
-			if FileAccess.file_exists("%s/%s.%s" % [base, id, ext]):
+			if ImgLoad.exists("%s/%s.%s" % [base, id, ext]):
 				return true
-	return FileAccess.file_exists("%s/%s.png" % [DIR, id])
+	return ImgLoad.exists("%s/%s.png" % [DIR, id])
 
 
 ## Pone en cola el arte de todas las cartas que todavía no lo tienen.
