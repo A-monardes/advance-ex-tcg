@@ -260,6 +260,10 @@ static func validate_deck(deck: Array[String], r: RuleSet = null) -> Array[Strin
 			errors.append("More than %d copies of %s." % [r.max_copies, n])
 	if stars > 1:
 		errors.append("Only 1 Pokémon Star is allowed per deck.")
+	var bad := r.illegal_cards(deck)
+	if not bad.is_empty():
+		var shown: Array = bad.slice(0, 3).map(func(c): return "%s (%s)" % [CardDB.card_name(c), CardDB.set_of(c)])
+		errors.append("Not legal in %s: %s%s." % [r.season, ", ".join(shown), " and %d more" % (bad.size() - 3) if bad.size() > 3 else ""])
 	if basics == 0:
 		errors.append("The deck needs at least one Basic Pokémon.")
 	return errors

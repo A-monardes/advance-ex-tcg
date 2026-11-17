@@ -209,5 +209,50 @@
       ["ecard2-136", 1], ["ecard1-149", 2], ["ecard1-155", 4], ["ecard1-164", 11], ["ecard1-161", 3],
       ["ecard1-163", 3], ["ecard1-162", 3], ["ecard1-165", 3], ["ecard1-160", 3]
     ]
+  },
+  "Jessie": {
+    "description": "Team Rocket Returns theme deck: Dark Tyranitar and Dark Marowak hit hard, with Dark Arbok and Rocket's Wobbuffet in support (Fighting, Grass and Psychic).",
+    "cards": [
+      ["ex7-20", 1], ["ex7-29", 1], ["ex7-47", 1], ["ex7-49", 1], ["ex7-7", 2],
+      ["ex7-40", 2], ["ex7-56", 2], ["ex7-75", 2], ["ex7-84", 2], ["ex7-88", 2],
+      ["ex1-83", 2], ["ex1-90", 2], ["ex1-91", 2], ["ex7-55", 3], ["ex7-57", 3],
+      ["ex7-51", 4], ["ex7-62", 4], ["ex1-104", 4], ["ex1-107", 4], ["ex1-105", 16]
+    ]
+  },
+  "Starcharge": {
+    "description": "Deoxys theme deck: fast Psychic and Grass attackers led by Deoxys, with Shiftry, Shedinja and Meteor Falls.",
+    "cards": [
+      ["ex8-14", 1], ["ex8-16", 1], ["ex8-25", 1], ["ex8-89", 1], ["ex8-43", 2],
+      ["ex8-32", 2], ["ex8-40", 2], ["ex8-66", 2], ["ex8-88", 2], ["ex8-90", 2],
+      ["ex1-90", 2], ["ex1-91", 2], ["ex8-67", 4], ["ex8-71", 4], ["ex8-76", 4],
+      ["ex8-55", 4], ["ex1-107", 8], ["ex1-104", 16]
+    ]
+  },
+  "Jetstream": {
+    "description": "Deoxys theme deck: Fire, Lightning and Water Pokémon soften up the opponent before Rayquaza swoops in.",
+    "cards": [
+      ["ex8-4", 1], ["ex8-19", 1], ["ex8-22", 1], ["ex8-49", 1], ["ex8-34", 2],
+      ["ex8-38", 2], ["ex8-61", 2], ["ex8-87", 2], ["ex8-88", 2], ["ex8-92", 2],
+      ["ex1-91", 2], ["ex1-92", 2], ["ex8-68", 4], ["ex8-63", 4], ["ex8-60", 4],
+      ["ex8-80", 4], ["ex1-108", 5], ["ex1-109", 9], ["ex1-106", 10]
+    ]
+  },
+  "Hydrobloom": {
+    "description": "Emerald theme deck: Water and Grass Pokémon wear the opponent down while Feebas evolves into Milotic.",
+    "cards": [
+      ["ex9-8", 1], ["ex9-13", 1], ["ex9-10", 1], ["ex9-40", 1], ["ex9-28", 2],
+      ["ex9-36", 2], ["ex9-80", 2], ["ex9-82", 2], ["ex9-85", 2], ["ex1-90", 2],
+      ["ex1-92", 2], ["ex9-64", 3], ["ex9-51", 3], ["ex9-49", 4], ["ex9-70", 4],
+      ["ex9-56", 4], ["ex9-101", 10], ["ex9-103", 14]
+    ]
+  },
+  "Wildfire": {
+    "description": "Emerald theme deck: Fire and Lightning Pokémon blaze through the opponent's defenses, with two Manectric and Blaziken.",
+    "cards": [
+      ["ex9-1", 1], ["ex9-7", 1], ["ex9-16", 1], ["ex9-38", 1], ["ex9-25", 2],
+      ["ex9-23", 2], ["ex9-81", 2], ["ex9-82", 2], ["ex9-85", 2], ["ex1-90", 2],
+      ["ex1-91", 2], ["ex9-72", 3], ["ex9-60", 3], ["ex9-69", 4], ["ex9-47", 4],
+      ["ex9-57", 4], ["ex9-104", 8], ["ex9-102", 16]
+    ]
   }
 }

@@ -997,8 +997,9 @@ func _duel_setup_input(k: int, accept: bool, n: int) -> void:
 		snd.play("move")
 		return
 	var names := Decks.names()
+	var fmt_rules := RuleSet.from_season(season_idx)
 	for pair in [[my_deck, "Your deck"], [opp_deck, "The opponent's deck"]]:
-		var errs := Game.validate_deck(Decks.get_deck(names[pair[0]]))
+		var errs := Game.validate_deck(Decks.get_deck(names[pair[0]]), fmt_rules)
 		if not errs.is_empty():
 			title_msg = "%s is not valid: %s" % [pair[1], errs[0]]
 			snd.play("error")
@@ -2478,6 +2479,8 @@ func _draw_duel_setup() -> void:
 	opp_deck = clampi(opp_deck, 0, names.size() - 1)
 	if not _deck_legal(names[my_deck], r):
 		fmt += " · your deck isn't legal"
+	elif not _deck_legal(names[opp_deck], r):
+		fmt += " · the opponent's deck isn't legal"
 	var star := func(nm: String) -> String: return ("★ " if Decks.is_user(nm) else "") + nm
 	var rows := [["Your deck", star.call(names[my_deck])], ["Opponent", star.call(names[opp_deck])],
 			["Difficulty", "%d · %s" % [ai_level, SimpleAI.LEVEL_NAMES[ai_level - 1]]], ["Format", fmt],
@@ -6874,10 +6877,7 @@ func _load_settings() -> void:
 
 ## ¿Todas las cartas del mazo eran legales en la temporada?
 func _deck_legal(deck_name: String, r: RuleSet) -> bool:
-	for id in Decks.get_deck(deck_name):
-		if not r.is_legal(str(id)) and not CardDB.is_basic_energy(str(id)):
-			return false
-	return true
+	return r.illegal_cards(Decks.get_deck(deck_name)).is_empty()
 
 
 func _save_settings() -> void:

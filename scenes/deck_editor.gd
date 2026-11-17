@@ -610,7 +610,7 @@ func _draw_list() -> void:
 	match row.get("kind", ""):
 		"deck":
 			var errs := Game.validate_deck(Decks.get_deck(row["name"]))
-			info = "Ready to play." if errs.is_empty() else errs[0]
+			info = ("Ready to play. Formats: " + legal_formats(Decks.get_deck(row["name"]))) if errs.is_empty() else errs[0]
 		"new":
 			info = "Starts a deck from scratch."
 		"copy":
@@ -723,3 +723,12 @@ func _draw_edit() -> void:
 		status = "Valid deck: ready to use." if errs.is_empty() else errs[0]
 	d._text_fit(Vector2(9, 132), status, d.C_HP_LOW if msg != "" or not errs.is_empty() else d.C_HP_OK.darkened(0.35), 222)
 	d._text_scroll(Vector2(9, 143), ("Name, code (ex2, ecard1-33) or set · Enter done · Esc clear" if searching else "◀▶ remove/add · Tab tab · F search · C card · X done"), d.C_DIM, 222, "ed_keys")
+
+
+## En qué temporadas se puede jugar el mazo ("2003-04 · 2004-05", o "none").
+static func legal_formats(deck: Array) -> String:
+	var out: Array = []
+	for i in RuleSet.SEASONS.size():
+		if RuleSet.from_season(i).illegal_cards(deck).is_empty():
+			out.append(RuleSet.SEASONS[i]["id"])
+	return " · ".join(out) if not out.is_empty() else "none"

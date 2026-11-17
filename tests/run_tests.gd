@@ -97,9 +97,12 @@ func test_decks_are_legal() -> void:
 	for n in Decks.preset_names():
 		var errs := Game.validate_deck(Decks.get_deck(n))
 		check(errs.is_empty(), "%s: %s" % [n, errs])
-		for id in Decks.get_deck(n):
-			# Era ADV, más las 13 cartas de Expedition/Aquapolis/Skyridge legales en el Mundial 2004
-			check(CardDB.set_of(id) in ["ex1", "ex2", "ex3", "ex4", "ex5", "ecard1", "ecard2", "ecard3"], "%s fuera de la era ADV" % id)
+		# Cada mazo predefinido tiene que poder jugarse en al menos una temporada
+		var some := false
+		for i in RuleSet.SEASONS.size():
+			if RuleSet.from_season(i).illegal_cards(Decks.get_deck(n)).is_empty():
+				some = true
+		check(some, "%s no es legal en ninguna temporada" % n)
 
 
 func test_worlds_2004_cards() -> void:
@@ -1472,3 +1475,13 @@ func test_frlg_to_emerald() -> void:
 	check(r.is_legal("np-27") and not r.is_legal("np-28") and r.is_legal("pop1-1") and r.is_legal("ex9-1"), "2004-05: np 1-27, POP 1, Emerald")
 	check(not RuleSet.from_season(0).is_legal("np-27") and not RuleSet.from_season(0).is_legal("ex6-1"), "2003-04 no incluye np-27 ni FRLG")
 	check(r.missing_sets().is_empty(), "2004-05 completa")
+	# El formato rechaza mazos con cartas de afuera (las reimpresiones de Entrenadores valen)
+	check(Game.validate_deck(Decks.get_deck("Blaze"), r).is_empty(), "Blaze es legal en 2004-05")
+	var worlds := Game.validate_deck(Decks.get_deck("Magma Spirit (Worlds 2004)"), r)
+	check(not worlds.is_empty() and worlds[-1].begins_with("Not legal"), "un mazo e-card no es legal en 2004-05 (%s)" % str(worlds))
+	check(Game.validate_deck(Decks.get_deck("Magma Spirit (Worlds 2004)"), RuleSet.from_season(0)).is_empty(), "pero sí en 2003-04")
+	check(r.is_legal("ecard1-157") and not r.is_legal("ecard1-1"), "Switch de Expedition vale por la reimpresión; Alakazam no")
+	var frlg: Array[String] = []
+	frlg.assign(Decks.get_deck("Blaze"))
+	frlg[0] = "ex6-105"
+	check(not Game.validate_deck(frlg, RuleSet.from_season(0)).is_empty(), "Charizard ex de FRLG no es legal en 2003-04")

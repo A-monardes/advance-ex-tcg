@@ -77,13 +77,45 @@ func missing_sets() -> Array:
 
 
 ## ¿La carta es legal en esta temporada? (sin temporada, todas)
+## Las Energías básicas siempre lo son. Un Entrenador o Energía especial de un set viejo vale
+## si tiene una reimpresión con el mismo nombre en un set legal (Potion, Switch...).
 func is_legal(id: String) -> bool:
-	if legal_sets.is_empty():
+	if legal_sets.is_empty() or CardDB.is_basic_energy(id):
 		return true
+	if _printed_legal(id):
+		return true
+	if CardDB.is_pokemon(id):
+		return false
+	if _reprints.has(id):
+		return _reprints[id]
+	var ok := false
+	var me := CardDB.get_card(id)
+	for other in CardDB.all_ids():
+		var c := CardDB.get_card(other)
+		if c.get("name") == me.get("name") and _printed_legal(str(other)):
+			ok = true
+			break
+	_reprints[id] = ok
+	return ok
+
+
+var _reprints := {}
+
+
+func _printed_legal(id: String) -> bool:
 	var p := id.split("-")
 	if not p[0] in legal_sets:
 		return false
 	return p[0] != "np" or np_max == 0 or int(p[1]) <= np_max
+
+
+## Las cartas del mazo que no son legales en la temporada (sin repetir).
+func illegal_cards(deck: Array) -> Array:
+	var out: Array = []
+	for id in deck:
+		if not is_legal(str(id)) and not out.has(id):
+			out.append(id)
+	return out
 
 
 ## Las mismas reglas, en batalla doble.
