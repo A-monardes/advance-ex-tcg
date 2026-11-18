@@ -41,6 +41,8 @@ static var _rules := {}
 static var _fams := {}
 const FAMS_PATH := "res://data/familias_pmd.json"
 
+static var _aura := {}       # fila -> colores del aura de llamas (Pokémon δ), para _put
+static var _sil := {}        # textura -> la misma con cada píxel visible en blanco (silueta)
 static var _species := {}    # especie -> Dictionary de animaciones (vacío si no hay carpeta)
 
 
@@ -343,6 +345,8 @@ static func setup(a: Dictionary, att: PlayerState, def: PlayerState, atk: Dictio
 	var kind: String = "" if heal_only else pick[0]
 	var ranged: bool = false if heal_only else pick[1]
 	a["m_heal_only"] = heal_only
+	a["att_id"] = att.active.top()
+	a["def_id"] = def.active.top()
 	a["m_att_mon"] = att.active
 	a["m_att_dmg0"] = att.active.damage
 	a["m_att_cond0"] = att.active.conditions_text()
@@ -492,10 +496,80 @@ static func _put(d, sp: String, name: String, row: int, frame: int, ground: Vect
 	if visible:
 		var w := float(an["w"])
 		var h := float(an["h"]) - sink
+		if h > 0 and _aura.has(row):
+			draw_aura(d, an["tex"], Rect2(o, Vector2(w, h)), Rect2(frame * w, int(R["r"]) * float(an["h"]), w, h),
+					_aura[row], alpha, o + R["ce"][frame])
 		if h > 0:
 			d.draw_texture_rect_region(an["tex"], Rect2(o, Vector2(w, h)),
 					Rect2(frame * w, int(R["r"]) * float(an["h"]), w, h), Color(1, 1, 1, alpha))
 	return {"c": o + R["ce"][frame], "h": o + R["hd"][frame]}
+
+
+## Colores del aura de un Pokémon δ: los de los tipos que gana (vacío si no es δ).
+static func aura_colors(d, id: String) -> Array:
+	if id == "" or not CardDB.is_delta(id):
+		return []
+	var out: Array = []
+	for t in CardDB.types(id):
+		out.append(d.TYPE_COLORS.get(t, Color.WHITE))
+	return out
+
+
+static func _silhouette(tex: Texture2D) -> Texture2D:
+	var key := tex.get_instance_id()
+	if _sil.has(key):
+		return _sil[key]
+	var img := tex.get_image()
+	if img == null:
+		_sil[key] = null
+		return null
+	img = img.duplicate()
+	if img.is_compressed():
+		img.decompress()
+	img.convert(Image.FORMAT_RGBA8)
+	for y in img.get_height():
+		for x in img.get_width():
+			var a := img.get_pixel(x, y).a
+			img.set_pixel(x, y, Color(1, 1, 1, 1.0 if a > 0.4 else 0.0))
+	var st := ImageTexture.create_from_image(img)
+	_sil[key] = st
+	return st
+
+
+## Aura de llamas alrededor del sprite (como en las ilustraciones de los Pokémon δ):
+## copias de la silueta en el color del tipo, estiradas hacia arriba y titilando, y lenguas
+## de fuego que suben. Va detrás del sprite. dst/src: dónde se dibuja el sprite y qué cuadro.
+static func draw_aura(d, tex: Texture2D, dst: Rect2, src: Rect2, cols: Array, alpha: float, center: Vector2) -> void:
+	if cols.is_empty() or alpha <= 0.05:
+		return
+	var sil := _silhouette(tex)
+	if sil == null:
+		return
+	var t := Time.get_ticks_msec() / 1000.0
+	# Capas: la de afuera más grande y transparente, la de adentro más clara
+	for L in 3:
+		var grow: float = [4.0, 2.5, 1.2][L]
+		var base: Color = cols[L % cols.size()]
+		var col: Color = base.lightened(0.25 * L)
+		var la: float = [0.3, 0.4, 0.5][L] * alpha
+		for k in 6:
+			var ang := TAU * k / 6.0 + t * 0.7
+			var flick := sin(t * 9.0 + k * 1.7 + L * 2.1) * 0.5 + 0.5
+			var off := Vector2(cos(ang), sin(ang) * 0.5) * grow
+			var up := grow * (1.2 + 1.3 * flick)
+			var r := Rect2(dst.position + off + Vector2(-grow * 0.5, -up), dst.size + Vector2(grow, up))
+			d.draw_texture_rect_region(sil, Rect2(r.position.round(), r.size.round()), src, Color(col, la))
+	# Lenguas de fuego que suben desde el cuerpo y se apagan
+	var half := maxf(6.0, dst.size.x * 0.22)
+	for i in 14:
+		var ph := fmod(t * 0.9 + i * 0.137 + i * i * 0.031, 1.0)
+		var seed := fmod(sin(i * 12.9898) * 43758.5453, 1.0)
+		var x := center.x + (absf(seed) * 2.0 - 1.0) * half
+		var y := center.y + 8.0 - ph * 32.0
+		var sz := 3.0 if ph < 0.3 else (2.0 if ph < 0.65 else 1.0)
+		var col: Color = cols[i % cols.size()].lightened(0.35 + 0.3 * ph)
+		col.a = (1.0 - ph) * 0.75 * alpha
+		d.draw_rect(Rect2(Vector2(roundf(x), roundf(y)), Vector2(sz, sz + 1.0)), col)
 
 
 static func _ellipse(d, c: Vector2, r: Vector2, col: Color) -> void:
@@ -533,6 +607,14 @@ static func draw(d, a: Dictionary) -> void:
 	var gd: Vector2 = a["m_g_def"]
 	var fade := clampf(s / T_IN, 0.0, 1.0) * clampf((dur - s) / T_OUT, 0.0, 1.0)
 	d.draw_rect(Rect2(0, 0, d.W, d.BOX_Y), Color(0.04, 0.05, 0.12, 0.72 * fade))
+	# Pokémon δ: aura de llamas del color de sus tipos
+	_aura = {}
+	var ca := aura_colors(d, str(a.get("att_id", "")))
+	var cd := aura_colors(d, str(a.get("def_id", "")))
+	if not ca.is_empty():
+		_aura[ra] = ca
+	if not cd.is_empty():
+		_aura[rd] = cd
 	var applied: bool = a.get("applied", false)
 	var dmg := int(a.get("dmg", 0))
 	var ko: bool = a.get("ko", false)

@@ -26,9 +26,10 @@ POKEDEX = "https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/pokedex
 def folder_name(card_name):
     """Igual que BattleScene.species() (sin las formas especiales)."""
     n = card_name
-    for pre in ("Team Aqua's ", "Team Magma's ", "Rocket's "):
+    for pre in ("Team Aqua's ", "Team Magma's ", "Rocket's ", "Holon's "):
         if n.startswith(pre):
             n = n[len(pre):]
+    n = " ".join(n.replace("δ", "").split())
     if n.endswith(" ★"):
         n = n[:-2]
     if n.startswith("Dark "):

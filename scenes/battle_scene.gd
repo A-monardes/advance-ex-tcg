@@ -67,10 +67,10 @@ static func skip(a: Dictionary) -> void:
 static func species(card_name: String) -> Array:
 	var n := card_name
 	var dark := false
-	for pre in ["Team Aqua's ", "Team Magma's ", "Rocket's "]:
+	for pre in ["Team Aqua's ", "Team Magma's ", "Rocket's ", "Holon's "]:
 		if n.begins_with(pre):
 			n = n.substr(pre.length())
-	n = n.trim_suffix(" ★")
+	n = n.replace("δ", "").replace("  ", " ").strip_edges().trim_suffix(" ★")
 	if n.begins_with("Dark "):
 		n = n.substr(5)
 		dark = true
@@ -242,6 +242,10 @@ static func _draw_mon(d, id: String, front: bool, pos: Vector2, sink: float) -> 
 	var tex := sprite(id, front)
 	if tex != null:
 		var h := float(SPR) - sink
+		var cols := MiniBattle.aura_colors(d, id)      # Pokémon δ: aura de llamas
+		if not cols.is_empty() and h > 0:
+			MiniBattle.draw_aura(d, tex, Rect2(pos + Vector2(0, sink), Vector2(SPR, h)), Rect2(0, 0, SPR, h), cols, 1.0,
+					pos + Vector2(SPR / 2.0, SPR * 0.6))
 		d.draw_texture_rect_region(tex, Rect2(pos + Vector2(0, sink), Vector2(SPR, h)), Rect2(0, 0, SPR, h))
 		return
 	var r := Rect2(pos + Vector2(10, 10 if front else 14), Vector2(44, 44))
