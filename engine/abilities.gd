@@ -38,6 +38,12 @@ const POWERS := [
 	"Support Navigation", "Type Change", "Evolutionary Fan", "Nectar Pod", "Reactive Generator", "Reactive Recharge",
 	"Emerge", "Power Circulation", "Shady Move", "Emerge Charge", "Delta Supply", "Dragon Curse", "Primal Light",
 	"Delta Support", "Splash Back", "Psychic Vision", "Driving Howl", "Time Reversal",
+	# Crystal Guardians, Dragon Frontiers, Power Keepers, POP 4-5, promos
+	"Peal of Thunder", "Excavate", "Crush Chance", "Spike Storm", "Delta Sign", "Delta Transport", "Echo Draw",
+	"Constrain", "Energy Recycle", "Time Travel", "Evolutionary Call", "Sharing", "Invitation", "Volunteer",
+	"Dozing", "Dig Up", "Tropical Heal", "Power of Evolution", "Extra Boost", "Imprison", "Fellow Boost",
+	"Type Shift", "Poison Structure", "Cursed Eyes", "Magnetic Redraw", "Chilling Breath", "Crimson Ray",
+	"Yellow Ray", "Blue Ray", "Purple Ray", "Dark Ray",
 ]
 const BODIES := [
 	"Withering Dust", "Protective Dust", "Intimidating Fang", "Lazy", "Rough Skin", "Natural Remedy",
@@ -74,6 +80,12 @@ const BODIES := [
 	"Ancient Protection", "Reactive Colors", "Paranoid", "Reactive Aroma", "Reactive Healing", "Reactive Shield",
 	"Ancient Tentacles", "Fire Remedy", "Versatile", "Icy Aura", "Delta Reactor", "Dual Aura", "Delta Reserve",
 	"Hydro Barrier", "Fellowship", "Clear Body", "Delta Block", "Synchronized Lift",
+	# Crystal Guardians ... Power Keepers
+	"Shield Veil", "Delta Protection", "Sand Veil", "Fluffy Fur", "Water Pressure", "Hover Lift", "Chlorophyll",
+	"Solid Shell", "Intimidating Armor", "Extra Noise", "Hard Rock", "Star Light", "Flotation", "Extra Liquid",
+	"Dark Eyes", "Holon Veil", "Battle Aura", "Armor", "Bedhead", "Psychic Wing", "Extra Feather", "Extra Wing",
+	"Extra Smoke", "Link Wing", "Rage Aura", "Synergy Effect", "Psychic Protector", "Metal Gravity",
+	"Reactive Barrier", "Frenzy",
 ]
 const REPEATABLE := ["Energy Trans", "Call for Power", "Metal Juncture", "Energy Connect", "Energy Return",
 		"Water Cyclone", "Strange Behavior", "Energy Rain", "Dark Trance", "3-D Reset", "Reactive Shift"]
@@ -81,16 +93,22 @@ const ON_EVOLVE := ["Loose Shell", "Healing Shower"]
 ## "Cuando jugás X de tu mano para evolucionar..." (se resuelven en on_evolve_from_hand).
 const EVOLVE_TRIGGER := ["Energy Recharge", "Venom Spray", "Manipulate", "Flame Vapor", "Streaming Mantle",
 		"Attract Energy", "Froth", "Blissful Support", "Devo Flash", "Bursting Up", "Darker Ring", "Prowl",
-		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge"]
+		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge",
+		"Peal of Thunder", "Evolutionary Call", "Dig Up", "Chilling Breath"]
 ## Se activan con el Pokémon en la Banca o el Activo (los demás de EVOLVE_TRIGGER, solo en el Activo).
 const EVOLVE_ANYWHERE := ["Attract Energy", "Blissful Support", "Devo Flash", "Bursting Up", "Prowl",
-		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge", "Darker Ring"]
+		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge", "Darker Ring",
+		"Peal of Thunder", "Evolutionary Call", "Dig Up", "Chilling Breath"]
+## Al bajarlos de la mano a la Banca.
+const BENCH_TRIGGER := ["Delta Switch", "Support Navigation", "Time Reversal", "Crush Chance", "Tropical Heal",
+		"Cursed Eyes", "Crimson Ray", "Yellow Ray", "Blue Ray", "Purple Ray", "Dark Ray"]
 const FOSSIL_LINE := ["Omanyte", "Omastar", "Kabuto", "Kabutops", "Kabutops ex"]
 # no se activan desde el menú (Psymimic aparece como ataques copiados)
 const TRIGGERED := ["Energy Grounding", "Psymimic", "Energy Recharge", "Venom Spray", "Manipulate",
 		"Flame Vapor", "Streaming Mantle", "Attract Energy", "Froth", "Legendary Ascent", "Dragon Boost",
 		"Lightning Burst", "Energy Evolution", "Golden Wing", "Delta Switch", "Shadow Curse", "Support Navigation",
-		"Reactive Recharge", "Time Reversal"]
+		"Reactive Recharge", "Time Reversal", "Time Travel", "Crush Chance", "Tropical Heal", "Cursed Eyes",
+		"Crimson Ray", "Yellow Ray", "Blue Ray", "Purple Ray", "Dark Ray"]
 const NIDOS := ["Nidoran ♀", "Nidorina", "Nidoqueen", "Nidoran ♂", "Nidorino", "Nidoking"]
 const DISCARD_FOSSIL := "Discard fossil"
 const CASTFORMS := ["Castform", "Sunny Castform", "Rain Castform", "Snow-cloud Castform"]
@@ -137,7 +155,27 @@ static func body(g: Game, p: PokemonInPlay, ability_name: String) -> bool:
 		return false
 	if _bodies_silenced(g, p):
 		return false
+	if p.flags.get("imprison", false) or cessation(g):
+		return false
+	if p.is_basic() and not p.is_fossil() and ability_name != "Intimidating Armor":
+		var own := g.owner_of(p)
+		if own != null and active_body(g, g.other(own), "Intimidating Armor"):
+			return false
 	return ability_name == "Toxic Gas" or not toxic_gas(g)
+
+
+## Cessation Crystal unida a un Activo (de cualquiera): nadie usa Poké-Powers ni Poké-Bodies.
+static func cessation(g: Game) -> bool:
+	for pl in g.players:
+		for a in pl.actives():
+			if CardDB.card_name(a.tool) == "Cessation Crystal" and not a.is_ex():
+				return true
+	return false
+
+
+## Synergy Effect: cada Pokémon tiene el suyo según el Estadio de su Líder del Alto Mando.
+static func synergy(g: Game, p: PokemonInPlay, stadium: String) -> bool:
+	return g.stadium_name() == stadium and body(g, p, "Synergy Effect") and _ability_text(p, "Synergy Effect").contains(stadium)
 
 
 ## Overpowering Fang (Feraligatr ex Activo), Dual Aura (Latias δ + Latios), Energy Root.
@@ -207,6 +245,14 @@ static func power_blocked(g: Game, me: PlayerState, p: PokemonInPlay) -> bool:
 			for x in pl.all_in_play():
 				if body(g, x, "Delta Reserve") and x.energy.any(func(e): return CardDB.card_name(e).begins_with("Holon Energy")):
 					return true
+	if p.flags.get("imprison", false) or cessation(g):
+		return true
+	if p.is_ex() and body_anywhere(g, "Extra Liquid"):
+		return true
+	if g.stadium_name() == "Holon Legacy" and CardDB.is_delta(p.top()):
+		return true
+	if p.is_basic() and active_body(g, g.other(me), "Intimidating Armor"):
+		return true
 	return p.has_special_condition() or toxic_gas(g) or active_body(g, g.other(me), "Lazy") \
 			or p.flags.get("no_powers", -1) >= g.turn_number or me.flags.get("no_powers", -1) >= g.turn_number
 
@@ -232,6 +278,8 @@ static func power_actions(g: Game, me: PlayerState) -> Array:
 			if n not in REPEATABLE and p.power_used_turn == g.turn_number:
 				continue
 			if n in ON_EVOLVE and p.evolved_turn != g.turn_number:
+				continue
+			if n in ["Delta Sign", "Sharing"] and me.turn_flags.get("used_" + n, false):
 				continue
 			for prm in _options(g, me, s, p, n):
 				out.append({"t": "power", "s": s, "n": n, "p": prm})
@@ -662,6 +710,74 @@ static func _options(g: Game, me: PlayerState, s: int, p: PokemonInPlay, n: Stri
 				out.append({})
 		"Driving Howl":
 			if opp.active != null and not opp.bench.is_empty():
+				out.append({})
+		"Excavate", "Echo Draw":
+			if not me.deck.is_empty():
+				out.append({})
+		"Spike Storm":
+			if me.is_active(p):
+				for t in opp.slots():
+					if opp.slot(t).damage > 0:
+						out.append({"tg": t})
+		"Delta Sign":
+			if me.deck.any(func(c): return CardDB.is_pokemon(c) and CardDB.is_delta(c)):
+				out.append({})
+		"Delta Transport":
+			if not me.is_active(p) and me.active != null and CardDB.is_delta(me.active.top()):
+				for b in me.bench.size():
+					out.append({"b": b})
+		"Constrain":
+			if me.hand.size() > 6 or opp.hand.size() > 6:
+				out.append({})
+		"Energy Recycle":
+			if me.discard.any(func(c): return CardDB.is_energy(c)):
+				out.append({})
+		"Sharing":
+			for c in _distinct(opp.hand, func(c): return CardDB.is_supporter(c) and Trainers.is_implemented(c)):
+				me.hand.append(c)
+				var opts := Trainers.options(g, me, me.hand.size() - 1)
+				me.hand.pop_back()
+				for prm in opts:
+					out.append({"id": c, "tp": prm})
+			if out.is_empty() and not opp.hand.is_empty():
+				out.append({"look": true})
+		"Invitation":
+			if me.deck.any(func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c)):
+				out.append({})
+		"Volunteer":
+			if p.cards.size() >= 2 and CardDB.card_name(p.cards[-2]) == "Vulpix" \
+					and me.deck.any(func(c): return CardDB.card_name(c) in ["Ninetales", "Ninetales ex"]):
+				out.append({})
+		"Dozing":
+			if me.is_active(p):
+				out.append({})
+		"Power of Evolution":
+			if p.is_evolved() and not me.deck.is_empty():
+				out.append({})
+		"Extra Boost":
+			for c in _distinct(me.hand, func(c): return CardDB.is_basic_energy(c)):
+				for t in me.slots():
+					var x := me.slot(t)
+					if x.is_ex() and CardDB.stage(x.top()) == 2:
+						out.append({"tg": t, "id": c})
+		"Fellow Boost":
+			for c in _distinct(me.hand, func(c): return CardDB.is_basic_energy(c)):
+				for t in me.slots():
+					var nm := me.slot(t).display_name()
+					if nm.begins_with("Latias") or nm.begins_with("Latios"):
+						out.append({"tg": t, "id": c})
+		"Imprison":
+			if me.is_active(p):
+				for t in opp.slots():
+					if not opp.slot(t).flags.get("imprison", false):
+						out.append({"tg": t})
+		"Type Shift":
+			out.append({})
+		"Poison Structure":
+			if g.stadium_name() == "Sidney's Stadium" and opp.active != null:
+				out.append({})
+		"Magnetic Redraw":
+			if me.is_active(p):
 				out.append({})
 	return out
 
@@ -1267,6 +1383,103 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 			g.log_msg("  Opponent's hand: " + ", ".join(opp.hand.map(func(c): return CardDB.card_name(c))))
 		"Driving Howl":
 			g.queue_choice(opp.index, "switch")
+		"Excavate":
+			var top: String = me.deck[-1]
+			g.ask(me.index, "Excavate: top card is %s" % CardDB.card_name(top), [
+					{"label": "Leave it on top", "d": false, "ai": Trainers._ai_value(top)},
+					{"label": "Discard it", "d": true, "ai": 2.0}], func(o):
+				if o["d"] and not me.deck.is_empty() and me.deck[-1] == top:
+					me.discard.append(me.deck.pop_back())
+					g.log_msg("  Discards the top card of the deck."))
+		"Echo Draw":
+			me.draw(1)
+		"Spike Storm":
+			var t := opp.slot(prm["tg"])
+			if t != null:
+				t.damage += 10
+		"Delta Sign":
+			me.turn_flags["used_Delta Sign"] = true
+			Trainers._ask_from_deck(g, me, "Delta Sign: Pokémon with δ", func(c): return CardDB.is_pokemon(c) and CardDB.is_delta(c))
+		"Delta Transport":
+			if prm["b"] < me.bench.size():
+				g.switch_active(me, prm["b"])
+		"Constrain":
+			_constrain(g, me, opp)
+		"Energy Recycle":
+			attach_from_pile(g, me, me.discard, 3, func(c): return CardDB.is_energy(c), func(_x): return true, "Energy Recycle", false)
+			me.turn_flags["end_turn_after"] = true
+		"Sharing":
+			me.turn_flags["used_Sharing"] = true
+			g.log_msg("  Opponent's hand: " + ", ".join(opp.hand.map(func(c): return CardDB.card_name(c))))
+			if prm.has("id") and opp.hand.has(prm["id"]):
+				g.log_msg("  Uses the effect of %s." % CardDB.card_name(prm["id"]))
+				Trainers.play(g, me, prm["id"], prm["tp"])
+		"Invitation":
+			Trainers._ask_from_deck(g, me, "Invitation: Basic Pokémon or Evolution card", func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c))
+		"Volunteer":
+			p.damage = maxi(0, p.damage - 40)
+			me.discard.append(p.cards.pop_back())
+			var evo := _take(me.deck, func(c): return CardDB.card_name(c) in ["Ninetales", "Ninetales ex"])
+			if evo != "":
+				g.evolve(me, p, evo)
+			g.shuffle(me.deck)
+		"Dozing":
+			p.damage = maxi(0, p.damage - 20)
+			p.rotation = ""
+			g.try_condition(p, "asleep")
+		"Power of Evolution":
+			me.hand.append(me.deck.pop_front())
+			g.log_msg("  Draws the bottom card of the deck.")
+		"Extra Boost", "Fellow Boost":
+			var t := me.slot(prm["tg"])
+			if t != null and me.hand.has(prm["id"]):
+				me.hand.erase(prm["id"])
+				t.energy.append(prm["id"])
+				g.log_msg("  Attaches %s to %s." % [CardDB.card_name(prm["id"]), t.display_name()])
+				on_energy_from_hand(g, me, t, prm["id"])
+				if n == "Fellow Boost":
+					me.turn_flags["end_turn_after"] = true
+		"Imprison":
+			var t := opp.slot(prm["tg"])
+			if t != null:
+				t.flags["imprison"] = true
+				g.log_msg("  Puts an Imprison marker on %s." % t.display_name())
+		"Type Shift":
+			var m := RegEx.create_from_string("type is (\\w+)").search(_ability_text(p, "Type Shift"))
+			p.type_override = [m.get_string(1) if m != null else "Colorless"]
+			p.flags["type_until"] = g.turn_number
+		"Poison Structure":
+			if opp.active != null:
+				g.try_condition(opp.active, "poisoned")
+		"Magnetic Redraw":
+			for pl in [me, opp]:
+				pl.deck.append_array(pl.hand)
+				pl.hand.clear()
+				g.shuffle(pl.deck)
+				pl.draw(4)
+	dark_eyes(g, me, p)
+
+
+## Dark Eyes (Shiftry ex): el Pokémon del rival que usa un Poké-Power recibe 2 contadores.
+static func dark_eyes(g: Game, me: PlayerState, p: PokemonInPlay) -> void:
+	var opp := g.other(me)
+	if body_in_play(g, opp, "Dark Eyes") and me.all_in_play().has(p) and fired_pl(g, opp, "Dark Eyes"):
+		p.damage += 20
+		g.log_msg("  Dark Eyes: 2 damage counters on %s." % p.display_name())
+
+
+## Constrain (Delcatty ex): cada jugador descarta hasta quedarse con 6 cartas (primero vos).
+static func _constrain(g: Game, me: PlayerState, opp: PlayerState) -> void:
+	for pl in [me, opp]:
+		var extra: int = pl.hand.size() - 6
+		if extra > 0:
+			Trainers.chain(g, pl.index, "Constrain: discard (keep 6)", extra,
+					func(_picked): return Trainers._distinct(pl.hand, func(_c): return true), false,
+					func(id):
+						if pl.hand.has(id):
+							pl.hand.erase(id)
+							pl.discard.append(id),
+					func(): pass)
 
 
 static func _energy_options(p: PokemonInPlay) -> Array:
@@ -1352,7 +1565,16 @@ static func prevents_damage(g: Game, attacker: PokemonInPlay, target: PokemonInP
 		return true
 	if body(g, target, "Extra-tight") and attacker.is_ex() and g.owner_of(attacker) != owner and fired(g, target, "Extra-tight"):
 		return true
+	if owner != null and g.owner_of(attacker) != owner:
+		if _benched_delta_guard(g, owner, target):
+			return true
+		if attacker.is_ex() and synergy(g, target, "Phoebe's Stadium") and fired(g, target, "Synergy Effect"):
+			return true
+		if attacker.is_ex() and CardDB.card_name(target.tool) == "Mysterious Shard" and not target.is_ex():
+			return true
 	if not is_active:
+		if owner != null and g.owner_of(attacker) != owner and body_in_play(g, owner, "Sand Veil") and fired_pl(g, owner, "Sand Veil"):
+			return true
 		if body(g, target, "Submerge"):
 			return true
 		if body(g, target, "Feathery") and g.owner_of(attacker) != owner and fired(g, target, "Feathery"):
@@ -1365,6 +1587,15 @@ static func prevents_damage(g: Game, attacker: PokemonInPlay, target: PokemonInP
 static func blocks_effects(g: Game, attacker: PokemonInPlay, target: PokemonInPlay) -> bool:
 	if target.flags.get("prevent_all", -1) >= g.turn_number:
 		return true
+	var t_owner := g.owner_of(target)
+	if t_owner != null and g.owner_of(attacker) != t_owner:
+		if _benched_delta_guard(g, t_owner, target):
+			return true
+		if attacker.is_ex() and CardDB.card_name(target.tool) == "Mysterious Shard" and not target.is_ex():
+			return true
+		if body(g, target, "Reactive Barrier") and target.energy.any(func(e): return CardDB.card_name(e) == "React Energy") \
+				and fired(g, target, "Reactive Barrier"):
+			return true
 	if body(g, target, "Protective Dust") and fired(g, target, "Protective Dust") \
 			or body(g, target, "Crystal Body") and fired(g, target, "Crystal Body"):
 		return true
@@ -1385,6 +1616,16 @@ static func blocks_effects(g: Game, attacker: PokemonInPlay, target: PokemonInPl
 				and target.energy.any(func(e): return CardDB.card_name(e) == "Lightning Energy") and fired(g, target, "Dragon Aura"):
 			return true
 	return _fluff(g, attacker, target)
+
+
+## Solid Shell de Cloyster δ: tus Pokémon δ de la Banca no reciben nada de los ataques rivales.
+static func _benched_delta_guard(g: Game, owner: PlayerState, target: PokemonInPlay) -> bool:
+	if owner.is_active(target) or not CardDB.is_delta(target.top()):
+		return false
+	for x in owner.all_in_play():
+		if body(g, x, "Solid Shell") and _ability_text(x, "Solid Shell").contains("Benched") and fired(g, x, "Solid Shell"):
+			return true
+	return false
 
 
 ## Protecciones contra un tipo de atacante que frenan daño y efectos (Holy Shield, Fast
@@ -1456,7 +1697,7 @@ static func pre_wr_bonus(g: Game, attacker: PokemonInPlay, target: PokemonInPlay
 		bonus += 10 * Energy.count_named(attacker, "R Energy")
 		if attacker.display_name() in NIDOS and body_in_play(g, att_owner, "Power Gene") and fired_pl(g, att_owner, "Power Gene"):
 			bonus += 10
-		for nm in ["Hunch", "Blaze"]:
+		for nm in ["Hunch", "Blaze", "Water Pressure"]:
 			if body(g, attacker, nm) and attacker.hp_left() <= 40 and fired(g, attacker, nm):
 				bonus += 40
 		if tgt_owner.is_active(target) and g.players.any(func(pl): return active_body(g, pl, "Vigorous Aura")):
@@ -1479,6 +1720,23 @@ static func pre_wr_bonus(g: Game, attacker: PokemonInPlay, target: PokemonInPlay
 			bonus += 10
 		if is_active and CardDB.card_name(attacker.tool) == "Solid Rage" and att_owner.prizes.size() > tgt_owner.prizes.size():
 			bonus += 20
+		if is_active and CardDB.is_delta(attacker.top()):
+			for x in att_owner.all_in_play():
+				if body(g, x, "Battle Aura") and fired(g, x, "Battle Aura"):
+					bonus += 10
+		var s2ex := attacker.is_ex() and CardDB.stage(attacker.top()) == 2
+		if is_active and s2ex:
+			for x in att_owner.all_in_play():
+				if body(g, x, "Extra Feather") and fired(g, x, "Extra Feather"):
+					bonus += 10
+		if target.is_ex() and CardDB.stage(target.top()) == 2 and body_in_play(g, tgt_owner, "Extra Smoke") and fired_pl(g, tgt_owner, "Extra Smoke"):
+			bonus -= 10
+		if is_active and body(g, attacker, "Frenzy"):
+			var txt := _ability_text(attacker, "Frenzy")
+			var rivals := ["Groudon", "Kyogre", "Rayquaza"].filter(func(nm): return txt.contains(nm + ","))
+			if tgt_owner.all_in_play().any(func(x): return x.display_name().trim_suffix(" ex") in rivals or x.display_name() in rivals) \
+					and fired(g, attacker, "Frenzy"):
+				bonus += 40
 		if attacker.is_ex() and active_body(g, tgt_owner, "Lazy Aura") and fired_pl(g, tgt_owner, "Lazy Aura"):
 			bonus -= 30
 		if active_body(g, tgt_owner, "Intimidating Pattern") and fired_pl(g, tgt_owner, "Intimidating Pattern"):
@@ -1491,6 +1749,10 @@ static func weakness_types(g: Game, target: PokemonInPlay) -> Array:
 	var w: Array = target.data().get("weaknesses", []).duplicate()
 	if w.is_empty():
 		return w
+	if g.stadium_name() == "Holon Legacy" and CardDB.is_delta(target.top()):
+		return []
+	if g.stadium_name() == "Glacia's Stadium" and target.is_type("Water") and not target.is_ex():
+		return []
 	if target.flags.get("no_weakness", -1) >= g.turn_number or stages(g, target, "Jynx") or holon(target, "Holon Energy FF", "Fire") \
 			or CardDB.card_name(target.tool) == "Protective Orb":
 		return []
@@ -1502,7 +1764,7 @@ static func weakness_types(g: Game, target: PokemonInPlay) -> Array:
 			return []
 	var owner := g.owner_of(target)
 	if owner != null:
-		if owner.is_active(target) and body_in_play(g, owner, "Dragon Veil"):
+		if owner.is_active(target) and (body_in_play(g, owner, "Dragon Veil") or body_in_play(g, owner, "Shield Veil")):
 			return []
 		if owner.bench.any(func(x): return body(g, x, "Dark Hole")):
 			w.erase("Darkness")
@@ -1616,7 +1878,38 @@ static func post_wr(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, is_
 		dmg -= 10
 	if target.flags.get("reduce_until", -1) >= g.turn_number:
 		dmg -= int(target.flags.get("reduce_by", 0))
+	if opp_attack and CardDB.is_delta(attacker.top()) and body(g, target, "Delta Protection") and fired(g, target, "Delta Protection"):
+		dmg -= 40
+	if body(g, target, "Solid Shell") and _ability_text(target, "Solid Shell").contains("reduced by 10") and fired(g, target, "Solid Shell"):
+		dmg -= 10
+	if body(g, target, "Armor") and att_owner.hand.size() >= 5 and fired(g, target, "Armor"):
+		dmg -= 30
+	if target.display_name() == "Groudon ex" and tgt_owner.all_in_play().any(func(x): return body(g, x, "Hard Rock") and Energy.total(x) <= 1) \
+			and fired_pl(g, tgt_owner, "Hard Rock"):
+		dmg -= 20
+	if opp_attack and synergy(g, target, "Glacia's Stadium") and fired(g, target, "Synergy Effect"):
+		dmg -= 30
+	if opp_attack and g.stadium_name() == "Drake's Stadium" and target.is_type("Colorless") and tgt_owner.is_active(target):
+		dmg -= 10
+	if opp_attack and dmg > 0 and body(g, target, "Psychic Protector") and not tgt_owner.hand.is_empty():
+		dmg -= _psychic_protector(g, tgt_owner, target, dmg)
 	return dmg
+
+
+## Psychic Protector (Flygon ex): descarta hasta 4 cartas de la mano y baja 10 por cada una.
+## Se decide solo: las justas para no quedar Fuera de Combate (si con 4 no alcanza, ninguna).
+static func _psychic_protector(g: Game, owner: PlayerState, target: PokemonInPlay, dmg: int) -> int:
+	var need := int(ceil(float(dmg - target.hp_left() + 1) / 10.0))
+	if need <= 0 or need > mini(4, owner.hand.size()):
+		return 0
+	var hand := owner.hand.duplicate()
+	hand.sort_custom(func(a, b): return Trainers._ai_value(a) < Trainers._ai_value(b))
+	for i in need:
+		owner.hand.erase(hand[i])
+		owner.discard.append(hand[i])
+	fired(g, target, "Psychic Protector")
+	g.log_msg("  Psychic Protector: discards %d card(s) to reduce the damage." % need)
+	return need * 10
 
 
 ## Poké-Bodies que reaccionan cuando el Activo recibe daño de un ataque.
@@ -1630,6 +1923,8 @@ static func after_damaged(g: Game, attacker: PokemonInPlay, target: PokemonInPla
 	if body(g, target, "Strikes Back") and fired(g, target, "Strikes Back"):
 		attacker.damage += 10
 		g.log_msg("  Strikes Back: 1 damage counter on %s." % attacker.display_name())
+	if body(g, target, "Fluffy Fur") and g.owner_of(attacker) != tgt_owner and fired(g, target, "Fluffy Fur"):
+		g.try_condition(attacker, "asleep")
 	if body(g, target, "Poison Payback") and fired(g, target, "Poison Payback"):
 		g.try_condition(attacker, "poisoned")
 	if body(g, target, "Fire Veil") and fired(g, target, "Fire Veil"):
@@ -1718,6 +2013,8 @@ static func can_have_condition(g: Game, p: PokemonInPlay, cond: String) -> bool:
 		return false
 	if holon(p, "Holon Energy GL", "Grass"):
 		return false
+	if g.stadium_name() == "Sidney's Stadium" and p.is_type("Darkness") and cond in ["asleep", "confused", "paralyzed"]:
+		return false
 	var owner := g.owner_of(p)
 	if owner != null and owner.is_active(p) and Energy.count_type(p, "Grass") > 0 and body_in_play(g, owner, "Green Essence") \
 			and fired_pl(g, owner, "Green Essence"):
@@ -1761,6 +2058,14 @@ static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
 		return 0
 	if p.is_type("Water") and not p.is_ex() and me.all_in_play().any(func(x): return body(g, x, "Reactive Lift") and x.energy.any(func(e): return CardDB.card_name(e) == "React Energy")):
 		return 0
+	if body(g, p, "Psychic Wing") and Energy.count_type(p, "Psychic") > 0:
+		return 0
+	if p.is_ex() and CardDB.stage(p.top()) == 2 and body_in_play(g, me, "Extra Wing"):
+		return 0
+	if (p.display_name().begins_with("Latias") or p.display_name().begins_with("Latios")) and body_in_play(g, me, "Link Wing"):
+		return 0
+	if p.display_name() == "Kyogre ex" and me.all_in_play().any(func(x): return body(g, x, "Flotation") and Energy.total(x) <= 1):
+		return 0
 	if body(g, p, "Synchronized Lift"):
 		var need := ["Articuno ex", "Moltres ex", "Zapdos ex"]
 		need.erase(p.display_name())
@@ -1783,10 +2088,15 @@ static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
 		cost += 1
 	if me.is_active(p) and not p.is_ex() and not _is_baby(p.top()) and me.bench.any(func(x): return body(g, x, "Retreat Aid")):
 		cost -= 2
+	if p.display_name() in ["Jigglypuff", "Wigglytuff", "Wigglytuff ex", "Igglybuff"] and body_in_play(g, me, "Hover Lift"):
+		cost -= 1
 	match g.stadium_name():
 		"High Pressure System":
 			if p.is_type("Fire") or p.is_type("Water"):
 				cost -= 1
+		"Phoebe's Stadium":
+			if p.is_type("Psychic"):
+				cost -= 2
 		"Team Aqua Hideout":
 			if not p.name_has("Team Aqua"):
 				cost += 1
@@ -1812,7 +2122,7 @@ static func attack_blocked(g: Game, p: PokemonInPlay) -> bool:
 	if own != null:
 		var opp := g.other(own)
 		if p.is_basic() and not p.is_fossil():
-			if active_body(g, opp, "Intimidating Ring"):
+			if active_body(g, opp, "Intimidating Ring") or active_body(g, opp, "Intimidating Armor"):
 				return true
 			if opp.all_in_play().size() == 1 and body(g, opp.all_in_play()[0], "Shining Horn"):
 				return true
@@ -2021,12 +2331,48 @@ static func on_evolve_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, slot
 		g.ask(me.index, "%s: use %s?" % [p.display_name(), n], opts, func(o):
 			if o["use"] and me.all_in_play().has(p):
 				g.log_msg("%s uses %s." % [p.display_name(), n])
-				_evolve_power(g, me, p, n))
+				_evolve_power(g, me, p, n)
+				Abilities.dark_eyes(g, me, p))
 
 
 static func _evolve_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String) -> void:
 	var opp := g.other(me)
 	match n:
+		"Peal of Thunder":
+			var top: Array[String] = []
+			for i in mini(5, me.deck.size()):
+				top.append(me.deck.pop_back())
+			g.log_msg("  Looks at the top %d cards: %s." % [top.size(), ", ".join(top.map(func(c): return CardDB.card_name(c)))])
+			var en := top.filter(func(c): return CardDB.is_energy(c))
+			var rest := top.filter(func(c): return not CardDB.is_energy(c))
+			me.discard.append_array(rest)
+			if en.is_empty():
+				return
+			var opts: Array = []
+			for sl in me.slots():
+				opts.append({"label": me.slot(sl).display_name(), "s": sl, "ai": 2.0 if sl == -1 else 1.0})
+			opts.append({"label": "Discard them", "s": -99, "ai": 0.0})
+			g.ask(me.index, "Peal of Thunder: attach %d Energy to..." % en.size(), opts, func(o):
+				var t := me.slot(o["s"]) if o["s"] != -99 else null
+				if t == null:
+					me.discard.append_array(en)
+					return
+				t.energy.append_array(en)
+				g.log_msg("  Attaches %d Energy to %s." % [en.size(), t.display_name()]))
+		"Evolutionary Call":
+			Trainers._pick_sequence(g, me, "Evolutionary Call: Pokémon", 3,
+					func(_picked): return Trainers._distinct(me.deck, func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c)), [])
+		"Dig Up":
+			Trainers.chain(g, me.index, "Dig Up: Pokémon Tool to your hand", 2,
+					func(_picked): return Trainers._distinct(me.discard, func(c): return CardDB.is_pokemon_tool(c)), true,
+					func(id):
+						if me.discard.has(id):
+							me.discard.erase(id)
+							me.hand.append(id),
+					func(): pass)
+		"Chilling Breath":
+			opp.flags["no_trainers"] = g.turn_number + 1
+			g.log_msg("  The opponent can't play Trainer cards during their next turn.")
 		"Energy Recharge":
 			var heads := g.flip_many(3)
 			_attach_from_discard(g, me, p, heads, "Energy Recharge")
@@ -2176,7 +2522,22 @@ static func wake_up(g: Game, p: PokemonInPlay) -> bool:
 ## Efectos "entre turnos" de Poké-Bodies, Herramientas y Estadios.
 static func between_turns(g: Game) -> void:
 	for pl in g.players:
+		var opp := g.other(pl)
+		for a in pl.actives():
+			if body(g, a, "Extra Noise"):
+				var hit := false
+				for x in opp.all_in_play():
+					if x.is_ex():
+						x.damage += 10
+						hit = true
+				if hit and fired(g, a, "Extra Noise"):
+					g.log_msg("  Extra Noise: 1 damage counter on each of the opponent's Pokémon-ex.")
 		for p in pl.all_in_play():
+			if body(g, p, "Bedhead") and p.rotation == "asleep" and opp.active != null and fired(g, p, "Bedhead"):
+				opp.active.damage += 20
+				g.log_msg("  Bedhead: 2 damage counters on %s." % opp.active.display_name())
+			if synergy(g, p, "Drake's Stadium") and p.damage > 0 and fired(g, p, "Synergy Effect"):
+				p.damage -= 10
 			if body(g, p, "Rain Dish") or body(g, p, "Healing Stone"):
 				if p.damage > 0:
 					fired(g, p, "Rain Dish" if body(g, p, "Rain Dish") else "Healing Stone")
@@ -2329,6 +2690,18 @@ static func on_knocked_out(g: Game, owner: PlayerState, discarded: Array[String]
 
 ## Recalcula efectos estáticos (tipos, PS extra, herramientas prohibidas).
 static func refresh(g: Game) -> void:
+	# Holon Veil (Ampharos δ): los Pokémon de su dueño cuentan como δ
+	var veil := {}
+	for pl in g.players:
+		if body_in_play(g, pl, "Holon Veil"):
+			for pile in [pl.deck, pl.hand, pl.discard]:
+				for c in pile:
+					if CardDB.is_pokemon(c):
+						veil[c] = true
+			for x in pl.all_in_play():
+				for c in x.cards:
+					veil[c] = true
+	CardDB.veil_delta = veil
 	for pl in g.players:
 		var opp := g.other(pl)
 		var lock := body_in_play(g, opp, "Primal Lock")
@@ -2348,6 +2721,13 @@ static func refresh(g: Game) -> void:
 				_discard_tool(pl, p, g)
 			p.flags["react_boost"] = p.display_name() in ["Huntail", "Gorebyss"] and pl.all_in_play().any(func(x): return body(g, x, "Reactive Booster"))
 			p.flags["delta_rainbow"] = CardDB.is_delta(p.top())
+			p.flags["crystal_beach"] = g.stadium_name() == "Crystal Beach"
+			if g.stadium_name() == "Sidney's Stadium" and p.is_type("Darkness") and p.rotation != "":
+				p.rotation = ""
+			if CardDB.card_name(p.tool) == "Mysterious Shard" and p.tool_turn < g.turn_number - 1 and g.current == pl.index:
+				_discard_tool(pl, p, g)
+			if CardDB.card_name(p.tool) in ["Cessation Crystal", "Mysterious Shard"] and p.is_ex():
+				_discard_tool(pl, p, g)
 			if p.display_name() == "Lunatone" and body_in_play(g, pl, "Sunbeam"):
 				p.hp_bonus = maxi(p.hp_bonus, 80 - CardDB.hp(p.top()))
 			if p.energy.any(func(e): return CardDB.card_name(e) == "Scramble Energy"):
@@ -2380,6 +2760,8 @@ static func refresh(g: Game) -> void:
 				modes.append("all:Fire")
 			if g.stadium_name() == "Holon Research Tower" and CardDB.is_delta(p.top()):
 				modes.append("basic+:Metal")
+			if p.is_type("Grass") and body_in_play(g, pl, "Chlorophyll"):
+				modes.append("Colorless>Grass")
 			if body(g, p, "Rare Metal"):
 				modes.append("basic:Metal")
 			if body(g, p, "Prismatic Body"):
@@ -2470,13 +2852,14 @@ static func on_bench_from_hand(g: Game, me: PlayerState, p: PokemonInPlay) -> vo
 		var n: String = ab["name"]
 		if ab["kind"] != "Poké-Power" or power_blocked(g, me, p):
 			continue
-		if n in ["Delta Switch", "Support Navigation", "Time Reversal"]:
+		if n in BENCH_TRIGGER:
 			var opts2 := [{"label": "Use " + n, "use": true, "ai": 1.0}, {"label": "Don't use it", "use": false, "ai": 0.0}]
 			g.ask(me.index, "%s: use %s?" % [p.display_name(), n], opts2, func(o):
 				if not o["use"]:
 					return
 				g.log_msg("%s uses %s." % [p.display_name(), n])
-				Abilities._bench_power(g, me, p, n))
+				Abilities._bench_power(g, me, p, n)
+				Abilities.dark_eyes(g, me, p))
 			continue
 		if n not in ["Legendary Ascent", "Dragon Boost"]:
 			continue
@@ -2555,6 +2938,12 @@ static func _ko_powers(g: Game, owner: PlayerState, attacker: PokemonInPlay, tar
 	if owner == null or power_blocked(g, owner, target):
 		return
 	var opp := g.other(owner)
+	if target.has_ability("Time Travel"):
+		# Siempre conviene usarlo: con cara no queda KO (lo resuelve Game._check_knockouts)
+		g.log_msg("%s uses Time Travel." % target.display_name())
+		if g.flip():
+			target.flags["time_travel"] = g.turn_number
+		dark_eyes(g, owner, target)
 	for nm in ["Golden Wing", "Shadow Curse", "Reactive Recharge"]:
 		if not target.has_ability(nm):
 			continue
@@ -2634,11 +3023,70 @@ static func attack_cost(g: Game, p: PokemonInPlay, atk: Dictionary) -> Array:
 		var txt := _ability_text(p, "Delta Aura")
 		if own != null and txt.contains(str(atk.get("name", ""))) and own.all_in_play().any(func(x): return x.display_name().begins_with(partner)):
 			cost = ["Lightning", "Metal", "Colorless"]
+	var nm := str(atk.get("name", ""))
+	var own2 := g.owner_of(p)
+	if own2 != null:
+		var opp2 := g.other(own2)
+		if body(g, p, "Star Light") and _ability_text(p, "Star Light").contains(nm) \
+				and opp2.all_in_play().any(func(x): return x.is_ex() or (x.is_evolved() and CardDB.stage(x.top()) == 2)):
+			cost.erase("Colorless")
+		if body(g, p, "Rage Aura") and _ability_text(p, "Rage Aura").contains(nm) and own2.prizes.size() > opp2.prizes.size():
+			cost = cost.filter(func(c): return c != "Colorless")
+	if p.is_ex() and body_anywhere(g, "Extra Liquid"):
+		cost.append("Colorless")
 	return cost
 
 
 static func _bench_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String) -> void:
+	var opp := g.other(me)
 	match n:
+		"Crush Chance":
+			if g.stadium != "":
+				g.discard_stadium()
+		"Tropical Heal":
+			for x in me.all_in_play():
+				x.rotation = ""
+				x.poison = 0
+				x.burned = false
+				x.flags.erase("imprison")
+				x.flags.erase("shock_wave")
+		"Cursed Eyes":
+			var all: Array = opp.slots().filter(func(sl): return opp.slot(sl).damage > 0)
+			var opts: Array = []
+			for a in all:
+				for b in opp.slots():
+					if b != a:
+						opts.append({"label": "%s → %s" % [opp.slot(a).display_name(), opp.slot(b).display_name()], "a": a, "b": b, "opp": true,
+								"ai": 50.0 if opp.slot(b).hp_left() <= 30 else 1.0})
+			if not opts.is_empty():
+				g.ask(me.index, "Cursed Eyes: move 3 damage counters", opts, func(o):
+					var fa := opp.slot(o["a"])
+					var tb := opp.slot(o["b"])
+					if fa != null and tb != null:
+						var k := mini(30, fa.damage)
+						fa.damage -= k
+						tb.damage += k)
+		"Crimson Ray", "Yellow Ray", "Blue Ray", "Purple Ray":
+			for pl in [me, opp]:
+				for a in pl.actives():
+					match n:
+						"Crimson Ray":
+							g.try_condition(a, "burned")
+						"Purple Ray":
+							g.try_condition(a, "confused")
+						"Yellow Ray":
+							a.damage += 10
+						"Blue Ray":
+							a.rotation = ""
+							a.poison = 0
+							a.burned = false
+							a.damage = maxi(0, a.damage - 30)
+		"Dark Ray":
+			if not opp.hand.is_empty():
+				var c: String = opp.hand[g.rng.randi_range(0, opp.hand.size() - 1)]
+				opp.hand.erase(c)
+				opp.discard.append(c)
+				g.log_msg("  Discards %s from the opponent's hand." % CardDB.card_name(c))
 		"Support Navigation":
 			Trainers._ask_from_deck(g, me, "Support Navigation: Supporter", func(c): return CardDB.is_supporter(c))
 		"Time Reversal":

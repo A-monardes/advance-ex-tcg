@@ -19,7 +19,7 @@ import sys
 import urllib.request
 
 BASE = "https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master"
-ADV_SETS = [f"ex{i}" for i in range(1, 14)] + ["pop1", "pop2", "pop3"]  # Ruby & Sapphire ... Holon Phantoms, más POP Series 1-3
+ADV_SETS = [f"ex{i}" for i in range(1, 17)] + ["pop1", "pop2", "pop3", "pop4", "pop5"]  # Ruby & Sapphire ... Power Keepers, más POP Series 1-5
 ALL_EX_SETS = [f"ex{i}" for i in range(1, 17)] + ["pop1"]  # ... hasta Power Keepers
 # Temporada 2003-04 (Expedition-on): los tres sets e-card enteros.
 ECARD_SETS = ["ecard1", "ecard2", "ecard3"]     # Expedition, Aquapolis, Skyridge
@@ -30,8 +30,8 @@ EXTRA_CARDS = {
     "ecard2": ["130", "136", "141", "145", "147"],   # Pokémon Fan Club, Town Volunteers, Weakness Guard, Boost Energy, Warp Energy
     "ecard3": ["123", "126", "138", "140"],          # Desert Shaman, Friend Ball, Oracle, Underground Expedition
 }
-# Nintendo Black Star Promos: hasta las del Mundial 2006 (001-036).
-PROMO_SETS = {"np": 36}
+# Nintendo Black Star Promos de la era EX (001-040).
+PROMO_SETS = {"np": 40}
 TOOL_FIX = {"Weakness Guard"}   # en esa época las herramientas no tenían el subtipo "Pokémon Tool"
 OUT = pathlib.Path(__file__).resolve().parent.parent / "data" / "cards_adv.json"
 

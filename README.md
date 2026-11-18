@@ -1,7 +1,7 @@
 # Advance EX TCG — Era ADV
 
-Simulador del Pokémon TCG de la **era ADV** (temporadas 2003-04, 2004-05 y 2005-06: de *Expedition*
-a *EX Holon Phantoms*) con estética de Game Boy Advance, hecho en **Godot 4.3**.
+Simulador del Pokémon TCG de la **era ADV** (temporadas 2003-04 a 2006-07: de *Expedition*
+a *EX Power Keepers*) con estética de Game Boy Advance, hecho en **Godot 4.3**.
 
 El juego está todo en **inglés** (menús, registro, campaña y diálogos), igual que el texto
 de las cartas. Esta documentación y los comentarios del código siguen en castellano.
@@ -23,15 +23,20 @@ de las cartas. Esta documentación y los comentarios del código siguen en caste
 | Holon Research Tower | EX Delta Species | ex11 |
 | Mirage Forest | EX Legend Maker | ex12 |
 | Holon Phantom | EX Holon Phantoms | ex13 |
-| — | POP Series 1–3 | pop1–pop3 |
-| — | Nintendo Black Star Promos 001–036 | np |
+| Green Cyclone, Storm Surge, Earth Shower | EX Crystal Guardians | ex14 |
+| Power Wave, Shadow Blaze | EX Dragon Frontiers | ex15 |
+| Mind Game, Dark Blast | EX Power Keepers | ex16 |
+| — | POP Series 1–5 | pop1–pop5 |
+| — | Nintendo Black Star Promos 001–040 | np |
 
 Además están los tres sets e-card que seguían siendo legales en 2003-04 (Expedition,
 Aquapolis y Skyridge: `ecard1`–`ecard3`). Cada temporada usa sus sets y sus reglas:
 **2003-04** (Expedition a Hidden Legends, promos 001–026) y **2004-05** (Ruby & Sapphire a
 Emerald, POP Series 1 y promos 001–027, el formato del Mundial 2005) y **2005-06** (Hidden
 Legends a Holon Phantoms, POP 1–3 y promos 027–033 y 035–036, el formato del Mundial 2006;
-POP 4 no era legal ese año). Todas las cartas
+POP 4 no era legal ese año) y **2006-07** (EX Deoxys a Power Keepers, POP 2–5 y promos
+027–040, el formato del Mundial 2007; Diamond & Pearl también era legal, pero todavía no está
+en el juego). Todas las cartas
 están programadas: ataques, Poké-Powers, Poké-Bodies, Entrenadores y Energías especiales
 (Pokémon Dark y Rocket's, Pokémon ★, Pokémon δ, Pokémon Holon's que se unen como Energía,
 Dark Metal, R, Scramble, React, δ Rainbow, Heal Energy...).
@@ -446,8 +451,11 @@ Los mazos temáticos oficiales de la era, con sus listas originales de 60 cartas
 | EX Delta Species | **Breakthrough** (Crobat δ, Dragonair δ, Holon's Electrode) · **Steeplechase** (Shelgon δ, Umbreon δ, Rapidash) |
 | EX Legend Maker | **Groundbreaker** (Golem, fósiles, Pinsir) · **Shadowquake** (Gengar, Huntail, Gorebyss) |
 | EX Holon Phantoms | **FireMist** (Latias δ, Blaziken, Primeape δ) · **FloodRush** (Latios δ, Bellossom δ, Omanyte δ) |
+| EX Crystal Guardians | **Green Cyclone** (Venusaur, Grovyle) · **Storm Surge** (Blastoise, Charmeleon δ) · **Earth Shower** (Swampert, Dugtrio) |
+| EX Dragon Frontiers | **Power Wave** (Feraligatr δ, Cloyster δ) · **Shadow Blaze** (Typhlosion δ, Arbok δ) |
+| EX Power Keepers | **Mind Game** (Gardevoir, Dusclops) · **Dark Blast** (Mightyena, Delcatty) |
 
-Las listas de 2004-05 y 2005-06 salen de Bulbapedia, Serebii (que da el número de cada carta) y la
+Las listas de 2004-05 a 2006-07 salen de Bulbapedia, Serebii (que da el número de cada carta) y la
 tienda TCGsync. En Silvery Ocean, Serebii suma 61 cartas porque incluye un Magcargo que es
 de Golden Sky; acá se dejó afuera.
 

@@ -62,6 +62,9 @@ static func units(p: PokemonInPlay) -> Array:
 	var modes: Array = p.flags.get("energy_as", [])
 	for e in p.energy:
 		var us := units_of_card(e, p)
+		# Crystal Beach: las Energías especiales que dan 2 o más dan solo 1 Incolora
+		if us.size() >= 2 and p.flags.get("crystal_beach", false) and CardDB.is_energy(e) and not CardDB.is_basic_energy(e):
+			us = [["Colorless"]]
 		for m in modes:
 			us = _convert(e, us, str(m))
 		out.append_array(us)

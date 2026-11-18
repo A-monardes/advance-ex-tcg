@@ -44,6 +44,12 @@ const SEASONS := [
 		"sets": ["ex5", "ex6", "ex7", "ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "pop1", "pop2", "pop3", "np"],
 		"np_ok": [27, 28, 29, 30, 31, 32, 33, 35, 36],
 		"first_player_supporter": false, "coin_winner_chooses": true},
+	# Mundial 2007 (DX-on): de EX Deoxys en adelante. Diamond & Pearl también era legal, pero
+	# todavía no está en el juego.
+	{"id": "2006-07", "name": "2006-07 · Deoxys to Power Keepers",
+		"sets": ["ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "ex14", "ex15", "ex16", "pop2", "pop3", "pop4", "pop5", "np"],
+		"np_ok": [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+		"first_player_supporter": false, "coin_winner_chooses": true},
 ]
 
 

@@ -41,6 +41,8 @@ func _init() -> void:
 	test_secret_gifts()
 	test_frlg_to_emerald()
 	test_holon()
+	test_rock_slide()
+	test_dx()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -1530,3 +1532,62 @@ func test_holon() -> void:
 	var r := RuleSet.from_season(idx)
 	check(r.is_legal("ex13-1") and r.is_legal("np-35") and not r.is_legal("np-34"), "legalidad de promos 2005-06")
 	check(not r.is_legal("ex4-1") and r.is_legal("ex5-1"), "Team Magma vs Team Aqua fuera, Hidden Legends dentro")
+
+
+func test_dx() -> void:
+	print("Crystal Guardians, Dragon Frontiers, Power Keepers")
+	# Crystal Beach: Double Rainbow Energy da 1 sola Incolora
+	var g := board("ex13-10", "ex1-15")
+	var kd := g.current_player().active
+	kd.energy.append("ex14-88")
+	Abilities.refresh(g)
+	check(Energy.total(kd) == 2, "Double Rainbow da 2 Energías")
+	g.stadium = "ex14-75"
+	Abilities.refresh(g)
+	check(Energy.total(kd) == 1 and Energy.count_type(kd, "Fire") == 0, "Crystal Beach la deja en 1 Incolora")
+	# Holon Legacy: los δ no tienen Debilidad
+	check(not Abilities.weakness_types(g, kd).is_empty(), "Kingdra δ tiene Debilidad")
+	g.stadium = "ex15-74"
+	check(Abilities.weakness_types(g, kd).is_empty(), "Holon Legacy: sin Debilidad")
+	# Intimidating Armor: los Básicos del rival no atacan
+	g = board(id_of("Mudkip"), "ex14-89")
+	check(Abilities.attack_blocked(g, g.current_player().active), "Intimidating Armor frena a un Básico")
+	# Extra Liquid: los ex pagan una Incolora más
+	g = board("ex14-89", "ex14-96")
+	g.opponent_player().active.cards.push_front(id_of("Treecko"))     # que sea evolucionado (no Básico)
+	var cost := Abilities.attack_cost(g, g.current_player().active, g.current_player().active.attacks()[0])
+	check(cost.size() == 4, "Extra Liquid suma una Incolora (%d)" % cost.size())
+	# Shock-wave: marca y KO
+	g = board("ex15-99", "ex1-15")
+	var ty := g.current_player().active
+	ty.energy.append_array([id_of("Lightning Energy"), id_of("Lightning Energy"), id_of("Lightning Energy")])
+	var opp := g.opponent_player()
+	g.apply({"t": "attack", "a": 0, "tg": -1, "opt": false})
+	while g.has_pending_choices():
+		g.apply(g.legal_actions()[0])
+	check(opp.active != null and opp.active.flags.get("shock_wave", false), "Electromark pone el marcador")
+	# Formato 2006-07
+	var idx := -1
+	for i in RuleSet.SEASONS.size():
+		if RuleSet.SEASONS[i]["id"] == "2006-07":
+			idx = i
+	var r := RuleSet.from_season(idx)
+	check(r.is_legal("ex16-1") and r.is_legal("np-40") and r.is_legal("ex8-1"), "2006-07: Power Keepers, promo 40 y Deoxys")
+	check(not r.is_legal("ex7-1"), "2006-07: Team Rocket Returns fuera")
+
+
+func test_rock_slide() -> void:
+	print("Rock Slide (Graveler): 20 al Activo y 10 a 2 de la Banca")
+	var g := board("ex12-34", id_of("Torchic"))
+	var gr := g.current_player().active
+	gr.energy.append_array([id_of("Fighting Energy"), id_of("Fighting Energy")])
+	var opp := g.opponent_player()
+	opp.bench.append(mon(id_of("Wurmple")))
+	var act := opp.active
+	g.apply({"t": "attack", "a": 0, "tg": -2, "opt": false})
+	var guard := 0
+	while g.has_pending_choices() and guard < 10:
+		g.apply(g.legal_actions()[0])
+		guard += 1
+	check(act.damage >= 20, "el Activo recibe el daño base (%d)" % act.damage)
+	check(opp.bench.filter(func(x): return x.damage == 10).size() == 2, "dos de la Banca reciben 10")

@@ -9,7 +9,10 @@ extends RefCounted
 const TOOLS := ["Lum Berry", "Oran Berry", "Balloon Berry", "Buffer Piece", "Strength Charm",
 		"Team Aqua Belt", "Team Magma Belt", "Weakness Guard",
 		"Healing Berry", "Memory Berry", "Time Shard", "Crystal Shard", "Star Piece", "EXP.ALL",
-		"Curse Powder", "Energy Root", "Fluffy Berry", "Protective Orb", "Sitrus Berry", "Solid Rage"]
+		"Curse Powder", "Energy Root", "Fluffy Berry", "Protective Orb", "Sitrus Berry", "Solid Rage",
+		"Cessation Crystal", "Mysterious Shard"]
+## Herramientas que no van en Pokémon-ex.
+const TOOLS_NO_EX := ["Cessation Crystal", "Mysterious Shard"]
 ## Herramientas solo para evolucionados que no sean ex / para los que no sean ex, Dark ni con dueño.
 const TOOLS_EVOLVED := ["Curse Powder", "Protective Orb", "Solid Rage"]
 const TOOLS_PLAIN := ["Energy Root", "Fluffy Berry", "Sitrus Berry"]
@@ -29,7 +32,9 @@ const STADIUMS := ["High Pressure System", "Low Pressure System", "Team Aqua Hid
 		"Mystery Zone", "Underground Lake",
 		"Mt. Moon", "Rocket's Hideout", "Rocket's Tricky Gym", "Meteor Falls", "Space Center", "Battle Frontier",
 		"Holon Research Tower", "Holon Ruins", "Cursed Stone", "Full Flame", "Giant Stump", "Power Tree", "Strange Cave",
-		"Holon Lake", "Championship Arena"]
+		"Holon Lake", "Championship Arena",
+		"Crystal Beach", "Holon Circle", "Holon Legacy", "Drake's Stadium", "Glacia's Stadium", "Phoebe's Stadium",
+		"Sidney's Stadium"]
 ## Estadios con una acción "una vez por turno" (aparecen como acción del jugador).
 const STADIUM_ACTIONS := ["Apricorn Forest", "Undersea Ruins", "Power Plant", "Ancient Ruins", "Mystery Zone",
 		"Underground Lake", "Holon Ruins", "Power Tree", "Strange Cave"]
@@ -60,6 +65,8 @@ const OTHERS := [
 	# Unseen Forces ... Holon Phantoms
 	"Mary's Request", "Holon Farmer", "Holon Lass", "Holon Mentor", "Holon Researcher", "Holon Scientist",
 	"Holon Adventurer", "Fieldworker", "Holon Transceiver", "Holon Fossil",
+	# Crystal Guardians, Dragon Frontiers, Power Keepers
+	"Castaway", "Windstorm", "Island Hermit", "Old Rod",
 ]
 
 
@@ -92,6 +99,8 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 			if n in TOOLS_EVOLVED and (not p.is_evolved() or p.is_ex()):
 				continue
 			if n in TOOLS_PLAIN and (p.is_ex() or p.name_has("Dark") or p.has_owner()):
+				continue
+			if n in TOOLS_NO_EX and p.is_ex():
 				continue
 			if p.tool == "" and (not n.begins_with("Team Aqua") or p.name_has("Team Aqua")) \
 					and (not n.begins_with("Team Magma") or p.name_has("Team Magma")):
@@ -274,6 +283,17 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 				out.append({"from": "discard"})
 		"Holon Fossil":
 			if me.bench.size() < g.rules.bench_size:
+				out.append({})
+		"Castaway":
+			if me.deck.any(func(c): return CardDB.is_supporter(c) or CardDB.is_pokemon_tool(c) or CardDB.is_basic_energy(c)):
+				out.append({})
+		"Windstorm":
+			if g.stadium != "" or g.players.any(func(pl): return pl.all_in_play().any(func(x): return x.tool != "")):
+				out.append({})
+		"Island Hermit":
+			out.append({})
+		"Old Rod":
+			if not me.discard.is_empty():
 				out.append({})
 
 		"Professor Elm's Training Method", "Friend Ball", "Oracle", "Underground Expedition":
@@ -641,6 +661,38 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 			me.discard.append(prm["pick"])
 			g.log_msg("  Discards %s." % CardDB.card_name(prm["pick"]))
 			_holon_supporter(g, me, opp, n, prm["pick"])
+		"Castaway":
+			var fn := func(picked: Array) -> Array:
+				var kinds := picked.map(func(c): return Trainers._castaway_kind(c))
+				return Trainers._distinct(me.deck, func(c): return Trainers._castaway_kind(c) != "" and Trainers._castaway_kind(c) not in kinds)
+			_pick_sequence(g, me, "Castaway: Supporter, Pokémon Tool, basic Energy", 3, fn, [])
+		"Windstorm":
+			_windstorm(g, me, 2)
+		"Island Hermit":
+			var faceup: Array = me.flags.get("faceup_prizes", [])
+			var shown := 0
+			for i in me.prizes.size():
+				if shown < 2 and not faceup.has(me.prizes[i]):
+					faceup.append(me.prizes[i])
+					shown += 1
+			me.flags["faceup_prizes"] = faceup
+			if shown > 0:
+				g.log_msg("  Turns %d Prize card(s) face up." % shown)
+			me.draw(2)
+		"Old Rod":
+			var h := g.flip_many(2)
+			var pred := Callable()
+			if h == 2:
+				pred = func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c)
+			elif h == 0:
+				pred = func(c): return CardDB.is_trainer(c)
+			if pred.is_valid():
+				var cands := _distinct(me.discard, pred)
+				if not cands.is_empty():
+					g.ask(me.index, "Old Rod: card to your hand", _card_options(cands, false), func(o):
+						if me.discard.has(o["id"]):
+							me.discard.erase(o["id"])
+							me.hand.append(o["id"]))
 		"Holon Transceiver":
 			var hs := func(c): return CardDB.is_supporter(c) and CardDB.card_name(c).contains("Holon")
 			if prm["from"] == "deck":
@@ -1196,6 +1248,46 @@ static func _bench_as_basic(g: Game, me: PlayerState, card_id: String) -> void:
 		p.damage = 20
 	me.bench.append(p)
 	g.log_msg("  %s goes to the Bench." % CardDB.card_name(card_id))
+
+
+static func _castaway_kind(c: String) -> String:
+	if CardDB.is_supporter(c):
+		return "supporter"
+	if CardDB.is_pokemon_tool(c):
+		return "tool"
+	if CardDB.is_basic_energy(c):
+		return "energy"
+	return ""
+
+
+## Windstorm: descartar hasta n Herramientas o Estadios en juego (de cualquiera), de a uno.
+static func _windstorm(g: Game, me: PlayerState, n: int) -> void:
+	if n <= 0:
+		return
+	var opts: Array = []
+	if g.stadium != "":
+		opts.append({"label": "Stadium: " + g.stadium_name(), "st": true, "ai": 1.0 if g.stadium_owner != me.index else -1.0})
+	for pl in g.players:
+		for x in pl.all_in_play():
+			if x.tool != "":
+				opts.append({"label": "%s (%s)" % [CardDB.card_name(x.tool), x.display_name()], "mon": x, "pl": pl.index,
+						"opp": pl.index != me.index, "ai": 2.0 if pl.index != me.index else -2.0})
+	if opts.is_empty():
+		return
+	opts.append({"label": "Done", "done": true, "ai": 0.0})
+	g.ask(me.index, "Windstorm: discard (%d left)" % n, opts, func(o):
+		if o.get("done", false):
+			return
+		if o.get("st", false):
+			g.discard_stadium()
+		else:
+			var x: PokemonInPlay = o["mon"]
+			var pl: PlayerState = g.players[o["pl"]]
+			if pl.all_in_play().has(x) and x.tool != "":
+				pl.discard.append(x.tool)
+				g.log_msg("  Discards %s." % CardDB.card_name(x.tool))
+				x.tool = ""
+		Trainers._windstorm(g, me, n - 1))
 
 
 static func _is_basic_card(c: String) -> bool:

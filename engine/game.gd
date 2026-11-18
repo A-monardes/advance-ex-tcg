@@ -489,6 +489,11 @@ func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 					var ok_d: Array = opp.slots().filter(func(s2): return opp.slot(s2).damage > 0)
 					if not ok_d.is_empty():
 						targets = ok_d
+				"shock":
+					var ok_s: Array = opp.slots().filter(func(s2): return opp.slot(s2).flags.get("shock_wave", false))
+					if ok_s.is_empty():
+						continue
+					targets = ok_s
 				"bench_team":
 					var team: String = parsed.get("team", "")
 					var ok_b: Array = range(opp.bench.size()).filter(func(b): return opp.bench[b].name_has(team))
@@ -520,6 +525,10 @@ func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 				match parsed["variable"].get("src", ""):
 					"opp_bench": srcs = opp.bench.map(func(x): return x.top())
 					"my_dark": srcs = me.all_in_play().filter(func(x): return x != a and x.name_has("Dark")).map(func(x): return x.top())
+					"opp_all": srcs = opp.all_in_play().map(func(x): return x.top())
+					"opp_delta": srcs = opp.all_in_play().filter(func(x): return CardDB.is_delta(x.top())).map(func(x): return x.top())
+					"opp_hand": srcs = opp.hand.filter(func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c))
+					"my_hand": srcs = me.hand.filter(func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c))
 				var seen_src := {}
 				for dcard in srcs:
 					if seen_src.has(dcard):
@@ -546,6 +555,17 @@ func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 					out.append({"t": "attack", "a": i, "tg": -2, "opt": c})
 				continue
 			for tg in targets:
+				if parsed["variable"].get("k", "") == "rainbow_wave":
+					# Mew ★ (Rainbow Wave): una opción por cada tipo de Energía básica que tiene unida
+					var tys := {}
+					for e in a.energy:
+						if CardDB.is_basic_energy(e):
+							tys[CardDB.basic_energy_type(e)] = true
+					for t in tys:
+						out.append({"t": "attack", "a": i, "tg": tg, "opt": t})
+					if tys.is_empty():
+						out.append({"t": "attack", "a": i, "tg": tg, "opt": ""})
+					continue
 				if parsed["variable"].get("k", "") == "burst_choice":
 					# Dragon Burst: una opción por cada tipo que tenga Energías para descartar
 					var any := false
@@ -737,6 +757,23 @@ func _apply(a: Dictionary) -> void:
 				me.discard.append(id)
 		"power":
 			with_ctx(a.get("ctx", null), func(): Abilities.use_power(self, current_player(), a["s"], a["n"], a["p"]))
+			var pw := current_player()
+			if pw.turn_flags.get("end_turn_after", false):
+				# Energy Recycle, Fellow Boost: "...y tu turno termina" (después de las elecciones)
+				pw.turn_flags.erase("end_turn_after")
+				Abilities.refresh(self)
+				_check_knockouts()
+				if phase == "over":
+					return
+				_prune_choices()
+				if not _choices.is_empty():
+					_after_choices = "end_turn"
+					phase = "choice"
+				else:
+					log_msg("Player %d's turn ends." % (current + 1))
+					_end_turn()
+				changed.emit()
+				return
 		"retreat":
 			with_ctx(a.get("ctx", null), func(): _retreat(current_player(), a["b"]))
 		"send_out":
@@ -820,6 +857,10 @@ func _resolve_attack(index: int, target: int, opt) -> void:
 		log_msg("  Pattern Distraction: the attack does nothing.")
 		does_nothing = true
 	attacker.flags["attacked_turn"] = turn_number
+	if stadium_name() == "Holon Circle" and not does_nothing:
+		log_msg("  Holon Circle: the attack ends.")
+		discard_stadium()
+		does_nothing = true
 	if atk.get("psymimic", false):
 		attacker.power_used_turn = turn_number
 		log_msg("  Psymimic: copies %s from %s." % [atk["name"], CardDB.card_name(atk["src"])])
@@ -925,6 +966,21 @@ func _check_knockouts() -> void:
 		for s in p.slots():
 			var mon := p.slot(s)
 			if mon == null or mon.hp_left() > 0:
+				continue
+			if mon.flags.get("time_travel", -1) == turn_number:
+				# Time Travel (Celebi ★): no queda KO; sus cartas unidas al descarte y él al fondo del mazo
+				var star := mon.top()
+				var rest := mon.all_cards()
+				rest.erase(star)
+				p.discard.append_array(rest)
+				p.deck.push_front(star)
+				log_msg("  %s is not Knocked Out and goes to the bottom of the deck." % mon.display_name())
+				if s == -1:
+					p.active = null
+				elif s == PlayerState.ACTIVE2:
+					p.active2 = null
+				else:
+					p.bench[s] = null
 				continue
 			log_msg("%s is Knocked Out!" % mon.display_name())
 			ko_log.append({"p": p.index, "slot": s, "id": mon.top(), "name": mon.display_name()})
@@ -1291,7 +1347,11 @@ func _pay_retreat(me: PlayerState, bench_idx: int, left: int) -> void:
 ## descarta todas sus Energías al ir a la Banca.
 func _retreat_switch(me: PlayerState, bench_idx: int) -> void:
 	var a := me.active
+	var hp_before := a.hp_left()
 	switch_active(me, bench_idx)
+	if hp_before >= 40 and Abilities.body_in_play(self, other(me), "Metal Gravity") and Abilities.fired_pl(self, other(me), "Metal Gravity"):
+		a.damage += 30
+		log_msg("  Metal Gravity: 3 damage counters on %s." % a.display_name())
 	if Abilities.active_body(self, other(me), "Suction Cups") and not a.energy.is_empty() \
 			and Abilities.fired_pl(self, other(me), "Suction Cups"):
 		me.discard.append_array(a.energy)

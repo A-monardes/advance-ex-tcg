@@ -98,8 +98,13 @@ static func is_ex(id: String) -> bool:
 
 
 ## Pokémon δ (Delta Species): "que tiene δ en su carta".
+## Holon Veil (Ampharos δ) hace que las cartas de Pokémon de su dueño cuenten como δ
+## (lo actualiza Abilities.refresh).
+static var veil_delta := {}
+
+
 static func is_delta(id: String) -> bool:
-	return card_name(id).contains("δ")
+	return card_name(id).contains("δ") or veil_delta.has(id)
 
 
 ## Pokémon Holon's que se pueden unir como Energía desde la mano.

@@ -20,7 +20,8 @@ const ST := "(Asleep|Burned|Confused|Paralyzed|Poisoned)"
 ## Operaciones que se resuelven antes de hacer el daño principal.
 const PRE := ["return_all_basic", "burst_choice", "any_energy", "coin", "flips", "until_tails", "nothing", "bonus", "set_base", "formula", "ignore",
 		"discard_self", "heal_def", "strip_def_trainers", "base_or_extra", "gust", "mill_count", "tidal", "mill_both_bonus",
-		"discard_bonus", "bonus_table", "discard_one_bonus", "lava_choice", "discard_to_counters", "hand_pick", "mind_play", "all_out"]
+		"discard_bonus", "bonus_table", "discard_one_bonus", "lava_choice", "discard_to_counters", "hand_pick", "mind_play", "all_out",
+		"note_hp"]
 
 static var _multi: Array = []
 static var _conds: Array = []
@@ -119,7 +120,7 @@ static func parse(card_id: String, attack: Dictionary) -> Dictionary:
 	ops = cleaned
 	var variable := {}
 	for op in ops:
-		if op["k"] in ["any_energy", "burst_choice", "genetic_memory", "copy_def", "hand_pick"]:
+		if op["k"] in ["any_energy", "burst_choice", "genetic_memory", "copy_def", "hand_pick", "rainbow_wave"]:
 			variable = op
 	var result := {"ops": ops, "unknown": " ".join(unknown), "target": target, "team": team, "optional": optional, "variable": variable}
 	_cache[key] = result
@@ -519,8 +520,11 @@ static func _build() -> void:
 		func(m): return [{"k": "heal_self", "n": int(m.get_string(1))}, {"k": "clear_self"}])
 	_k("Remove (\\d+) damage counters from the Defending Pokémon\\.", func(m): return {"k": "heal_def", "n": int(m.get_string(1))})
 	# Daño a otros Pokémon
-	_k("Does (\\d+) damage to (?:1|\\d+) of your opponent's Benched Pokémon\\.",
+	_k("Does (\\d+) damage to 1 of your opponent's Benched Pokémon\\.",
 		func(m): return {"k": "snipe", "n": int(m.get_string(1)), "needs": "bench"})
+	# "a 2 de los Pokémon en Banca del rival (1 si hay uno solo)": se eligen de a uno
+	_k("Does (\\d+) damage to (\\d+) of your opponent's Benched Pokémon\\.",
+		func(m): return {"k": "multi_bench", "count": int(m.get_string(2)), "n": int(m.get_string(1))})
 	_k("Does (\\d+) damage to 1 of your opponent's Pokémon\\.", func(m): return {"k": "snipe", "n": int(m.get_string(1)), "needs": "any"})
 	_k("(?:This attack does|Does) (\\d+) damage to each of your opponent's Pokémon\\.",
 		func(m): return {"k": "spread", "n": int(m.get_string(1)), "scope": "opp_all"})
@@ -643,6 +647,7 @@ static func _build() -> void:
 	_build_ecard()
 	_build_ex()
 	_build_holon()
+	_build_dx()
 
 
 ## Redacciones de la era e-card (Expedition, Aquapolis, Skyridge): casi todas son variantes de
@@ -1279,6 +1284,93 @@ static func _build_ex() -> void:
 
 
 ## Unseen Forces, Delta Species, Legend Maker, Holon Phantoms, POP 2-3 y promos 028-036.
+## Crystal Guardians, Dragon Frontiers, Power Keepers, POP 4-5 y promos (temporada 2006-07).
+static func _build_dx() -> void:
+	# --- Varias oraciones ---
+	_mf("Count the number of your opponent's Pokémon\\. Search your deck for up to that number of Basic Pokémon and put them onto your Bench\\.(?: Shuffle your deck afterward\\.)?",
+		func(_m): return {"k": "bench_search", "n": 5, "n_per": "opp_count", "type": "", "team": ""})     # Luvdisc
+	_mf("Search your deck for a Trainer card, show it to your opponent, and put it into your hand\\. If that card is a Pokémon Tool card, you may attach it to 1 of your Pokémon instead\\.(?: Shuffle your deck afterward\\.)?",
+		func(_m): return {"k": "mining"})     # Mawile
+	_mf("Choose either Burned or Poisoned, and either Asleep or Confused\\. The Defending Pokémon is now affected by both Special Conditions\\.",
+		func(_m): return {"k": "pick_choose"})     # Swalot
+	_mf("Choose 2 of your opponent's Pokémon\\. This attack does? (\\d+) damage to each of them\\.",
+		func(m): return {"k": "multi_any", "count": 2, "n": int(m.get_string(1))})     # Aggron ex
+	_mf("Before doing damage, count the remaining HP of the Defending Pokémon\\. If that Pokémon is Knocked Out by this attack, NAME does damage to itself equal to the attack's damage minus the remaining HP of the Defending Pokémon\\. This attack's damage isn't (?:affected )?by Weakness, Resistance, Poké-Powers, Poké-Bodies, or any other effects on that Pokémon\\.",
+		func(_m): return [{"k": "ignore", "w": true, "r": true, "fx": true}, {"k": "note_hp"}, {"k": "burn_away"}])     # Blaziken ex
+	_mf("Search your discard pile for all Energy cards\\. This attack does (\\d+) damage times the number of Energy cards you find there\\. Show them to your opponent, and put them on top of your deck\\.(?: Shuffle your deck afterward\\.)?",
+		func(m): return [{"k": "formula", "f": "discard_count", "what": "energy", "n": int(m.get_string(1)), "mode": "times"}, {"k": "energy_discard_to_deck"}])     # Delcatty ex
+	_mf("Choose 1 of your opponent's Pokémon\\. This attack does (\\d+) damage to (?:that|the) Pokémon\\. If that Pokémon already has any damage counters on it, this attack does (\\d+) damage instead\\.",
+		func(m): return {"k": "snipe", "n": int(m.get_string(1)), "needs": "any", "if": "damaged", "n_if": int(m.get_string(2))})     # Shiftry ex
+	_mf("Choose 1 of your opponent's Pokémon\\. This attack does (\\d+) damage to the Pokémon\\. If you choose a Pokémon that has any Poké-Powers or Poké-Bodies, this attack does (\\d+) damage instead\\.",
+		func(m): return {"k": "snipe", "n": int(m.get_string(1)), "needs": "any", "if": "ability", "n_if": int(m.get_string(2))})     # Rayquaza ex δ
+	_mf("You may discard 2 cards from your hand\\. If you do, this attack does \\d+ damage plus (\\d+) more damage and does (\\d+) damage to 1 of your opponent's Benched Pokémon\\.",
+		func(m): return [{"k": "bonus", "n": int(m.get_string(1)), "optional": true, "c": "hand_min", "cn": 2},
+				{"k": "discard_hand_n", "n": 2, "optional": true, "c": "hand_min", "cn": 2},
+				{"k": "multi_bench", "count": 1, "n": int(m.get_string(2)), "optional": true, "c": "hand_min", "cn": 2}])     # Swampert ex
+	_mf("Discard a Basic Pokémon or Evolution card from your hand\\. Choose 1 of that card's attacks\\. [\\w ]+ copies this attack\\. This attack does nothing if NAME doesn't have the Energy necessary to use that attack\\.(?: NAME performs that attack\\.)?",
+		func(_m): return {"k": "copy_def", "needs_energy": true, "src": "my_hand"})     # Alakazam ★
+	_mf("Choose an attack on 1 of your opponent's Pokémon in play that has δ on its card\\. [\\w ]+ copies that attack except for its Energy cost\\.(?: NAME performs that attack\\.)?",
+		func(_m): return {"k": "copy_def", "needs_energy": false, "src": "opp_delta"})     # Togetic δ
+	_mf("Choose an attack on 1 of your opponent's Pokémon in play\\. [\\w ]+ copies that attack\\. This attack does nothing if NAME doesn't have the Energy necessary to use that attack\\.(?: NAME performs that attack\\.)?",
+		func(_m): return {"k": "copy_def", "needs_energy": true, "src": "opp_all"})     # Mew ★
+	_mf("Look at your opponent's hand and choose a Basic Pokémon or Evolution card you find there\\. Choose 1 of that Pokémon's attacks\\. [\\w ]+ copies that attack except for its Energy cost\\.(?: NAME performs that attack\\.)?",
+		func(_m): return {"k": "copy_def", "needs_energy": false, "src": "opp_hand"})     # Shiftry ex
+	_mf("Count the amount of Energy attached to NAME\\. Put that many damage counters on 1 of your opponent's Pokémon\\.",
+		func(_m): return {"k": "counters", "to": "target", "n": 1, "per": "self_energy_x", "needs": "any"})     # Celebi ★
+	_mf("You may discard a Basic Pokémon or Evolution card from your hand\\. If you do, choose 1 of your opponent's Benched Pokémon and do (\\d+) damage to that Pokémon\\.",
+		func(m): return {"k": "fossil_charge", "n": int(m.get_string(1)), "what": "pokemon"})     # Nidoking δ
+	_mf("Flip a coin\\. If heads, the Defending Pokémon is now Paralyzed and switch NAME with 1 of your Benched Pokémon\\.",
+		func(_m): return [{"k": "coin"}, {"k": "status", "conds": ["paralyzed"], "who": "def", "c": "heads"}, {"k": "self_switch", "c": "heads"}])     # Gligar δ
+	_mf("Put 1 damage counter on 1 of your opponent's Pokémon\\. If that Pokémon has δ on its card, put (\\d+) damage counters instead\\.",
+		func(m): return {"k": "counters", "to": "target", "n": 1, "needs": "any", "if_delta": int(m.get_string(1))})     # Lickitung δ
+	_mf("Search your deck for a Basic Pokémon and basic Energy card, show them to your opponent, and put them into your hand\\.(?: Shuffle your deck afterward\\.)?",
+		func(_m): return {"k": "search_two", "a": "basic", "b": "basic_energy"})     # Smoochum δ
+	_mf("Put (\\d+) damage counters on the Defending Pokémon\\. If that Pokémon would be Knocked Out by this attack, put any damage counters not necessary to Knock Out the Defending Pokémon on your opponent's Benched Pokémon in any way you like\\.",
+		func(m): return {"k": "dragon_roar", "n": int(m.get_string(1))})     # Dragonite ex δ
+	_mf("You may do up to (\\d+) damage instead of \\d+ to the Defending Pokémon\\. If you do, this attack does (\\d+) damage to 1 of your opponent's Benched Pokémon\\.",
+		func(m): return [{"k": "set_base", "n": int(m.get_string(1)), "optional": true}, {"k": "multi_bench", "count": 1, "n": int(m.get_string(2)), "optional": true}])     # Salamence ex δ
+	_mf("Choose 1 basic Energy card attached to NAME\\. This attack does (\\d+) damage to each of your opponent's Pokémon that is the same type as the basic Energy card that you chose\\.",
+		func(m): return {"k": "rainbow_wave", "n": int(m.get_string(1))})     # Mew ★
+	_mf("Discard up to (\\d+) Fighting Energy cards attached to NAME\\. For each Energy card you discarded, choose an opponent's Pokémon in play and this attack does (\\d+) damage to those Pokémon\\.(?: This attack's damage isn't affected by Weakness or Resistance\\.)?",
+		func(m): return [{"k": "any_energy", "mode": "discard_named", "etype": "Fighting Energy", "max": int(m.get_string(1)), "base": 0, "per": 0},
+				{"k": "rock_blast", "n": int(m.get_string(2))}])     # Armaldo
+	_mf("Your opponent flips a number of coins equal to the number of his or her Benched Pokémon\\. This attack does (\\d+) damage times the number of tails\\.(?: This attack's damage isn't affected by Weakness or Resistance\\.)?",
+		func(m): return [{"k": "ignore", "w": true, "r": true}, {"k": "flips", "count": "opp_bench", "n": int(m.get_string(1)), "mode": "times_tails"}])     # Banette
+	_mf("Before doing damage, you may flip a coin\\. If tails, this attack does nothing\\. If heads, this attack does (\\d+) damage instead\\.",
+		func(m): return [{"k": "coin", "optional": true}, {"k": "nothing", "c": "tails", "optional": true}, {"k": "set_base", "n": int(m.get_string(1)), "c": "heads", "optional": true}])     # Lugia
+	_mf("Flip a coin\\. If heads, your opponent discards the top card from his or her deck\\.",
+		func(_m): return [{"k": "coin"}, {"k": "mill_opp", "n": 1, "c": "heads"}])     # Groudon ex
+	_mf("Flip a coin\\. If heads, choose 1 of either player's Evolved Pokémon, remove the highest stage Evolution card from that Pokémon, and put it into that player's hand\\.",
+		func(_m): return [{"k": "coin"}, {"k": "devolve_any", "c": "heads"}])     # Mew (promo)
+	_mf("Choose 1 of your opponent's Pokémon that has any Shock-wave markers on it\\. That Pokémon is Knocked Out\\.",
+		func(_m): return {"k": "ko_marked", "needs": "shock"})     # Tyranitar ex δ
+	# --- Condiciones ---
+	_c("If NAME has a Pokémon Tool card attached to it, ", func(_m): return {"c": "self_card", "name": "Pokémon Tool"})
+	_c("If ([\\w']+ Stadium) is in play, ", func(m): return {"c": "stadium", "name": m.get_string(1)})
+	_c("If you have a Stadium card in play, ", func(_m): return {"c": "my_stadium"})
+	_c("If your opponent has a Stadium card in play, ", func(_m): return {"c": "opp_stadium"})
+	_c("If the Defending Pokémon has δ on its card, ", func(_m): return {"c": "def_delta"})
+	_c("If the Defending Pokémon is Knocked Out by this attack, ", func(_m): return {"c": "def_ko", "phase": "post"})
+	# --- Cláusulas ---
+	_k("That Pokémon is now " + ST + "\\.", func(m): return {"k": "status", "conds": [STATUS[m.get_string(1)]], "who": "def"})
+	_k("This attack does (\\d+) damage to each of your opponent's Benched Pokémon-ex\\.", func(m): return {"k": "spread", "n": int(m.get_string(1)), "scope": "opp_bench_ex"})
+	_k("During your opponent's next turn, your opponent can't use any Poké-Powers on his or her Pokémon\\.", func(_m): return {"k": "opp_flag", "flag": "no_powers"})
+	_k("Does (\\d+) damage plus (\\d+) more damage for each Prize card your opponent has taken\\.",
+		func(m): return {"k": "formula", "f": "opp_taken", "n": int(m.get_string(2)), "mode": "plus"})
+	_k("Search your discard pile for an Energy card and attach it to 1 of your Pokémon\\.",
+		func(_m): return {"k": "attach", "from": "discard", "etype": "", "to": "any", "n": 1})
+	_k("NAME has no Weakness during your opponent's next turn\\.", func(_m): return {"k": "flag_self", "flag": "no_weakness", "turns": 1})
+	_k("Discard (\\d+) (\\w+) Energy attached to NAME\\.", func(m): return {"k": "discard_self", "count": int(m.get_string(1)), "etype": m.get_string(2)})
+	_k("Prevent all effects of attacks?, including damage, done to NAME by your opponent's Pokémon-ex during your opponent's next turn\\.",
+		func(_m): return {"k": "flag_self", "flag": "prevent_ex", "turns": 1})
+	_k("Put a Shock-wave marker on 1 of your opponent's Pokémon\\.", func(_m): return {"k": "mark_shock", "needs": "any"})
+	_k("Discard all Energy cards attached to NAME and discard the top (\\d+) cards from your opponent's deck\\.",
+		func(m): return [{"k": "discard_self", "count": 99, "etype": ""}, {"k": "mill_opp", "n": int(m.get_string(1))}])
+	_k("Does (\\d+) damage to each of your opponent's Benched Pokémon that has the same name as the Defending Pokémon\\.",
+		func(m): return {"k": "spread", "n": int(m.get_string(1)), "scope": "opp_bench_same_name"})
+	_k("During your opponent's next turn, any damage done to NAME is reduced by (\\d+)\\.", func(m): return {"k": "reduce_self", "n": int(m.get_string(1))})
+
+
 static func _build_holon() -> void:
 	# --- Varias oraciones ---
 	_mf("The Defending Pokémon is now Asleep and Poisoned\\. Before applying this effect, you may switch 1 of your opponent's Benched Pokémon with 1 of the Defending Pokémon\\. If you do, the new Defending Pokémon is now Asleep and Poisoned\\.(?: Your opponent chooses the Defending Pokémon to switch\\.)?",
@@ -1556,6 +1648,12 @@ static func resolve(g: Game, attacker: PokemonInPlay, attack: Dictionary, target
 				g.log_msg("  The attack does nothing.")
 				return
 			var inner: Dictionary = CardDB.get_card(opt["cp_card"])["attacks"][int(opt["cp_a"])]
+			if parsed["variable"].get("src", "") == "my_hand":
+				if not me.hand.has(opt["cp_card"]):
+					return
+				me.hand.erase(opt["cp_card"])
+				me.discard.append(opt["cp_card"])
+				g.log_msg("  Discards %s from the hand." % CardDB.card_name(opt["cp_card"]))
 			g.log_msg("  Copies %s." % inner["name"])
 			resolve(g, attacker, inner, target, opt.get("cp_opt", false), opt["cp_card"])
 		return
@@ -1671,6 +1769,8 @@ static func _cond_ok(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, 
 			var cnm: String = op["name"]
 			if cnm == "Technical Machine":
 				return attacker.tm != ""
+			if cnm == "Pokémon Tool":
+				return attacker.tool != ""
 			return attacker.energy.any(func(e): return CardDB.card_name(e) == cnm) or CardDB.card_name(attacker.tool) == cnm
 		"def_type": return d != null and d.is_type(op["type"])
 		"fewer_prizes": return me.prizes.size() < opp.prizes.size()
@@ -1686,6 +1786,11 @@ static func _cond_ok(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, 
 				return attacker.energy.filter(func(e): return CardDB.card_name(e).begins_with(et + " Energy")).size() >= int(op.get("at", 1))
 			return Energy.count_type(attacker, et) >= int(op.get("at", 1))
 		"def_basic": return d != null and d.is_basic() and not d.is_fossil()
+		"my_stadium": return g.stadium != "" and g.stadium_owner == me.index
+		"opp_stadium": return g.stadium != "" and g.stadium_owner == opp.index
+		"def_delta": return d != null and CardDB.is_delta(d.top())
+		"def_ko": return d == null or d.hp_left() <= 0 or not opp.all_in_play().has(d)
+		"hand_min": return me.hand.size() >= int(op["cn"])
 		"def_stage2": return d != null and CardDB.stage(d.top()) == 2
 		"def_body": return d != null and d.abilities().any(func(ab): return ab["kind"] == "Poké-Body")
 		"def_resist":
@@ -1743,6 +1848,7 @@ static func _pre(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp:
 				g.log_msg("  %s %d Energy card(s)." % [{"discard": "Discards", "hand_discard": "Discards from hand"}.get(op["mode"], "Returns to hand"), k])
 			if op["mode"] == "hand_discard_draw":
 				me.draw(int(op["draw"]) * k)
+			ctx["discarded"] = k
 			if op["mode"] in ["discard_flips", "discard_all_flips"]:
 				ctx["dmg"] = op["base"] + op["per"] * g.flip_many(k)
 			else:
@@ -1761,6 +1867,7 @@ static func _pre(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp:
 					"def_counters": count = d.damage / 10 if d != null else 0
 					"self_counters": count = a.damage / 10
 					"def_energy": count = Energy.total(d) if d != null else 0
+					"opp_bench": count = opp.bench.size()
 					"bench_energy":
 						count = 0
 						for b in me.bench:
@@ -1771,6 +1878,7 @@ static func _pre(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp:
 			ctx["flips"] = count
 			match op["mode"]:
 				"times": ctx["dmg"] = op["n"] * heads
+				"times_tails": ctx["dmg"] = op["n"] * (count - heads)
 				"plus": ctx["dmg"] += op["n"] * heads
 				"all_or_each": ctx["dmg"] += op["all"] if heads == count else op["n"] * heads
 				"table", "set_table":          # lo que pasa según cuántas caras salieron
@@ -1793,6 +1901,8 @@ static func _pre(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp:
 				ctx["dmg"] = op["n"] * heads
 		"nothing":
 			return false
+		"note_hp":
+			ctx["def_hp0"] = d.hp_left() if d != null else 0
 		"mind_play":
 			if not opp.hand.is_empty():
 				var c: String = opp.hand[g.rng.randi_range(0, opp.hand.size() - 1)]
@@ -2024,7 +2134,10 @@ static func _formula_value(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerS
 			if d == null:
 				return 0
 			return (1 if d.rotation != "" else 0) + (1 if d.poison > 0 else 0) + (1 if d.burned else 0)
+		"opp_taken": return maxi(0, g.rules.prizes - opp.prizes.size())
 		"discard_count":
+			if op["what"] == "energy":
+				return me.discard.filter(func(c): return CardDB.is_energy(c)).size()
 			if op["what"] == "tool":
 				return me.discard.filter(func(c): return CardDB.is_pokemon_tool(c)).size()
 			return me.discard.filter(func(c): return CardDB.is_supporter(c)).size()
@@ -2376,6 +2489,8 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 			if op.has("cap"):
 				n = mini(n, op["cap"])
 			for t in _counter_targets(op["to"], opp, ctx["target"]):
+				if op.has("if_delta") and CardDB.is_delta(t.top()):
+					n = int(op["if_delta"])
 				if not Abilities.blocks_effects(g, a, t):
 					t.damage += 10 * n
 					g.log_msg("  %d damage counter(s) on %s." % [n, t.display_name()])
@@ -2451,8 +2566,9 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 				var ty: String = op["type"]
 				var team: String = op["team"]
 				pred = func(c): return CardDB.is_basic_pokemon(c) and (ty in CardDB.types(c) or (team != "" and CardDB.card_name(c).contains(team)))
+			var bn: int = opp.all_in_play().size() if op.get("n_per", "") == "opp_count" else int(op["n"])
 			# El jugador elige qué Pokémon poner (de a uno, "Listo" para parar: dice "hasta").
-			Trainers.chain(g, me.index, "Choose a Pokémon for the Bench", op["n"],
+			Trainers.chain(g, me.index, "Choose a Pokémon for the Bench", bn,
 					func(_p): return Trainers._distinct(me.deck, pred) if me.bench.size() < g.rules.bench_size else [], true,
 					func(id):
 						me.deck.erase(id)
@@ -2951,8 +3067,96 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 			while g.flip():
 				hd += 1
 			me.draw(hd * int(op["n"]))
+		"mining":
+			var trs := Trainers._distinct(me.deck, func(c): return CardDB.is_trainer(c))
+			if trs.is_empty():
+				g.shuffle(me.deck)
+			else:
+				g.ask(me.index, "Mining: Trainer card", Trainers._card_options(trs, false), func(o):
+					if not me.deck.has(o["id"]):
+						return
+					me.deck.erase(o["id"])
+					g.shuffle(me.deck)
+					var free: Array = me.slots().filter(func(sl): return me.slot(sl).tool == "")
+					if not CardDB.is_pokemon_tool(o["id"]) or free.is_empty():
+						me.hand.append(o["id"])
+						return
+					var opts: Array = [{"label": "Put it into your hand", "s": -99, "ai": 0.5}]
+					for sl in free:
+						opts.append({"label": "Attach to " + me.slot(sl).display_name(), "s": sl, "ai": 1.0})
+					g.ask(me.index, "Mining: %s" % CardDB.card_name(o["id"]), opts, func(o2):
+						var t := me.slot(o2["s"]) if o2["s"] != -99 else null
+						if t != null and t.tool == "":
+							t.tool = o["id"]
+							t.tool_turn = g.turn_number
+						else:
+							me.hand.append(o["id"])))
+		"pick_choose":
+			if d != null and not blocked:
+				var opts14: Array = []
+				for c1 in ["burned", "poisoned"]:
+					for c2 in ["asleep", "confused"]:
+						opts14.append({"label": "%s + %s" % [c1.capitalize(), c2.capitalize()], "a": c1, "b": c2, "opp": true, "ai": 1.0})
+				g.ask(me.index, "Pick and Choose: Special Conditions", opts14, func(o):
+					if opp.all_in_play().has(d):
+						g.try_condition(d, o["a"])
+						g.try_condition(d, o["b"]))
+		"burn_away":
+			if d != null and d.hp_left() <= 0:
+				var back := maxi(0, int(ctx["dealt"]) - int(ctx.get("def_hp0", 0)))
+				if back > 0:
+					a.damage += back
+					g.log_msg("  %s takes %d damage." % [a.display_name(), back])
+		"energy_discard_to_deck":
+			var en: Array = me.discard.filter(func(c): return CardDB.is_energy(c))
+			for c in en:
+				me.discard.erase(c)
+				me.deck.append(c)
+			if not en.is_empty():
+				g.log_msg("  Puts %d Energy card(s) into the deck." % en.size())
+				g.shuffle(me.deck)
+		"discard_hand_n":
+			Trainers.chain(g, me.index, "Discard a card from your hand", int(op["n"]),
+					func(_p): return Trainers._distinct(me.hand, func(_c): return true), false,
+					func(id):
+						if me.hand.has(id):
+							me.hand.erase(id)
+							me.discard.append(id),
+					func(): pass)
+		"search_two":
+			_ask_search(g, me, a, op["a"], 1, [])
+			_ask_search(g, me, a, op["b"], 1, [])
+		"dragon_roar":
+			if d != null and not blocked:
+				var room := maxi(0, d.hp_left()) / 10
+				var on_def := mini(int(op["n"]), room)
+				d.damage += 10 * on_def
+				g.log_msg("  %d damage counter(s) on %s." % [on_def, d.display_name()])
+				var extra := int(op["n"]) - on_def
+				if extra > 0 and not opp.bench.is_empty():
+					_ask_bench_counters(g, me, opp, extra)
+		"rainbow_wave":
+			var et: String = ctx["opt"] if ctx["opt"] is String else ""
+			if et != "":
+				for t in opp.all_in_play():
+					if t.is_type(et):
+						g.deal_attack_damage(a, t, op["n"], t == opp.active, ctx["ignore"] if t == opp.active else {})
+		"rock_blast":
+			_rock_blast(g, me, opp, a, int(ctx.get("discarded", 0)), int(op["n"]))
+		"mark_shock":
+			var t: PokemonInPlay = opp.slot(ctx["target"])
+			if t != null and not Abilities.blocks_effects(g, a, t):
+				t.flags["shock_wave"] = true
+				g.log_msg("  Puts a Shock-wave marker on %s." % t.display_name())
+		"ko_marked":
+			var t: PokemonInPlay = opp.slot(ctx["target"])
+			if t != null and t.flags.get("shock_wave", false) and not Abilities.blocks_effects(g, a, t):
+				t.damage = t.max_hp() + 999
+				g.log_msg("  %s is Knocked Out by the Shock-wave!" % t.display_name())
 		"fossil_charge":
 			var foss := Trainers._distinct(me.hand, func(c): return CardDB.card_name(c) in ["Claw Fossil", "Mysterious Fossil", "Root Fossil", "Holon Fossil"])
+			if op.get("what", "") == "pokemon":
+				foss = Trainers._distinct(me.hand, func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c))
 			if not foss.is_empty() and not opp.bench.is_empty():
 				var opts12 := Trainers._card_options(foss, false)
 				opts12.append({"label": "Don't discard", "id": "", "ai": 0.0})
@@ -3046,6 +3250,22 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 							d.energy.append(e)
 
 
+## Rock Blast (Armaldo): por cada Energía descartada, 20 de daño al Pokémon rival que elijas.
+static func _rock_blast(g: Game, me: PlayerState, opp: PlayerState, a: PokemonInPlay, left: int, n: int) -> void:
+	if left <= 0 or opp.all_in_play().is_empty():
+		return
+	var opts: Array = []
+	for sl in opp.slots():
+		var x := opp.slot(sl)
+		opts.append({"label": "%s (%d HP)" % [x.display_name(), maxi(0, x.hp_left())], "s": sl, "opp": true,
+				"ai": 100.0 if x.hp_left() <= n else 10.0 - x.hp_left() / 10.0})
+	g.ask(me.index, "Rock Blast: %d damage to... (%d left)" % [n, left], opts, func(o):
+		var t := opp.slot(o["s"])
+		if t != null:
+			g.deal_attack_damage(a, t, n, t == opp.active, {"w": true, "r": true})
+		AttackEffects._rock_blast(g, me, opp, a, left - 1, n))
+
+
 static func _spread_targets(scope: String, me: PlayerState, opp: PlayerState) -> Array[PokemonInPlay]:
 	var out: Array[PokemonInPlay] = []
 	match scope:
@@ -3074,6 +3294,10 @@ static func _spread_targets(scope: String, me: PlayerState, opp: PlayerState) ->
 		"all_active":
 			out.append(opp.active)
 			out.append(me.active)
+		"opp_bench_ex": out.append_array(opp.bench.filter(func(p): return p.is_ex()))
+		"opp_bench_same_name":
+			var nm := opp.active.display_name() if opp.active != null else ""
+			out.append_array(opp.bench.filter(func(p): return p.display_name() == nm))
 	return out
 
 
@@ -3257,15 +3481,17 @@ static func _ask_bench_targets(g: Game, me: PlayerState, opp: PlayerState, a: Po
 		return
 	var opts: Array = []
 	for b in opp.bench.size():
-		if b not in chosen:
-			var p := opp.bench[b]
-			opts.append({"label": p.display_name(), "b": b, "opp": true, "ai": 100.0 if p.hp_left() <= n else float(p.damage)})
+		var p := opp.bench[b]
+		if p != null and p not in chosen and p.hp_left() > 0:
+			opts.append({"label": p.display_name(), "b": b, "mon": p, "opp": true, "ai": 100.0 if p.hp_left() <= n else float(p.damage)})
 	if opts.is_empty():
 		return
 	g.ask(me.index, "Choose a Benched Pokémon", opts, func(o):
-		var p := opp.bench[o["b"]]
-		g.deal_attack_damage(a, p, n, false, ignore)
-		AttackEffects._ask_bench_targets(g, me, opp, a, left - 1, n, ignore, chosen + [o["b"]]))
+		# Con el Pokémon (no el lugar): si otro quedó KO, los lugares de la Banca se corren
+		var p: PokemonInPlay = o["mon"]
+		if opp.bench.has(p):
+			g.deal_attack_damage(a, p, n, false, ignore)
+		AttackEffects._ask_bench_targets(g, me, opp, a, left - 1, n, ignore, chosen + [p]))
 
 
 static func _ask_counters(g: Game, me: PlayerState, opp: PlayerState, a: PokemonInPlay, left: int) -> void:

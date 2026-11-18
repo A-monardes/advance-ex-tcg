@@ -354,5 +354,68 @@
       ["ex11-101", 2], ["ex11-99", 2], ["ex13-73", 4], ["ex13-62", 4], ["ex13-59", 4],
       ["ex13-92", 4], ["ex1-106", 11], ["ex1-107", 13]
     ]
+  },
+  "Green Cyclone": {
+    "description": "Crystal Guardians theme deck: Venusaur's Chlorophyll powers Grass Pokémon like Grovyle and Loudred.",
+    "cards": [
+      ["ex14-28", 1], ["ex14-33", 1], ["ex14-34", 2], ["ex14-53", 2], ["ex14-32", 2],
+      ["ex14-23", 2], ["ex14-78", 2], ["ex14-87", 2], ["ex14-86", 2], ["ex12-73", 2],
+      ["ex14-73", 2], ["ex14-45", 4], ["ex14-67", 4], ["ex14-60", 4], ["ex14-69", 4],
+      ["ex1-104", 24]
+    ]
+  },
+  "Storm Surge": {
+    "description": "Crystal Guardians theme deck: Blastoise with Charmeleon δ, Fearow δ and Pelipper δ on Water and Lightning Energy.",
+    "cards": [
+      ["ex14-14", 1], ["ex14-18", 1], ["ex14-26", 1], ["ex14-77", 1], ["ex14-30", 2],
+      ["ex14-43", 2], ["ex14-54", 2], ["ex14-86", 2], ["ex14-82", 2], ["ex14-84", 2],
+      ["ex14-71", 2], ["ex14-87", 2], ["ex14-49", 4], ["ex14-63", 4], ["ex14-61", 4],
+      ["ex14-70", 4], ["ex1-106", 11], ["ex1-109", 13]
+    ]
+  },
+  "Earth Shower": {
+    "description": "Crystal Guardians theme deck: Swampert, Dugtrio and Medicham shake the ground with Water and Fighting Energy.",
+    "cards": [
+      ["ex14-5", 1], ["ex14-27", 1], ["ex14-25", 1], ["ex14-84", 1], ["ex14-38", 2],
+      ["ex14-55", 2], ["ex14-36", 2], ["ex14-86", 2], ["ex14-87", 2], ["ex14-83", 2],
+      ["ex14-71", 2], ["ex14-73", 2], ["ex13-95", 2], ["ex14-50", 4], ["ex14-58", 4],
+      ["ex14-44", 4], ["ex14-56", 4], ["ex1-106", 10], ["ex1-105", 12]
+    ]
+  },
+  "Power Wave": {
+    "description": "Dragon Frontiers theme deck: Feraligatr δ's Battle Aura and Cloyster δ guard a δ team on Lightning and Fighting Energy.",
+    "cards": [
+      ["ex15-14", 1], ["ex15-2", 1], ["ex15-20", 1], ["ex15-88", 1], ["ex15-37", 2],
+      ["ex15-27", 2], ["ex15-59", 2], ["ex15-79", 2], ["ex15-82", 2], ["ex15-72", 2],
+      ["ex14-86", 2], ["ex14-87", 2], ["ex15-63", 4], ["ex15-31", 4], ["ex15-67", 4],
+      ["ex15-52", 4], ["ex1-105", 9], ["ex1-109", 15]
+    ]
+  },
+  "Shadow Blaze": {
+    "description": "Dragon Frontiers theme deck: Typhlosion δ, Arbok δ and Lickitung δ with Fire and Psychic Energy.",
+    "cards": [
+      ["ex15-13", 1], ["ex15-19", 1], ["ex15-12", 1], ["ex15-88", 1], ["ex15-70", 2],
+      ["ex15-36", 2], ["ex15-33", 2], ["ex15-42", 2], ["ex14-86", 2], ["ex14-87", 2],
+      ["ex15-72", 2], ["ex15-79", 2], ["ex15-47", 4], ["ex15-45", 4], ["ex15-61", 4],
+      ["ex15-68", 4], ["ex1-108", 11], ["ex1-107", 13]
+    ]
+  },
+  "Mind Game": {
+    "description": "Power Keepers theme deck: Gardevoir, Dusclops and Sableye play with Phoebe's Stadium on Psychic and Water Energy.",
+    "cards": [
+      ["ex16-9", 1], ["ex16-22", 1], ["ex16-14", 1], ["ex16-81", 1], ["ex16-80", 1],
+      ["ex16-78", 1], ["ex16-33", 2], ["ex16-31", 2], ["ex16-63", 2], ["ex14-86", 2],
+      ["ex14-87", 2], ["ex16-79", 2], ["ex16-75", 2], ["ex16-53", 4], ["ex16-59", 4],
+      ["ex16-55", 4], ["ex16-50", 4], ["ex16-105", 10], ["ex16-107", 14]
+    ]
+  },
+  "Dark Blast": {
+    "description": "Power Keepers theme deck: Mightyena and Sidney's Stadium lead a Fire and Darkness team.",
+    "cards": [
+      ["ex16-18", 1], ["ex16-8", 1], ["ex16-25", 1], ["ex16-78", 1], ["ex16-80", 1],
+      ["ex16-81", 1], ["ex16-28", 2], ["ex16-29", 2], ["ex16-43", 2], ["ex16-74", 2],
+      ["ex16-82", 2], ["ex14-87", 2], ["ex14-86", 2], ["ex16-48", 4], ["ex16-67", 4],
+      ["ex16-58", 4], ["ex16-62", 4], ["ex16-87", 4], ["ex1-108", 20]
+    ]
   }
 }
