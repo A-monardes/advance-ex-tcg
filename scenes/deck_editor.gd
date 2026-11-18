@@ -47,6 +47,7 @@ func _init(duel) -> void:
 func open_collection(state) -> void:
 	camp = state
 	_pool = state.collection_ids()
+	_tab_memo_key = []
 	screen = "camp_list"
 	cursor = state.active_deck
 	camp_menu = -1
@@ -74,6 +75,7 @@ func _start_camp_edit(slot: int) -> void:
 func open() -> void:
 	camp = null
 	_pool = _full_pool.duplicate()
+	_tab_memo_key = []
 	screen = "list"
 	cursor = 0
 	scroll = 0
@@ -124,7 +126,33 @@ func _sorted(ids: Array) -> Array:
 	return arr
 
 
+## El catálogo tiene más de 2000 cartas: el orden, la lista de cada pestaña y la validación
+## del mazo se calculan una vez y se guardan (antes se rehacían en cada cuadro).
+static var _sort_keys := {}
+var _tab_memo_key := []
+var _tab_memo: Array = []
+var _deck_memo := {}       # hash del mazo -> {"errs": [...], "formats": "..."}
+
+
+func _deck_info(deck: Array) -> Dictionary:
+	var h := deck.hash()
+	if not _deck_memo.has(h):
+		if _deck_memo.size() > 64:
+			_deck_memo.clear()
+		var errs := Game.validate_deck(deck)
+		_deck_memo[h] = {"errs": errs, "formats": legal_formats(deck) if errs.is_empty() else ""}
+	return _deck_memo[h]
+
+
 func _sort_key(id: String) -> String:
+	if _sort_keys.has(id):
+		return _sort_keys[id]
+	var k := _make_sort_key(id)
+	_sort_keys[id] = k
+	return k
+
+
+func _make_sort_key(id: String) -> String:
 	var cat := 0 if CardDB.is_pokemon(id) else (2 if CardDB.is_energy(id) else 1)
 	var parts := id.split("-")
 	var set_rank := "z" + parts[0] if parts[0].begins_with("ecard") else parts[0]   # los ecard al final
@@ -132,6 +160,15 @@ func _sort_key(id: String) -> String:
 
 
 func _tab_cards() -> Array:
+	var key := [tab, search, _pool.size(), camp != null, counts.hash() if tab == 0 else 0]
+	if key == _tab_memo_key:
+		return _tab_memo
+	_tab_memo = _tab_cards_build()
+	_tab_memo_key = key
+	return _tab_memo
+
+
+func _tab_cards_build() -> Array:
 	var ids: Array = []
 	match tab:
 		0:
@@ -582,7 +619,7 @@ func _draw_list() -> void:
 			"deck":
 				var n: String = row["name"]
 				var deck := Decks.get_deck(n)
-				var ok := Game.validate_deck(deck).is_empty()
+				var ok: bool = _deck_info(deck)["errs"].is_empty()
 				if sel:
 					d._text_scroll(Vector2(17, y), "★ " + n, d.C_TEXT, 170, "edl")
 				else:
@@ -609,8 +646,8 @@ func _draw_list() -> void:
 	var info := ""
 	match row.get("kind", ""):
 		"deck":
-			var errs := Game.validate_deck(Decks.get_deck(row["name"]))
-			info = ("Ready to play. Formats: " + legal_formats(Decks.get_deck(row["name"]))) if errs.is_empty() else errs[0]
+			var di := _deck_info(Decks.get_deck(row["name"]))
+			info = ("Ready to play. Formats: " + str(di["formats"])) if di["errs"].is_empty() else di["errs"][0]
 		"new":
 			info = "Starts a deck from scratch."
 		"copy":
@@ -629,7 +666,7 @@ func _draw_list() -> void:
 func _draw_edit() -> void:
 	var total := _total()
 	var deck := _deck_array()
-	var errs := Game.validate_deck(deck)
+	var errs: Array = _deck_info(deck)["errs"]
 	# Encabezado: nombre, búsqueda y cantidad
 	d._frame(Rect2(0, 0, d.W, 22))
 	d._text_fit(Vector2(9, 5), "★ " + deck_name, d.C_TEXT, 110 if (search != "" or searching) else 180)
