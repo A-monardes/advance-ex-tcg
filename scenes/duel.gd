@@ -1094,18 +1094,7 @@ func _card_lines(id: String, p: PokemonInPlay) -> Array:
 			var col: Color = C_POWER if ab["kind"] == "Poké-Power" else C_BODY
 			lines.append({"row": [["bold", ab["kind"] + ": ", col], ["bold", ab["name"], col]]})
 			lines.append_array(_para(str(ab["text"]), col))
-		for atk in c.get("attacks", []):
-			lines.append({"gap": INFO_GAP})
-			var row: Array = []
-			for t in atk.get("cost", []):
-				row.append(["icon", t])
-			if atk.get("cost", []).is_empty():
-				row.append(["text", "(no cost)"])
-			row.append(["bold", "  " + atk["name"]])
-			row.append(["text", "  " + atk.get("damage_text", "")])
-			lines.append({"row": row})
-			if str(atk.get("text", "")) != "":
-				lines.append_array(_para(str(atk["text"]), C_TEXT))
+		_attack_lines(lines, c)
 		# Herramienta y MT unidas, con su imagen y su texto
 		if p != null:
 			for extra in [[p.tool, "ATTACHED TOOL"], [p.tm, "ATTACHED TECHNICAL MACHINE"]]:
@@ -1134,7 +1123,25 @@ func _card_lines(id: String, p: PokemonInPlay) -> Array:
 		lines.append(", ".join(c.get("subtypes", [])) if not c.get("subtypes", []).is_empty() else str(c.get("supertype", "")))
 		lines.append({"body": true})
 		lines.append_array(_para(str(c.get("text", "")).replace("You can play only one Supporter card each turn. When you play this card, put it next to your Active Pokémon. When your turn ends, discard this card. ", "")))
+		# MT y Estadios que dan un ataque (Rocket's Tricky Gym, Holon Lake...): el ataque con su costo
+		_attack_lines(lines, c)
 	return lines
+
+
+## Los ataques de la carta en la ficha: costo con íconos, nombre, daño y texto.
+func _attack_lines(lines: Array, c: Dictionary) -> void:
+	for atk in c.get("attacks", []):
+		lines.append({"gap": INFO_GAP})
+		var row: Array = []
+		for t in atk.get("cost", []):
+			row.append(["icon", t])
+		if atk.get("cost", []).is_empty():
+			row.append(["text", "(no cost)"])
+		row.append(["bold", "  " + atk["name"]])
+		row.append(["text", "  " + atk.get("damage_text", "")])
+		lines.append({"row": row})
+		if str(atk.get("text", "")) != "":
+			lines.append_array(_para(str(atk["text"]), C_TEXT))
 
 
 ## Un párrafo de la ficha partido en renglones del ancho del panel del medio, para que
