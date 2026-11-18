@@ -33,6 +33,61 @@ var batch_failed := 0
 var _failed := {}          # id -> true si no se pudo bajar en esta sesión
 var _cache := {}           # id -> Image
 var _crop := {}            # supertipo -> [x0, y0, x1, y1] en proporciones de la carta
+var _web_batch := false    # en el navegador, "bajar todo" lo hace JavaScript (sigue con la pestaña de fondo)
+
+## En el navegador la pestaña de fondo frena el juego (y con él las descargas de Godot).
+## Esto baja en JavaScript, que sigue aunque no se mire la pestaña: guarda cada carta en la
+## Cache Storage del navegador (si se cierra la página, lo bajado no se pierde) y el juego,
+## cuando corre, las va tomando de a poco para recortarlas y guardarlas como siempre.
+const WEB_JS := """
+window.exArt = window.exArt || (function () {
+	const st = {list: [], next: 0, running: 0, ready: [], mem: [], memBusy: 0, fails: [], total: 0, settled: 0};
+	const MAX = 4, KEEP = 6;
+	let cache = null;
+	async function open() { if (!cache && window.caches) { try { cache = await caches.open('ex-tcg-arte'); } catch (e) {} } return cache; }
+	async function one(id, url) {
+		try {
+			const c = await open();
+			let r = c ? await c.match(url) : null;
+			if (!r) {
+				r = await fetch(url);
+				if (!r.ok) throw new Error('http ' + r.status);
+				if (c) { await c.put(url, r.clone()); }
+			}
+			if (c) { st.ready.push([id, url]); } else { st.ready.push([id, url, await r.blob()]); }
+		} catch (e) { st.fails.push(id); }
+		st.settled++;
+		pump();
+	}
+	function pump() {
+		while (st.running < MAX && st.next < st.list.length) {
+			const [id, url] = st.list[st.next++];
+			st.running++;
+			one(id, url).finally(() => { st.running--; pump(); });
+		}
+		while (st.memBusy + st.mem.length < KEEP && st.ready.length) {
+			const [id, url, blob0] = st.ready.shift();
+			st.memBusy++;
+			(async () => {
+				try {
+					const blob = blob0 || await (await (await open()).match(url)).blob();
+					const b64 = await new Promise((ok, ko) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = ko; fr.readAsDataURL(blob); });
+					st.mem.push([id, b64]);
+					if (cache) { cache.delete(url); }
+				} catch (e) { st.fails.push(id); }
+				st.memBusy--;
+				pump();
+			})();
+		}
+	}
+	return {
+		start(json) { const l = JSON.parse(json); st.list = st.list.concat(l); st.total += l.length; pump(); return st.total; },
+		// Una carta lista: "id|base64", "!id" si falló, "" si todavía no hay nada.
+		take() { if (st.fails.length) return '!' + st.fails.shift(); const m = st.mem.shift(); pump(); return m ? m[0] + '|' + m[1] : ''; },
+		pending() { return st.list.length - st.settled + st.ready.length + st.mem.length + st.memBusy; },
+	};
+})();
+"""
 
 
 func _ready() -> void:
@@ -114,6 +169,8 @@ func download_all() -> void:
 	batch_total = 0
 	batch_done = 0
 	batch_failed = 0
+	if OS.has_feature("web") and _web_start():
+		return
 	for id in CardDB.all_ids():
 		if not has_art(id) and not id in _queue and id != _busy:
 			_failed.erase(id)
@@ -129,6 +186,68 @@ func batch_text() -> String:
 	if batch_done < batch_total:
 		return "%d/%d" % [batch_done, batch_total]
 	return "Done" if batch_failed == 0 else "%d missing" % batch_failed
+
+
+## Navegador: le pasa a JavaScript la lista de cartas sin arte para que las baje él.
+func _web_start() -> bool:
+	if JavaScriptBridge.eval(WEB_JS + "; typeof window.exArt", true) != "object":
+		return false
+	var list: Array = []
+	for id in CardDB.all_ids():
+		if not has_art(id) and id != _busy:
+			_queue.erase(id)
+			_failed.erase(id)
+			var url := _url(id, 1)
+			if url != "":
+				list.append([id, url])
+	batch_total = list.size()
+	if list.is_empty():
+		return true
+	JavaScriptBridge.eval("window.exArt.start(%s)" % JSON.stringify(JSON.stringify(list)), true)
+	_web_batch = true
+	return true
+
+
+## Toma de JavaScript las cartas que ya bajó (unas pocas por cuadro, para no trabar el juego).
+func _process(_delta: float) -> void:
+	if not _web_batch:
+		return
+	for k in 2:
+		var s: String = str(JavaScriptBridge.eval("window.exArt.take()", true))
+		if s == "":
+			break
+		if s.begins_with("!"):
+			var fid := s.substr(1)
+			print("arte: %s falló (navegador)" % fid)
+			_failed[fid] = true
+			batch_failed += 1
+		else:
+			var cut := s.find("|")
+			var id := s.left(cut)
+			var card := Image.new()
+			if card.load_png_from_buffer(Marshalls.base64_to_raw(s.substr(cut + 1))) == OK:
+				_store(id, card)
+			else:
+				_failed[id] = true
+				batch_failed += 1
+		batch_done += 1
+	if batch_done >= batch_total:
+		_web_batch = false
+
+
+func _store(id: String, card: Image) -> void:
+	var art := crop(card, id)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_path(id).get_base_dir()))
+	art.save_png(ProjectSettings.globalize_path(_path(id)))
+	_cache[id] = art
+	listo.emit(id)
+
+
+func _url(id: String, source: int) -> String:
+	var parts := source_id(id).split("-")
+	if parts.size() < 2:
+		return ""
+	return SOURCES[source].replace("{SET}", parts[0].to_upper()).replace("{set}", parts[0]).replace("{N}", parts[1])
 
 
 func _next() -> void:
@@ -187,7 +306,7 @@ func _request() -> void:
 		_try += 1
 	_failed[_busy] = true
 	_busy = ""
-	if batch_total > 0:
+	if batch_total > 0 and not _web_batch:
 		batch_done += 1
 		batch_failed += 1
 	_next()
@@ -197,14 +316,10 @@ func _done(result: int, code: int, _headers: PackedStringArray, body: PackedByte
 	var id := _busy
 	var card := Image.new()
 	if result == HTTPRequest.RESULT_SUCCESS and code == 200 and card.load_png_from_buffer(body) == OK:
-		var art := crop(card, id)
-		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_path(id).get_base_dir()))
-		art.save_png(ProjectSettings.globalize_path(_path(id)))
-		_cache[id] = art
 		_busy = ""
-		if batch_total > 0:
+		if batch_total > 0 and not _web_batch:
 			batch_done += 1
-		listo.emit(id)
+		_store(id, card)
 		_next()
 		return
 	print("arte: %s falló (resultado %d, código %d)" % [id, result, code])
