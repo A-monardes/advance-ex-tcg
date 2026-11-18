@@ -2154,6 +2154,8 @@ func _draw_info_box(r: Rect2, m: PokemonInPlay) -> void:
 	if _shows_reverse(m):
 		_draw_reverse_box(Rect2(r.position + Vector2(4, 1), r.size - Vector2(5, 2)), m.top())
 	_fill_types(Rect2(r.position + Vector2(1, 1), Vector2(3, r.size.y - 2)), m)
+	if CardDB.is_delta(m.top()):
+		_draw_delta_mark(r, m.top(), r.position.y + 19)
 	var name := m.display_name()
 	var ex := name.ends_with(" ex")
 	if ex:
@@ -2170,6 +2172,87 @@ func _draw_info_box(r: Rect2, m: PokemonInPlay) -> void:
 	var hp_txt := "%d/%d" % [maxi(0, roundi(_shown_hp(m))), m.max_hp()]
 	_text(Vector2(r.end.x - 5 - _text_w(hp_txt), r.position.y + 19), hp_txt, C_TEXT)
 	_draw_energy(r.position + Vector2(7, 29), m)
+
+
+## La δ del logo de las cartas δ (DejaVu Serif Bold Italic a 18 px), ya pasada a píxeles:
+## cada dígito es la opacidad 0-9. DELTA_GLOW es la misma letra desenfocada (el brillo).
+const DELTA_CORE := [
+		"000000000000000000",
+		"000000000000000000",
+		"000000000000000000",
+		"000000035676641000",
+		"000000699532692000",
+		"000002996000050000",
+		"000004995000000000",
+		"000001899653000000",
+		"000003896489710000",
+		"000039960039960000",
+		"000189920039990000",
+		"000499900049990000",
+		"000699700069980000",
+		"000799600089950000",
+		"000699500299810000",
+		"000299700699300000",
+		"000038988961000000",
+		"000000122000000000",
+		"000000000000000000",
+		"000000000000000000",
+		"000000000000000000"]
+const DELTA_GLOW := [
+		"000000000000000000",
+		"000000001111100000",
+		"000000112222211000",
+		"000001233333321100",
+		"000012455433332100",
+		"000013565432221100",
+		"000024666432211000",
+		"000124666543321000",
+		"000135665555431000",
+		"001246654456642100",
+		"001356643356753100",
+		"012467642357753100",
+		"012567532357753100",
+		"012567532357642100",
+		"012466533466531000",
+		"001356544455321000",
+		"001234444443210000",
+		"000122333221100000",
+		"000011111110000000",
+		"000000000000000000",
+		"000000000000000000"]
+
+
+## Pokémon δ: la δ del logo de las cartas, centrada debajo de la barra de PS (los números
+## pasan por encima), del color del tipo que gana (con dos tipos, uno arriba y el otro
+## abajo), con un brillo que late despacio y un destello que la cruza en cada vuelta.
+## top: dónde termina la barra de PS.
+func _draw_delta_mark(r: Rect2, id: String, top: float) -> void:
+	var cols: Array = []
+	for ty in CardDB.types(id):
+		cols.append(TYPE_COLORS.get(ty, C_TEXT))
+	if cols.is_empty():
+		cols = [C_TEXT]
+	var t := Time.get_ticks_msec() / 1000.0
+	var pulse := 0.5 + 0.5 * sin(t * TAU / 1.5)       # late cada 1,5 s
+	var gh: int = DELTA_CORE.size()
+	var gw: int = DELTA_CORE[0].length()
+	var cy := (top + 3.0 + r.end.y - 3.0) / 2.0
+	var o := Vector2(roundf(r.position.x + 3 + (r.size.x - 3) / 2.0 - gw / 2.0), roundf(cy - gh / 2.0))
+	var a_core := 0.30 + 0.12 * pulse
+	var a_glow := 0.22 + 0.20 * pulse
+	var sweep := fmod(t / 3.0, 1.0) * (gw + gh) * 1.25 - gh * 0.4     # destello: una pasada cada 3 s
+	for y in gh:
+		var col: Color = cols[0] if y < gh / 2 or cols.size() == 1 else cols[1]
+		var rc: String = DELTA_CORE[y]
+		var rg: String = DELTA_GLOW[y]
+		for x in gw:
+			var a := maxf(int(rc[x]) / 9.0 * a_core, int(rg[x]) / 9.0 * a_glow)
+			if a <= 0.01:
+				continue
+			var c := Color(col, a)
+			if int(rc[x]) >= 5 and absf(x + y * 0.6 - sweep) < 2.0:
+				c = Color(col.lightened(0.5), minf(1.0, a + 0.4))
+			draw_rect(Rect2(o + Vector2(x, y), Vector2(1, 1)), c)
 
 
 ## Barra de PS con la etiqueta naranja: verde, amarilla o roja según lo que queda.
@@ -2364,6 +2447,8 @@ func _draw_compact_info(r: Rect2, m: PokemonInPlay, mine: bool) -> void:
 	draw_rect(r.grow(-1), Color("#f8f8e8"))
 	draw_rect(Rect2(r.position.x + 1, r.end.y - 3, r.size.x - 2, 2), Color("#d8d8b8"))
 	_fill_types(Rect2(r.position + Vector2(1, 1), Vector2(3, r.size.y - 2)), m)
+	if CardDB.is_delta(m.top()):
+		_draw_delta_mark(r, m.top(), r.position.y + 17)
 	var name := m.display_name()
 	var ex := name.ends_with(" ex")
 	if ex:
