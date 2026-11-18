@@ -1660,7 +1660,13 @@ func _find_table_styles() -> void:
 	for dir in TABLE_DIRS:
 		if not DirAccess.dir_exists_absolute(dir):
 			continue
-		var files := Array(DirAccess.get_files_at(dir))
+		# En el juego exportado (y en la web) la carpeta lista "x.png.import" / "x.png.remap"
+		# en vez del PNG: se les saca esa terminación (ImgLoad carga la versión importada).
+		var files: Array = []
+		for f0: String in DirAccess.get_files_at(dir):
+			var f1 := f0.trim_suffix(".import").trim_suffix(".remap")
+			if not files.has(f1):
+				files.append(f1)
 		files.sort()
 		for f: String in files:
 			if not f.get_extension().to_lower() in ["png", "jpg", "webp"]:
