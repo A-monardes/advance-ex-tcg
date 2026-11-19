@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<title>$GODOT_PROJECT_NAME</title>
+		<style>
+html, body, #canvas {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+body {
+	color: white;
+	background-color: #202838;
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+#status, #status-splash, #status-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+#status, #status-splash {
+	top: 0;
+	bottom: 0;
+}
+
+/* Pantalla de carga de Advance EX TCG: fondo de cuadritos como el menú, el logo y una
+   barra como la de PS (se llena de rojo a amarillo y a verde) */
+#status {
+	background-color: #202838;
+	background-image: repeating-conic-gradient(#242e40 0 25%, #202838 0 50%);
+	background-size: 32px 32px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	visibility: hidden;
+	font-family: 'Courier New', monospace;
+	font-weight: bold;
+}
+
+#status-splash {
+	position: static;
+	width: min(560px, 80vw);
+	image-rendering: pixelated;
+	margin: 0 0 6vh 0;
+}
+
+#status-progress, #status-notice {
+	display: none;
+}
+
+#status-progress {
+	position: static;
+	width: min(460px, 70vw);
+}
+
+#bar-row {
+	display: flex;
+	align-items: stretch;
+	height: 22px;
+}
+
+#bar-tag {
+	background: #f0a030;
+	color: #f8f8f8;
+	border: 3px solid #202838;
+	outline: 2px solid #f8f8f8;
+	padding: 0 8px;
+	font-size: 13px;
+	line-height: 16px;
+	letter-spacing: 1px;
+	text-shadow: 1px 1px 0 #a05818;
+}
+
+#bar {
+	flex: 1;
+	background: #384058;
+	border: 3px solid #202838;
+	outline: 2px solid #f8f8f8;
+	margin-left: 4px;
+	position: relative;
+}
+
+#bar-fill {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 0;
+	background: #e04030;
+	box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.35);
+	transition: width 0.2s;
+}
+
+#bar-pct, #bar-tip {
+	text-align: center;
+	margin-top: 14px;
+	font-size: 15px;
+	color: #f8f8f8;
+	text-shadow: 2px 2px 0 #101420;
+}
+
+#bar-tip {
+	margin-top: 6px;
+	color: #a0b0d0;
+}
+
+#status-notice {
+	background-color: #5b3943;
+	border-radius: 0.5rem;
+	border: 1px solid #9b3943;
+	color: #e0e0e0;
+	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+	line-height: 1.3;
+	margin: 0 2rem;
+	overflow: hidden;
+	padding: 1rem;
+	text-align: center;
+	z-index: 1;
+}
+		</style>
+		$GODOT_HEAD_INCLUDE
+	</head>
+	<body>
+		<canvas id="canvas">
+			Your browser does not support the canvas tag.
+		</canvas>
+
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
+
+		<div id="status">
+			<img id="status-splash" src="$GODOT_SPLASH" alt="">
+			<div id="status-progress">
+				<div id="bar-row"><div id="bar-tag">LOAD</div><div id="bar"><div id="bar-fill"></div></div></div>
+				<div id="bar-pct">0%</div>
+				<div id="bar-tip">Shuffling the deck...</div>
+			</div>
+			<div id="status-notice"></div>
+		</div>
+
+		<script src="$GODOT_URL"></script>
+		<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
+
+	let initializing = true;
+	let statusMode = '';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occured');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				navigator.serviceWorker.getRegistration().then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			}).then(() => {
+				window.location.reload();
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		setStatusMode('progress');
+		const barFill = document.getElementById('bar-fill');
+		const barPct = document.getElementById('bar-pct');
+		const barTip = document.getElementById('bar-tip');
+		const tips = ['Shuffling the deck...', 'Drawing 7 cards...', 'Placing the Prize cards...',
+			'Flipping the coin...', 'Choosing the Active Pokémon...', 'Polishing the holos...'];
+		let tipIdx = 0;
+		const tipTimer = setInterval(() => {
+			tipIdx = (tipIdx + 1) % tips.length;
+			barTip.textContent = tips[tipIdx];
+		}, 1600);
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					const p = Math.min(1, current / total);
+					barFill.style.width = (p * 100).toFixed(1) + '%';
+					barFill.style.background = p > 0.5 ? '#58d080' : (p > 0.2 ? '#f8d030' : '#e04030');
+					barPct.textContent = Math.floor(p * 100) + '%';
+				}
+			},
+		}).then(() => {
+			clearInterval(tipTimer);
+			setStatusMode('hidden');
+		}, displayFailureNotice);
+	}
+}());
+		</script>
+	</body>
+</html>
