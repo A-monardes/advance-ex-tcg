@@ -1,0 +1,10 @@
+{
+  "name": "advance-ex-tcg-relay",
+  "version": "1.0.0",
+  "description": "Relay de partidas en línea de Advance EX TCG: une a dos jugadores con un código de sala y les pasa los mensajes.",
+  "main": "relay.js",
+  "scripts": { "start": "node relay.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "ws": "^8.18.0" },
+  "license": "MIT"
+}

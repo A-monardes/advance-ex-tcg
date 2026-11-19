@@ -580,3 +580,25 @@ IA y al azar en dobles.
 Proyecto de fans sin fines de lucro. Pokémon es marca de Nintendo, Creatures y
 GAME FREAK. La letra pixel es propia del proyecto (Roboto y Tiny5, bajo SIL Open Font License, quedan en `fonts/` sin usar). Datos de [pokemon-tcg-data](https://github.com/PokemonTCG/pokemon-tcg-data).
 No se incluyen imágenes oficiales.
+
+
+## Duelo en línea
+
+"Online duel" en el menú principal: uno crea la partida y recibe un código de 4 letras, se lo
+pasa al otro (por WhatsApp, por ejemplo) y el otro se une con ese código. Anda en la PC y en
+la web, y se puede jugar PC contra web.
+
+Cómo funciona: los dos juegos calculan la misma partida a la vez. Arrancan con la misma
+semilla y los mismos mazos, y cada uno le manda al otro el número de cada acción que elige
+(su lugar en la lista de acciones posibles), junto con una huella del estado para notar si las
+dos partidas se separaran. El formato y el tipo de batalla los elige quien crea la partida.
+
+Hace falta un relay: `server/relay.js` (Node). Solo une a los dos jugadores por el código y
+les pasa los mensajes; no sabe nada del juego. Para probar en la misma red:
+`cd server && npm install && npm start` y en el juego, Server = `ws://<ip>:8080`. La web
+(https) necesita un relay con `wss://`, alojado en algún servicio (por ejemplo Render, con
+la carpeta `server` como raíz, `npm install` y `npm start`).
+
+`tests/net_duel.gd` juega una partida entera entre dos procesos a través de un relay local y
+compara el resultado de los dos lados.
+

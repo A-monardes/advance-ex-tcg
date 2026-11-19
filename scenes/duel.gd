@@ -130,8 +130,8 @@ var over_sound_done := false
 var editor                   # editor de mazos (scenes/deck_editor.gd)
 var title_msg := ""
 var title_row := 0           # fila elegida en el menú principal (ver _draw_title)
-const TITLE_ITEMS := ["Campaign", "Options", "Edit decks", "Free duel"]
-const TITLE_ROWS := 4
+const TITLE_ITEMS := ["Campaign", "Options", "Edit decks", "Free duel", "Online duel"]
+const TITLE_ROWS := 5
 var duel_row := 0            # fila elegida en el armado del duelo libre (title_view "duel")
 const DUEL_ROWS := 6
 ## La campaña está en desarrollo: en el juego publicado aparece como "coming soon" y no se
@@ -147,6 +147,14 @@ var doubles_mode := false      # duelo libre en batalla doble (2 contra 2)
 var game: Game
 var ai: SimpleAI
 var human := 0
+# --- Partida en línea (engine/net_link.gd + scenes/online.gd) ---
+# Los dos juegos calculan la misma partida: misma semilla, mismos mazos, y cada uno le pasa
+# al otro el número de cada acción que elige (su lugar en game.legal_actions()).
+var net: NetLink = null          # null = partida local contra la IA
+var net_in := 0                  # acciones del rival ya aplicadas
+var net_out := 0                 # acciones tuyas ya mandadas
+var net_lost := ""               # se cortó la conexión o se perdió la sincronía: mensaje
+var online                       # pantalla de "Online duel" (scenes/online.gd)
 var ai_timer := 0.0
 
 var menu_level := "root"     # root | list
@@ -246,6 +254,7 @@ func _ready() -> void:
 	_load_settings()
 	CardDB.load_db()
 	editor = DeckEditorScript.new(self)
+	online = load("res://scenes/online.gd").new(self)
 	campaign = CampaignScript.new(self)
 	snd = SoundScript.new()
 	add_child(snd)
@@ -292,11 +301,32 @@ func start_campaign_duel(mine: Array[String], theirs: Array[String], level: int,
 	rival_sprite = rsprite
 
 
-func _begin_duel(mine: Array[String], theirs: Array[String], level: int, intro_line: String) -> void:
+## Partida en línea: los dos juegos la arman igual (mazo del que creó la sala primero).
+func start_net_duel(link: NetLink, decks: Array, seed_value: int, season: int, doubles: bool) -> void:
+	net = link
+	net_in = 0
+	net_out = 0
+	net_lost = ""
+	campaign_rival = ""
+	reverse_ids = {}
+	season_idx = season
+	doubles_mode = doubles
+	var a: Array[String] = []
+	var b: Array[String] = []
+	a.assign(decks[0])
+	b.assign(decks[1])
+	_begin_duel(a, b, ai_level, "Online duel · room %s." % link.room, seed_value)
+	human = link.you
+
+
+func _begin_duel(mine: Array[String], theirs: Array[String], level: int, intro_line: String, seed_value: int = 0) -> void:
+	if seed_value == 0:
+		_net_close()
+		human = 0
 	var rules := RuleSet.from_season(season_idx)
 	if doubles_mode and campaign_rival == "":
 		rules = RuleSet.make_doubles(rules)
-	game = Game.new(mine, theirs, 0, rules)
+	game = Game.new(mine, theirs, seed_value, rules)
 	pmd_web.want_cards(mine + theirs)          # web: baja los sprites de PMD de los dos mazos
 	snd.jingle(["comenzar_partida"])      # la música del duelo arranca cuando termina
 	game.log_msg(intro_line)
@@ -386,6 +416,10 @@ func _opening_call(heads: bool) -> void:
 func _process(delta_real: float) -> void:
 	var delta: float = delta_real * ANIM_SPEEDS[anim_speed]   # velocidad de las animaciones
 	_update_trans(delta_real)
+	if net != null:
+		_net_poll()
+	if mode == "title" and title_view == "online":
+		online.update(delta_real)
 	if mode == "title" and title_attract:
 		_attract_t += delta_real
 	if mode == "campaign":
@@ -452,7 +486,7 @@ func _process(delta_real: float) -> void:
 			if animations_on:
 				var d: Dictionary = e.duplicate()
 				d["t"] = 0.0
-				d["choose"] = e["p"] == human     # vos elegís cuál de tus Premios boca abajo tomar
+				d["choose"] = e["p"] == human and net == null     # vos elegís cuál de tus Premios boca abajo tomar
 				prize_anim.append(d)
 		prize_seen = game.prize_log.size()
 	if mode == "duel" and game.deck_log.size() > deck_seen:
@@ -512,17 +546,83 @@ func _process(delta_real: float) -> void:
 	elif mode == "duel" and _check_setup_screen():
 		pass
 	elif mode == "duel" and game.phase != "over" and game.actor() != human and not board_view and intro == "" and not paused and setup_screen == "":
-		ai_timer -= delta
-		if ai_timer <= 0.0:
-			ai_timer = AI_DELAY
-			_do(ai.choose(game))
+		if net != null:
+			_net_remote_step()
+		else:
+			ai_timer -= delta
+			if ai_timer <= 0.0:
+				ai_timer = AI_DELAY
+				_do(ai.choose(game))
 	queue_redraw()
+
+
+## Mandás tu acción: su número en la lista de acciones posibles (las dos partidas tienen la
+## misma lista) y una huella del estado, para notar si las partidas se separaron.
+func _net_send_action(action: Dictionary) -> void:
+	var i := game.legal_actions().find(action)
+	if i < 0:
+		net_lost = "Desync: your move isn't in the list (bug). The game can't go on."
+		return
+	net.send({"k": "act", "n": net_out, "i": i, "h": _net_hash()})
+	net_out += 1
+
+
+## Toca jugar al rival: si ya llegó su acción, se aplica como si la hubiera hecho la IA.
+func _net_remote_step() -> void:
+	if net_lost != "":
+		return
+	for j in net.inbox.size():
+		var m: Dictionary = net.inbox[j]
+		if str(m.get("k", "")) != "act":
+			continue
+		net.inbox.remove_at(j)
+		if int(m.get("n", -1)) != net_in or int(m.get("h", 0)) != _net_hash():
+			net_lost = "Desync: the two games no longer match. The game can't go on."
+			return
+		var acts := game.legal_actions()
+		var i := int(m.get("i", -1))
+		if i < 0 or i >= acts.size():
+			net_lost = "Desync: the opponent's move doesn't exist here."
+			return
+		net_in += 1
+		_do(acts[i])
+		return
+
+
+## Huella del estado: lo que tiene que dar igual en las dos computadoras.
+func _net_hash() -> int:
+	var parts: Array = [game.turn_number, game.phase, game.current, game.actor(), game.stadium]
+	for p in game.players:
+		parts.append([p.hand.size(), p.deck.size(), p.prizes.size(), p.discard.size(),
+				p.all_in_play().map(func(x): return [x.top(), x.damage, x.energy.size()])])
+	return hash(var_to_str(parts)) & 0x3fffffff
+
+
+func _net_poll() -> void:
+	net.poll()
+	if mode != "duel":
+		return
+	for j in range(net.inbox.size() - 1, -1, -1):
+		if str(net.inbox[j].get("k", "")) == "concede" and game.phase != "over":
+			net.inbox.remove_at(j)
+			game.concede(1 - human)
+	if net.status in ["closed", "error"] and net_lost == "" and game.phase != "over":
+		net_lost = net.error if net.error != "" else "Connection lost."
+
+
+func _net_close() -> void:
+	if net != null:
+		net.close()
+	net = null
+	net_lost = ""
 
 
 ## Aplica una acción. Si la jugada tira monedas, primero se ven las monedas y recién
 ## después pasa lo que tenga que pasar: el resultado se calcula antes en una copia de la
 ## partida (el motor es determinista, así que las monedas de la copia son las reales).
 func _do(action: Dictionary) -> void:
+	if net != null and game.actor() == human:
+		_net_send_action(action)
 	if not animations_on:
 		_apply_now(action)
 		return
@@ -722,6 +822,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				title_attract = false
 				snd.play("accept")
 			return
+		if title_view == "online":
+			online.input(event)
+			return
 		_title_input(k, accept and not event.echo)
 		return
 	if mode == "campaign":
@@ -736,6 +839,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		_editor_sound(k, event.echo)
 		editor.input(event)
+		return
+	if net_lost != "":
+		if accept and not event.echo:
+			_net_close()
+			_go(func(): mode = "title")
 		return
 	if paused:
 		_pause_input(k, accept and not event.echo, back and not event.echo)
@@ -812,6 +920,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					mode = "campaign"
 					campaign.after_duel(won))
 			else:
+				_net_close()
 				_go(func(): mode = "title")
 		return
 	if setup_screen != "":
@@ -954,6 +1063,8 @@ func _title_input(k: int, accept: bool) -> void:
 	if title_view == "duel":
 		_duel_setup_input(k, accept, n)
 		return
+	if title_view == "online":
+		return       # la maneja online.input (necesita el evento entero para escribir)
 	match k:
 		KEY_UP:
 			title_row = (title_row + TITLE_ROWS - 1) % TITLE_ROWS
@@ -985,6 +1096,10 @@ func _title_input(k: int, accept: bool) -> void:
 			snd.play("ok")
 			title_view = "duel"
 			duel_row = DUEL_ROWS - 1        # el cursor arranca en "Start duel!"
+		4:
+			snd.play("ok")
+			title_view = "online"
+			online.open()
 
 
 ## Armado del duelo libre: mazos, dificultad, formato y tipo de batalla.
@@ -1169,9 +1284,30 @@ func _draw() -> void:
 			MiniBattle.draw(self, anim)
 		else:
 			BattleScene.draw(self, anim)
+	if mode == "duel" and net != null:
+		_draw_net_overlay()
 	_draw_trans()
 	if gallery_id != "":
 		_draw_gallery()
+
+
+## En línea: "Esperando al rival…" mientras elige, o el aviso si se cortó la conexión.
+func _draw_net_overlay() -> void:
+	if net_lost != "":
+		var r := Rect2(20, 48, W - 40, 50)
+		draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.45))
+		_frame(r)
+		_text_fit(Vector2(r.position.x + 9, r.position.y + 7), "ONLINE DUEL", C_DIM, r.size.x - 18)
+		_text_scroll(Vector2(r.position.x + 9, r.position.y + 20), net_lost, C_TEXT, r.size.x - 18, "netlost")
+		_text(Vector2(r.position.x + 9, r.position.y + 33), "Z: back to the title", Color("#c03028"))
+		return
+	if game.phase != "over" and game.actor() != human and anim.is_empty() and coin_anim.is_empty():
+		var dots := ".".repeat(1 + int(Time.get_ticks_msec() / 400) % 3)
+		var txt := "Waiting for the opponent" + dots
+		var w := _text_w("Waiting for the opponent...") + 10
+		var r := Rect2((W - w) / 2.0, 1, w, 12)
+		draw_rect(r, Color(0.06, 0.08, 0.18, 0.8))
+		_text(r.position + Vector2(5, 0), txt, Color("#f8f8f8"))
 
 
 func _draw_screen() -> void:
@@ -2642,9 +2778,11 @@ func _draw_title() -> void:
 	_draw_logo(1)
 	if title_view == "duel":
 		_draw_duel_setup()
+	elif title_view == "online":
+		online.draw()
 	else:
 		# Menú principal: cuatro opciones
-		var panel := Rect2(64, 62, 112, 56)
+		var panel := Rect2(64, 56, 112, 70)
 		_frame(panel)
 		for i in TITLE_ROWS:
 			var y := panel.position.y + 6 + i * 12
@@ -2675,6 +2813,8 @@ func _draw_title() -> void:
 		_text_scroll(Vector2(6, 149), title_msg, Color("#f8a090"), 228, "title_msg")
 	elif title_view == "duel":
 		_text(Vector2(6, 149), "▲▼ select · ◀▶ change · Z start · X back", C_LIGHT)
+	elif title_view == "online":
+		_text_scroll(Vector2(6, 149), online.keys_text(), C_LIGHT, 228, "online_keys")
 	else:
 		_text(Vector2(6, 149), "▲▼ select · Z accept", C_LIGHT)
 
@@ -8247,6 +8387,8 @@ func _pause_input(k: int, accept: bool, back: bool) -> void:
 		elif accept:
 			if quit_yes:
 				paused = false
+				if net != null:
+					net.send({"k": "concede"})
 				game.concede(human)
 				snd.play("back")
 			else:
