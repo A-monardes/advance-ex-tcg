@@ -7,7 +7,7 @@ extends RefCounted
 ## Uso: host(url) o join(url, "ABCD"), y poll() en cada cuadro. Lo que manda el otro queda
 ## en inbox (diccionarios); send(dic) se lo manda.
 
-const DEFAULT_URL := "ws://127.0.0.1:8080"
+const DEFAULT_URL := "wss://advance-ex-tcg.onrender.com"    # el relay del juego, en Render (server/relay.js)
 
 var ws := WebSocketPeer.new()
 var url := ""
