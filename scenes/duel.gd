@@ -1951,6 +1951,9 @@ func _reduce_palette(img: Image, n: int) -> void:
 
 ## Activo en la mesa: el retrato cuadrado solo, sin marco de carta.
 func _draw_big_card(r: Rect2, m: PokemonInPlay) -> void:
+	if _face_down(m):
+		_draw_card_back(r)
+		return
 	# El Activo se ve como retrato suelto, sin marco de carta (el tipo ya lo indica la
 	# franja del cuadro de info). Ocupa el lugar de la carta, un poco más grande.
 	var q := _portrait_rect(r.position.floor())
@@ -2171,6 +2174,8 @@ func _draw_stadium_tab() -> void:
 ## Arriba del cuadro de info (tu Activo) o abajo (el del rival). Verde si funciona; gris,
 ## sin color, si está anulado.
 func _draw_body_tab(r: Rect2, m: PokemonInPlay, below: bool) -> void:
+	if _face_down(m):
+		return
 	var bodies := _active_body_names(m)
 	if bodies.is_empty():
 		return
@@ -2224,7 +2229,19 @@ func _portrait_rect(card_pos: Vector2) -> Rect2:
 	return Rect2(card_pos + Vector2(-2, 3), Vector2(46, 46))
 
 
+## Preparación: los Pokémon que pone el rival van boca abajo (como en el juego real, se dan
+## vuelta los de los dos recién cuando termina la preparación).
+func _face_down(m: PokemonInPlay) -> bool:
+	if game == null or game.phase != "setup" or mode != "duel":
+		return false
+	var own := game.owner_of(m)
+	return own != null and own.index != human
+
+
 func _draw_mini_card(r: Rect2, m: PokemonInPlay, hp_inside: bool = false) -> void:
+	if _face_down(m):
+		_draw_card_back(r)
+		return
 	var t := _main_type(m.top())
 	draw_rect(r, C_INK)
 	draw_rect(r.grow(-1), C_YELLOW)
@@ -2283,11 +2300,14 @@ func _draw_bench_cards(p: PlayerState) -> void:
 			_outline(r, C_LINE if p.index == human else Color("#c87060"))
 			continue
 		_draw_mini_card(r, p.bench[i])
-		_draw_bench_status(p, i, r)
+		if not _face_down(p.bench[i]):
+			_draw_bench_status(p, i, r)
 
 
 ## Recuadro con nombre, barra de PS, condiciones y Energías (como en las batallas de GBA).
 func _draw_info_box(r: Rect2, m: PokemonInPlay) -> void:
+	if _face_down(m):
+		return
 	var t := _main_type(m.top())
 	draw_rect(Rect2(r.position + Vector2(2, 2), r.size), Color("#283858"))
 	draw_rect(r, C_INK)
@@ -2633,6 +2653,9 @@ func _hovered_action() -> Dictionary:
 ## Carta compacta del Activo en la mesa doble: marco amarillo, ilustración de 22x22 y una
 ## franja abajo con herramienta/MT y el logo ex.
 func _draw_compact_card(r: Rect2, m: PokemonInPlay) -> void:
+	if _face_down(m):
+		_draw_card_back(r)
+		return
 	r.position = r.position.floor()
 	var t := _main_type(m.top())
 	draw_rect(Rect2(r.position + Vector2(2, 2), r.size), Color("#202838"))
@@ -2657,6 +2680,8 @@ func _draw_compact_card(r: Rect2, m: PokemonInPlay) -> void:
 ## Ficha compacta: nombre, barra de PS y abajo las Energías y los PS en números. La
 ## pastilla de estado va sobre el nombre, a la derecha.
 func _draw_compact_info(r: Rect2, m: PokemonInPlay, mine: bool) -> void:
+	if _face_down(m):
+		return
 	draw_rect(Rect2(r.position + Vector2(2, 2), r.size), Color("#283858"))
 	draw_rect(r, C_INK)
 	draw_rect(r.grow(-1), Color("#f8f8e8"))
@@ -4769,9 +4794,10 @@ func _check_moves(before: Dictionary) -> void:
 				items.append({"mon": m, "p": pi, "from": start, "kind": "hand" if from_hand else "deck"})
 				var who := "You put" if mine else "The opponent puts"
 				var where := "on the Bench" if now >= 0 else "in the Active Spot"
+				var shown := "Pokémon face down" if _face_down(m) else m.display_name()
 				if texts.is_empty() or texts[0].begins_with(who):
-					texts = ["%s a %s %s." % [who, m.display_name(), where]] if texts.is_empty() \
-							else [texts[0].trim_suffix(".") + " and %s." % m.display_name()]
+					texts = ["%s a %s %s." % [who, shown, where]] if texts.is_empty() \
+							else [texts[0].trim_suffix(".") + " and %s." % shown]
 	if items.is_empty():
 		return
 	var swap := items.any(func(it): return it["kind"] == "swap")
@@ -4813,6 +4839,9 @@ func _draw_moves() -> void:
 func _draw_moving_card(r: Rect2, m: PokemonInPlay, shadow: bool) -> void:
 	r.position = r.position.floor()
 	r.size = r.size.round()
+	if _face_down(m):
+		_draw_card_back(r)
+		return
 	var t := _main_type(m.top())
 	if shadow:
 		draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Color(0, 0, 0, 0.3))
