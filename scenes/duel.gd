@@ -176,6 +176,9 @@ var info_nav_sync := Callable()   # mueve el cursor de donde se abrió (mano, me
 var info_attach: Array = []       # [jugador, lugar] si la ficha es de un Pokémon en juego
 var info_stack: Array = []        # fichas de las que se vino (Z en un Pokémon -> sus cartas unidas)
 var board_view := false      # recorrer la mesa (tecla B)
+## Panel de Premios (tecla R): {"open", "t" 0..1 deslizamiento, "col" 0..3, "row" 0..2}.
+## Columnas 0-1: Premios del rival (panel izquierdo); 2-3: los tuyos (derecho).
+var prize_view := {}
 var board_sel := [0, -1]     # [jugador, casilla]: -1 = Activo, 0..4 = Banca
 var pile_view := ""          # "" | "hand" (tecla M) | "discard" (tecla D)
 var pile_side := 0           # descarte: 0 = el tuyo, 1 = el del rival
@@ -339,6 +342,7 @@ func _begin_duel(mine: Array[String], theirs: Array[String], level: int, intro_l
 	game.ask_first = true
 	game.start()
 	mode = "duel"
+	prize_view = {}
 	show_log = false
 	info_lines = []
 	info_stack.clear()
@@ -428,6 +432,10 @@ func _process(delta_real: float) -> void:
 		_attract_t += delta_real
 	if mode == "campaign":
 		campaign.update(delta_real)
+	if not prize_view.is_empty():
+		prize_view["t"] = clampf(prize_view["t"] + (1.0 if prize_view["open"] else -1.0) * delta_real / PV_TIME, 0.0, 1.0)
+		if not prize_view["open"] and prize_view["t"] <= 0.0:
+			prize_view = {}
 	if mode == "duel" and paused:
 		_update_music()
 		queue_redraw()
@@ -947,6 +955,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_nav_sound(k, false, back and not event.echo)
 		_board_input(k, accept and not event.echo, back, event.echo)
 		return
+	if not prize_view.is_empty() and prize_view["open"]:
+		_prize_view_input(k, accept and not event.echo, (back or k == KEY_R) and not event.echo)
+		return
+	if k == KEY_R and not event.echo and _prizes_revealed():
+		_open_prize_view()
+		return
 	if k in [KEY_B, KEY_M, KEY_D, KEY_C] and not event.echo:
 		snd.play("ok")
 	if k == KEY_TAB and not event.echo:
@@ -1392,6 +1406,8 @@ func _draw_screen() -> void:
 		_draw_results()
 		return
 	_draw_stadium_tab()
+	_draw_prize_hint()
+	_draw_prize_view()
 	_draw_textbox()
 	_draw_energy_anim()
 	_draw_trainer_anim()
@@ -3618,7 +3634,7 @@ func _draw_textbox() -> void:
 	var tw := box.size.x - 18
 	# Menú principal de tu turno: "¿Qué hará...?" y las opciones en dos columnas
 	if game.phase == "main" and game.actor() == human and menu_level == "root" and not menu_items.is_empty() \
-			and trainer_anim.is_empty() and power_anim.is_empty() and anim.is_empty() and not _deck_showing() and not board_view \
+			and prize_view.is_empty() and trainer_anim.is_empty() and power_anim.is_empty() and anim.is_empty() and not _deck_showing() and not board_view \
 			and not _prize_showing() and energy_anim.is_empty() and evo_anim.is_empty() and coin_anim.is_empty() \
 			and ko_anim.is_empty() and check_anim.is_empty() and move_anim.is_empty():
 		_draw_command_menu()
@@ -3632,6 +3648,9 @@ func _draw_textbox() -> void:
 		return
 	if board_view:
 		_draw_board_details(box, x, y)
+		return
+	if not prize_view.is_empty():
+		_draw_prize_view_text(x, y)
 		return
 	if not coin_anim.is_empty() and str(coin_anim.get("label", "")) != "":
 		_text_scroll(Vector2(x, y), coin_anim["label"], C_TEXT, tw, "coinlbl")
@@ -8783,6 +8802,7 @@ const JOY_KEYS := {
 	JOY_BUTTON_A: KEY_Z, JOY_BUTTON_B: KEY_X, JOY_BUTTON_X: KEY_C, JOY_BUTTON_Y: KEY_B,
 	JOY_BUTTON_START: KEY_P, JOY_BUTTON_BACK: KEY_TAB,
 	JOY_BUTTON_LEFT_SHOULDER: KEY_M, JOY_BUTTON_RIGHT_SHOULDER: KEY_D,
+	JOY_BUTTON_RIGHT_STICK: KEY_R,
 	JOY_BUTTON_DPAD_UP: KEY_UP, JOY_BUTTON_DPAD_DOWN: KEY_DOWN,
 	JOY_BUTTON_DPAD_LEFT: KEY_LEFT, JOY_BUTTON_DPAD_RIGHT: KEY_RIGHT,
 }
@@ -8798,3 +8818,165 @@ func _joypad(event: InputEventJoypadButton) -> void:
 	if mode == "title" and event.button_index == JOY_BUTTON_START:
 		k.keycode = KEY_Z
 	_unhandled_input(k)
+
+
+# ===========================================================================
+# Panel de Premios boca arriba (tecla R)
+# ===========================================================================
+# Cuando un efecto deja Premios boca arriba (Island Hermit, Here Comes Team Rocket!...),
+# aparece una "R" junto a los Premios y con R se deslizan dos paneles: a la izquierda los
+# Premios que le quedan al rival y a la derecha los tuyos. Los boca abajo se ven de dorso.
+
+const PV_TIME := 0.18
+const PV_W := 70.0
+const PV_H := 107.0
+const PV_SLOT := Vector2(27, 26)
+
+
+func _prize_is_up(pl: PlayerState, id: String) -> bool:
+	return pl.flags.get("prizes_face_up", false) or pl.flags.get("faceup_prizes", []).has(id)
+
+
+func _player_has_up_prizes(pl: PlayerState) -> bool:
+	return pl.prizes.any(func(id): return _prize_is_up(pl, id))
+
+
+func _prizes_revealed() -> bool:
+	return mode == "duel" and game != null and game.phase != "over" \
+			and game.players.any(func(pl): return _player_has_up_prizes(pl))
+
+
+func _open_prize_view() -> void:
+	snd.play("ok")
+	# El cursor arranca en tu primer Premio boca arriba (o en el del rival)
+	var start := [2, 0]
+	for side in [1, 0]:
+		var pl: PlayerState = game.players[human if side == 1 else 1 - human]
+		for i in pl.prizes.size():
+			if _prize_is_up(pl, pl.prizes[i]):
+				start = [side * 2 + i % 2, i / 2]
+				break
+		if start != [2, 0] or side == 0:
+			break
+	prize_view = {"open": true, "t": 0.0, "col": start[0], "row": start[1]}
+	show_log = false
+
+
+## Jugador y número de Premio que marca el cursor.
+func _prize_view_sel() -> Array:
+	var side: int = int(prize_view["col"]) / 2
+	var pl: PlayerState = game.players[human if side == 1 else 1 - human]
+	return [pl, int(prize_view["row"]) * 2 + int(prize_view["col"]) % 2]
+
+
+func _prize_view_input(k: int, accept: bool, close: bool) -> void:
+	if close:
+		snd.play("back")
+		prize_view["open"] = false
+		return
+	if k in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
+		snd.play("move")
+	match k:
+		KEY_LEFT: prize_view["col"] = maxi(0, prize_view["col"] - 1)
+		KEY_RIGHT: prize_view["col"] = mini(3, prize_view["col"] + 1)
+		KEY_UP: prize_view["row"] = maxi(0, prize_view["row"] - 1)
+		KEY_DOWN: prize_view["row"] = mini(2, prize_view["row"] + 1)
+	if accept:
+		var sel := _prize_view_sel()
+		var pl: PlayerState = sel[0]
+		var i: int = sel[1]
+		if i < pl.prizes.size() and _prize_is_up(pl, pl.prizes[i]):
+			snd.play("ok")
+			var id: String = pl.prizes[i]
+			_open_info([func(): return _card_lines(id, null)], 0)
+
+
+## La "R" junto a los Premios de quien tenga alguno boca arriba (titila).
+func _draw_prize_hint() -> void:
+	if not _prizes_revealed() or not prize_view.is_empty() or mode != "duel":
+		return
+	if int(Time.get_ticks_msec() / 400) % 3 == 2:
+		return
+	for pl in game.players:
+		if not _player_has_up_prizes(pl):
+			continue
+		var o := _counters_pos(pl.index)
+		var at := Vector2(o.x + 47, o.y + 2) if o.x < W / 2.0 else Vector2(o.x - 10, o.y + 4)
+		var r := Rect2(at, Vector2(9, 9))
+		draw_rect(r, Color("#483810"))
+		draw_rect(r.grow(-1), C_ACCENT)
+		_draw_tiny_letter_r(at + Vector2(3, 2))
+
+
+func _draw_tiny_letter_r(p: Vector2) -> void:
+	var g := ["110", "101", "110", "101", "101"]
+	for row in 5:
+		for col in 3:
+			if g[row][col] == "1":
+				draw_rect(Rect2(p.x + col, p.y + row, 1, 1), Color("#483810"))
+
+
+func _draw_prize_view() -> void:
+	if prize_view.is_empty():
+		return
+	var t: float = prize_view["t"]
+	var e := 1.0 - pow(1.0 - t, 3.0)
+	var slide := (PV_W + 5.0) * e
+	var blink := int(Time.get_ticks_msec() / 220) % 2 == 0
+	for side in 2:
+		var pl: PlayerState = game.players[human if side == 1 else 1 - human]
+		var x0 := (-PV_W - 3.0 + slide) if side == 0 else (W + 3.0 - slide)
+		var box := Rect2(x0, 2, PV_W, PV_H)
+		draw_rect(Rect2(box.position + Vector2(2, 2), box.size), C_INK)
+		draw_rect(box, Color("#f8f8e8"))
+		_outline(box, Color("#484850"))
+		var head := Color("#d84840") if side == 0 else Color("#3868c8")
+		draw_rect(Rect2(box.position + Vector2(1, 1), Vector2(PV_W - 2, 11)), head)
+		var title := "RIVAL" if side == 0 else "YOU"
+		_text(Vector2(x0 + (PV_W - _text_w(title)) / 2.0, 2), title, C_LIGHT)
+		var ups := pl.prizes.filter(func(id): return _prize_is_up(pl, id)).size()
+		var sub := "%d left · %d up" % [pl.prizes.size(), ups]
+		_text(Vector2(x0 + (PV_W - _text_w(sub)) / 2.0, 13), sub, C_TEXT)
+		for i in 6:
+			var r := Rect2(x0 + 7 + (i % 2) * (PV_SLOT.x + 2), 26 + (i / 2) * (PV_SLOT.y + 2), PV_SLOT.x, PV_SLOT.y)
+			if i < pl.prizes.size():
+				if _prize_is_up(pl, pl.prizes[i]):
+					_draw_card_image(r, pl.prizes[i])
+				else:
+					_draw_card_back(r)
+			else:
+				# Ya tomado: hueco punteado
+				for d in range(0, int(r.size.x), 3):
+					draw_rect(Rect2(r.position.x + d, r.position.y, 1, 1), C_DIM)
+					draw_rect(Rect2(r.position.x + d, r.end.y - 1, 1, 1), C_DIM)
+				for d in range(0, int(r.size.y), 3):
+					draw_rect(Rect2(r.position.x, r.position.y + d, 1, 1), C_DIM)
+					draw_rect(Rect2(r.end.x - 1, r.position.y + d, 1, 1), C_DIM)
+			var sel: bool = prize_view["open"] and int(prize_view["col"]) / 2 == side \
+					and int(prize_view["row"]) * 2 + int(prize_view["col"]) % 2 == i
+			if sel and blink:
+				_outline(r.grow(2), C_ACCENT)
+				_outline(r.grow(1), C_LIGHT)
+
+
+func _draw_prize_view_text(x: float, y: float) -> void:
+	var sel := _prize_view_sel()
+	var pl: PlayerState = sel[0]
+	var i: int = sel[1]
+	var who := "Your" if pl.index == human else "Rival's"
+	_text(Vector2(x, y), "%s Prize %d:" % [who, i + 1], C_TEXT)
+	if i >= pl.prizes.size():
+		_text(Vector2(x, y + LINE), "Already taken.", C_DIM)
+		_text(Vector2(x, y + LINE * 2), "R/X: close", C_DIM)
+	elif _prize_is_up(pl, pl.prizes[i]):
+		var id: String = pl.prizes[i]
+		var line := CardDB.card_name(id)
+		if CardDB.is_pokemon(id):
+			var c := CardDB.get_card(id)
+			var st: Array = c.get("subtypes", [])
+			line += "  " + ("Stage 2" if "Stage 2" in st else "Stage 1" if "Stage 1" in st else "Basic") + "  HP " + str(c.get("hp", ""))
+		_text(Vector2(x, y + LINE), line, C_TEXT)
+		_text(Vector2(x, y + LINE * 2), "Z: card info   R/X: close", C_DIM)
+	else:
+		_text(Vector2(x, y + LINE), "Face down.", C_DIM)
+		_text(Vector2(x, y + LINE * 2), "R/X: close", C_DIM)
