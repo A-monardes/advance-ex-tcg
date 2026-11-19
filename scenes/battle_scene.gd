@@ -70,7 +70,10 @@ static func species(card_name: String) -> Array:
 	for pre in ["Team Aqua's ", "Team Magma's ", "Rocket's ", "Holon's "]:
 		if n.begins_with(pre):
 			n = n.substr(pre.length())
-	n = n.replace("δ", "").replace("  ", " ").strip_edges().trim_suffix(" ★")
+	n = n.replace("δ", "").replace("  ", " ").strip_edges()
+	if n.ends_with(" ★"):
+		n = n.trim_suffix(" ★")
+		dark = true       # los Pokémon ★ son shiny: se busca primero <especie>_shiny
 	if n.begins_with("Dark "):
 		n = n.substr(5)
 		dark = true

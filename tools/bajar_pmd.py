@@ -4,6 +4,11 @@ faltan para la mini pelea, con los mismos archivos que copia importar_pmd.py.
 Uso: python3 tools/bajar_pmd.py            # todas las especies de las cartas sin carpeta
      python3 tools/bajar_pmd.py abra mew   # solo esas
 
+Los Pokémon ★ usan la versión shiny (carpeta <especie>_shiny, de la variante 0000/0001 de
+SpriteCollab): también se bajan las que falten. Esos shinies los hizo la comunidad (en Mystery
+Dungeon solo Celebi tiene uno oficial): sus autores quedan en credits.txt de cada carpeta y en
+docs/creditos_sprites.md (tools/creditos_pmd.py).
+
 Necesita conexión a raw.githubusercontent.com. El número de la Pokédex sale de
 data/cards_adv.json (o de una tabla de nombres si la carta no lo trae).
 """
@@ -61,6 +66,8 @@ def main():
         if n not in dex:
             continue
         want[n] = dex[n]
+        if "★" in c["name"]:
+            want[n + "_shiny"] = dex[n]
     only = sys.argv[1:]
     names = sorted(n for n in want if (n in only if only else not os.path.exists(os.path.join(DESTINO, n, "AnimData.xml"))))
     sin_dex = sorted({folder_name(c["name"]) for c in cards if c["supertype"] == "Pokémon"} - set(dex))
@@ -68,7 +75,7 @@ def main():
         print("Sin número de Pokédex (se saltean):", ", ".join(sin_dex))
     need = usadas()
     for n in names:
-        url = BASE % want[n]
+        url = BASE % want[n] + ("0000/0001/" if n.endswith("_shiny") else "")
         try:
             xml = get(url + "AnimData.xml")
         except Exception as e:  # noqa: BLE001
