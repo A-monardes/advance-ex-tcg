@@ -115,6 +115,9 @@ func _run() -> void:
 				if scene.setup_screen != "":
 					key(KEY_X)                     # cierra la ventana del mulligan / de la mano
 					continue
+				if not scene.prize_anim.is_empty() and scene.prize_anim[0].get("choose", false) and scene._prize_showing():
+					scene._pick_prize(0)
+					continue
 				if busy():
 					continue
 				if g.turn_number >= 6 and g.phase == "main":

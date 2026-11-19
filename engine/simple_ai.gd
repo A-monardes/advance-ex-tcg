@@ -240,6 +240,8 @@ func _score_raw(g: Game, a: Dictionary) -> float:
 		"mull_draw":
 			return float(a["n"])
 		"choose":
+			if a.has("k"):
+				return 1.0 if a["k"] == me.prizes.size() else 0.0   # Premio: boca abajo da lo mismo
 			if a.has("i"):
 				return float(g.choice_options()[a["i"]].get("ai", 0.0))
 			var p := me.bench[a["b"]]

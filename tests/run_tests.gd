@@ -43,6 +43,7 @@ func _init() -> void:
 	test_holon()
 	test_rock_slide()
 	test_delta_evolution()
+	test_prize_pick()
 	test_dx()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
@@ -1614,3 +1615,31 @@ func test_delta_evolution() -> void:
 		dk.append("ex14-48")
 		dk.append("ex14-49")
 	check(Game.validate_deck(dk).any(func(e): return "copies of Charmander" in e), "4 copias: Charmander y Charmander δ cuentan juntos")
+
+
+func test_prize_pick() -> void:
+	print("Elegir Premio (reglas reales)")
+	var g := board(id_of("Torchic"), id_of("Torchic"))
+	var me := g.current_player()
+	var opp := g.opponent_player()
+	opp.bench.append(PokemonInPlay.new(id_of("Torchic")))
+	g.prize_pick = [true, true]
+	me.prizes = ["ex1-3", "ex1-19", "ex1-40", "ex1-51", "ex1-62", "ex1-73"] as Array[String]
+	me.flags["faceup_prizes"] = ["ex1-19"]
+	var hand0 := me.hand.size()
+	opp.active.damage = 999
+	g._check_knockouts()
+	g._continue_after_choices()
+	check(g.pending_choice_kind() == "prize" and g.actor() == me.index, "el que hace KO elige Premio primero")
+	check(g.legal_actions().size() == 6, "5 Premios + quedarse con el apartado")
+	g.apply({"t": "choose", "k": 1})
+	check(me.hand.size() == hand0 + 1 and me.hand.has("ex1-19") and not me.prizes.has("ex1-19"), "se lleva el elegido")
+	check(me.prizes.has("ex1-73") and me.prizes.size() == 5, "el apartado vuelve a los Premios")
+	check(not me.flags["faceup_prizes"].has("ex1-19"), "ya no figura boca arriba")
+	check(g.pending_choice_kind() == "promote" and g.actor() == opp.index, "después el rival manda su Activo")
+	var g2 := board(id_of("Torchic"), id_of("Torchic"))
+	g2.opponent_player().bench.append(PokemonInPlay.new(id_of("Torchic")))
+	g2.opponent_player().active.damage = 999
+	g2._check_knockouts()
+	g2._continue_after_choices()
+	check(g2.pending_choice_kind() == "promote", "la IA no elige Premio (sin prize_pick)")

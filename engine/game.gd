@@ -42,7 +42,10 @@ var deck_log: Array = []        # [{"k": "shuffle"|"draw", "p", "ids"}] para las
 var checkup_log: Array = []     # [{"p", "mon", "kind", "dmg"}] daño de veneno/quemadura entre turnos (para la mesa)
 var checkup_mark := -1           # cuántos body_events había al empezar el chequeo (los de antes son del ataque)
 var ko_log: Array = []          # [{"p", "slot", "id", "name"}] Pokémon fuera de combate, para la animación
-var prize_log: Array = []       # [{"p", "id", "n", "of", "left"}] Premios tomados, para la animación
+var prize_log: Array = []       # [{"p", "id", "n", "of", "left", "pick"}] Premios tomados, para la animación
+## Jugadores que eligen qué Premio tomar (como en las reglas reales). La pantalla lo
+## activa para las personas; la IA toma el de arriba (boca abajo da lo mismo).
+var prize_pick := [false, false]
 var evolve_log: Array = []      # [{"p", "mon", "from", "to"}] para la animación   # motivo de cada moneda: "", "burn", "sleep"
 var sudden_death := 0           # cuántas veces se pasó a Muerte Súbita en este duelo
 var sudden_death_enabled := true   # las copias de la IA no la juegan (cuentan el empate)
@@ -235,7 +238,7 @@ func pending_prompt() -> String:
 		"promote": return "New Active Pokémon"
 		"promote2": return "Second Active Pokémon"
 		"switch": return "Switch Active Pokémon"
-	return _choices[0]["prompt"]
+	return _choices[0].get("prompt", "")
 
 
 static func validate_deck(deck: Array[String], r: RuleSet = null) -> Array[String]:
@@ -359,6 +362,11 @@ func _choice_actions() -> Array:
 			out.append({"t": "choose", "i": i})
 		return out
 	var p := players[c["p"]]
+	if c["kind"] == "prize":
+		# k = posición del Premio que se toma; k == cantidad: se queda con la que ya apartó
+		for k in p.prizes.size() + 1:
+			out.append({"t": "choose", "k": k})
+		return out
 	for b in p.bench.size():
 		out.append({"t": "choose", "b": b})
 		if c["kind"] == "switch" and p.active2 != null:
@@ -708,6 +716,8 @@ func _apply(a: Dictionary) -> void:
 						with_ctx(c2, func(): switch_active(p, a["b"]))
 					else:
 						switch_active(p, a["b"])
+				"prize":
+					_take_chosen_prize(p, c, int(a["k"]))
 				"ask":
 					var opt: Dictionary = c["options"][a["i"]]
 					_insert_pos = 0
@@ -962,6 +972,7 @@ func _checkup_one(p: PlayerState, a: PokemonInPlay) -> void:
 func _check_knockouts() -> void:
 	var prize_win := [false, false]
 	var ko2 := [false, false]        # dobles: cayó el segundo Activo
+	var picks: Array = []            # elecciones de Premio a agregar al frente
 	for p in players:
 		for s in p.slots():
 			var mon := p.slot(s)
@@ -1013,7 +1024,19 @@ func _check_knockouts() -> void:
 			for i in n:
 				var prize: String = taker.prizes.pop_back()
 				taker.hand.append(prize)
-				prize_log.append({"p": taker.index, "id": prize, "n": i + 1, "of": n, "left": taker.prizes.size()})
+				var was_up := false
+				if taker.flags.has("faceup_prizes") and not taker.prizes.has(prize):
+					was_up = taker.flags["faceup_prizes"].has(prize)
+					taker.flags["faceup_prizes"].erase(prize)
+				prize_log.append({"p": taker.index, "id": prize, "n": i + 1, "of": n, "left": taker.prizes.size(), "up": was_up})
+			# El motor ya apartó las cartas; si el jugador elige, puede cambiarlas por
+			# cualquiera de los Premios que quedan (ver "prize" en apply).
+			if prize_pick[taker.index] and not taker.prizes.is_empty():
+				for i in n:
+					var li := prize_log.size() - n + i
+					prize_log[li]["pick"] = true
+					picks.append({"p": taker.index, "kind": "prize", "log": li,
+							"prompt": "Choose a Prize card" + (" (%d/%d)" % [i + 1, n] if n > 1 else "")})
 			log_msg("  Player %d takes %d Prize card(s)." % [taker.index + 1, n])
 			if taker.prizes.is_empty():
 				prize_win[taker.index] = true
@@ -1048,6 +1071,32 @@ func _check_knockouts() -> void:
 			_choices.push_front({"p": p.index, "kind": "promote"})
 		if rules.doubles and ko2[p.index] and not _choices.any(func(c): return c["p"] == p.index and c["kind"] == "promote2"):
 			_choices.append({"p": p.index, "kind": "promote2"})
+	# Primero se toman los Premios, después el rival manda su nuevo Activo
+	for i in range(picks.size() - 1, -1, -1):
+		_choices.push_front(picks[i])
+
+
+## Elegir Premio: la carta que el motor apartó vuelve al lugar k y se toma la de ese lugar.
+func _take_chosen_prize(p: PlayerState, c: Dictionary, k: int) -> void:
+	var e: Dictionary = prize_log[c["log"]]
+	if k < 0 or k >= p.prizes.size():
+		return
+	var idx := p.hand.rfind(e["id"])
+	if idx < 0:
+		return
+	var chosen: String = p.prizes[k]
+	p.hand[idx] = chosen
+	p.prizes[k] = e["id"]
+	var faceup: Array = p.flags.get("faceup_prizes", [])
+	var chosen_up := faceup.has(chosen) and not p.prizes.has(chosen)
+	if chosen_up:
+		faceup.erase(chosen)        # ya no está entre los Premios
+	if e.get("up", false):
+		faceup.append(e["id"])      # la que vuelve sigue boca arriba
+	if not faceup.is_empty():
+		p.flags["faceup_prizes"] = faceup
+	e["id"] = chosen
+	e["up"] = chosen_up
 
 
 ## Quita elecciones que ya no tienen sentido (p.ej. cambiar sin Banca).
@@ -1058,6 +1107,7 @@ func _prune_choices() -> void:
 			"switch": return p.active != null and not p.bench.is_empty()
 			"promote": return p.active == null and not p.bench.is_empty()
 			"promote2": return p.active != null and p.active2 == null and not p.bench.is_empty()
+			"prize": return not p.prizes.is_empty()
 		return not c["options"].is_empty())
 
 
@@ -1192,6 +1242,11 @@ func queue_choice(player_index: int, kind: String) -> void:
 		_insert_pos += 1
 	else:
 		_choices.append(c)
+
+
+## La elección pendiente (o {} si no hay).
+func pending_choice() -> Dictionary:
+	return _choices[0] if phase == "choice" else {}
 
 
 func choice_options() -> Array:
@@ -1461,6 +1516,8 @@ func _describe_raw(a: Dictionary) -> String:
 		"first": return "I'll go first" if a["me"] else "Opponent goes first"
 		"mull_draw": return "Draw %d extra card(s) (opponent's mulligan)" % a["n"] if a["n"] > 0 else "Don't draw extra cards"
 		"choose":
+			if a.has("k"):
+				return "Prize card %d" % (a["k"] + 1)
 			if a.has("i"):
 				return _choices[0]["options"][a["i"]]["label"]
 			if a.has("act") and phase == "choice":

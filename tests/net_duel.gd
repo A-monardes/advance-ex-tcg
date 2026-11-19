@@ -53,6 +53,7 @@ func _run() -> void:
 	ai = SimpleAI.new(77 if role == "host" else 99, 3)
 	var g: Game = scene.game
 	var steps := 0
+	var picks := 0
 	t0 = Time.get_ticks_msec()
 	while g.phase != "over" and scene.net_lost == "" and Time.get_ticks_msec() - t0 < 240000:
 		scene._mull_shown = true
@@ -60,7 +61,10 @@ func _run() -> void:
 		scene.setup_screen = ""
 		scene.intro = ""
 		scene.rival_intro = {}
-		if g.actor() == scene.human and scene.anim.is_empty() and scene.coin_anim.is_empty() and scene.trainer_anim.is_empty() \
+		if not scene.prize_anim.is_empty() and scene.prize_anim[0].get("choose", false) and scene._prize_showing():
+			scene._pick_prize(steps % 3)        # elige un Premio (viaja como acción)
+			picks += 1
+		elif g.actor() == scene.human and scene.anim.is_empty() and scene.coin_anim.is_empty() and scene.trainer_anim.is_empty() \
 				and scene.power_anim.is_empty() and scene.banner.is_empty() and scene.evo_anim.is_empty() and scene.prize_anim.is_empty() \
 				and scene.deck_anim.is_empty() and scene.check_anim.is_empty() and scene.ko_anim.is_empty() and scene.vs_anim.is_empty() \
 				and scene.move_anim.is_empty() and scene.energy_anim.is_empty():
@@ -68,6 +72,6 @@ func _run() -> void:
 			steps += 1
 		await process_frame
 	await create_timer(1.0).timeout
-	print(role, ": fin fase=", g.phase, " ganador=", g.winner, " turno=", g.turn_number, " pasos=", steps,
+	print(role, ": fin fase=", g.phase, " ganador=", g.winner, " turno=", g.turn_number, " pasos=", steps, " premios=", picks,
 			" huella=", scene._net_hash(), " perdido='", scene.net_lost, "'")
 	quit()

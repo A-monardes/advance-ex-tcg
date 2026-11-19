@@ -329,6 +329,8 @@ func _begin_duel(mine: Array[String], theirs: Array[String], level: int, intro_l
 	if doubles_mode and campaign_rival == "":
 		rules = RuleSet.make_doubles(rules)
 	game = Game.new(mine, theirs, seed_value, rules)
+	# Elegís qué Premio tomar (reglas reales). En línea eligen los dos, cada uno en su compu.
+	game.prize_pick = [true, true] if net != null else [human == 0, human == 1]
 	pmd_web.want_cards(mine + theirs)          # web: baja los sprites de PMD de los dos mazos
 	snd.jingle(["comenzar_partida"])      # la música del duelo arranca cuando termina
 	game.log_msg(intro_line)
@@ -484,11 +486,16 @@ func _process(delta_real: float) -> void:
 		if animations_on:
 			banner = {"p": game.current, "turn": game.turn_number, "t": 0.0}
 	if mode == "duel" and game.prize_log.size() > prize_seen:
-		for e in game.prize_log.slice(prize_seen):
-			if animations_on:
+		for j in range(prize_seen, game.prize_log.size()):
+			var e: Dictionary = game.prize_log[j]
+			# Vos elegís cuál de tus Premios tomar (el motor espera esa elección)
+			var pick: bool = e.get("pick", false) and e["p"] == human
+			if animations_on or pick:
 				var d: Dictionary = e.duplicate()
 				d["t"] = 0.0
-				d["choose"] = e["p"] == human and net == null     # vos elegís cuál de tus Premios boca abajo tomar
+				d["log"] = j
+				d["choose"] = pick
+				d["quick"] = not animations_on      # sin animaciones: solo el selector
 				prize_anim.append(d)
 		prize_seen = game.prize_log.size()
 	if mode == "duel" and game.deck_log.size() > deck_seen:
@@ -547,6 +554,8 @@ func _process(delta_real: float) -> void:
 		pass
 	elif mode == "duel" and _check_setup_screen():
 		pass
+	elif mode == "duel" and game.pending_choice_kind() == "prize" and game.actor() == human:
+		_ensure_prize_picker()
 	elif mode == "duel" and game.phase != "over" and game.actor() != human and not board_view and intro == "" and not paused and setup_screen == "":
 		if net != null:
 			_net_remote_step()
@@ -755,6 +764,8 @@ func _rebuild_menu() -> void:
 		return
 	if intro != "" or game.phase == "over" or game.actor() != human:
 		return
+	if game.pending_choice_kind() == "prize":
+		return            # se elige en el selector de Premios
 	var actions := game.legal_actions()
 	if game.phase != "main":
 		menu_level = "list"
@@ -3652,7 +3663,14 @@ func _draw_textbox() -> void:
 		var pc: Dictionary = prize_anim[0]
 		var head := "Choose one of your Prize cards" + (" (%d/%d)" % [pc["n"], pc["of"]] if pc["of"] > 1 else "") + "."
 		_text(Vector2(x, y), head, C_TEXT)
-		_text(Vector2(x, y + LINE), "They're face down: it could be any of them.", C_DIM)
+		var pile := _prize_pile(pc["p"])
+		var ci := clampi(prize_cursor, 0, pile.size() - 1)
+		if pile.is_empty() or not pile.any(func(q): return q[1]):
+			_text(Vector2(x, y + LINE), "They're face down: it could be any of them.", C_DIM)
+		elif pile[ci][1]:
+			_text(Vector2(x, y + LINE), "Face up: " + CardDB.card_name(pile[ci][0]), C_TEXT)
+		else:
+			_text(Vector2(x, y + LINE), "Face down: it could be any of the hidden ones.", C_DIM)
 		_text(Vector2(x, y + LINE * 2), "◀▶▲▼ move · Z take", C_DIM)
 		return
 	if _prize_showing():
@@ -6606,6 +6624,23 @@ func _draw_energy_anim() -> void:
 # Una estrella grande aparece girando en el centro, con rayos y chispas, y delante
 # la carta del Premio se da vuelta. Los Premios del rival se ven boca abajo.
 
+## Por las dudas: si el motor espera que elijas un Premio y no hay selector, se abre uno.
+func _ensure_prize_picker() -> void:
+	if mode != "duel" or game.pending_choice_kind() != "prize" or game.actor() != human:
+		return
+	if prize_anim.any(func(e): return e.get("choose", false)):
+		return
+	var li: int = game.pending_choice().get("log", -1)
+	if li < 0 or li >= game.prize_log.size():
+		return
+	var d: Dictionary = game.prize_log[li].duplicate()
+	d["t"] = 0.0
+	d["log"] = li
+	d["choose"] = true
+	d["quick"] = true
+	prize_anim.push_front(d)
+
+
 func _prize_showing() -> bool:
 	return not prize_anim.is_empty() and anim.is_empty() and energy_anim.is_empty() \
 			and coin_anim.is_empty() and evo_anim.is_empty() and ko_anim.is_empty() and check_anim.is_empty() and move_anim.is_empty()
@@ -7157,38 +7192,76 @@ func _prize_slot_pos(i: int) -> Vector2:
 func _pick_prize(k: int) -> void:
 	var pz: Dictionary = prize_anim[0]
 	var pl: PlayerState = game.players[pz["p"]]
-	var taken: String = pz["id"]
-	if k < pl.prizes.size():
-		var idx := pl.hand.rfind(taken)
-		if idx >= 0:
-			var chosen: String = pl.prizes[k]
-			pl.hand[idx] = chosen
-			pl.prizes[k] = taken
-			pz["id"] = chosen
+	# La elección la hace el motor (así también viaja en el duelo en línea)
+	if k > pl.prizes.size() and pz.has("log"):
+		# Elegiste otra de las que ya se apartaron (ambas están en tu mano): solo cambia
+		# cuál se muestra primero
+		var pend := prize_anim.filter(func(e): return e["p"] == pz["p"] and e.get("choose", false) and e.has("log"))
+		var j := k - pl.prizes.size()
+		if j < pend.size():
+			var a1: Dictionary = game.prize_log[pz["log"]]
+			var a2: Dictionary = game.prize_log[pend[j]["log"]]
+			for key in ["id", "up"]:
+				var tmp = a1.get(key)
+				a1[key] = a2.get(key)
+				a2[key] = tmp
+	if game.pending_choice_kind() == "prize" and game.actor() == pz["p"]:
+		_do({"t": "choose", "k": mini(k, pl.prizes.size())})
+		if pz.has("log"):
+			pz["id"] = game.prize_log[pz["log"]]["id"]
+	if pz.get("quick", false):
+		prize_anim.pop_front()
+		prize_cursor = 0
+		_rebuild_menu()
+		return
 	pz["from"] = _prize_slot_pos(k)
 	pz["choose"] = false
 	pz["t"] = 0.08
 	prize_cursor = 0
 
 
+## Las cartas entre las que se elige, en orden de casilla: [id, boca_arriba].
+## Primero los Premios que quedan y después las que el motor ya apartó y faltan elegir.
+func _prize_pile(player: int) -> Array:
+	var pl: PlayerState = game.players[player]
+	var all_up: bool = pl.flags.get("prizes_face_up", false)
+	var faceup: Array = pl.flags.get("faceup_prizes", [])
+	var out: Array = []
+	for id in pl.prizes:
+		out.append([id, all_up or faceup.has(id)])
+	for e in prize_anim:
+		if e["p"] == player and e.get("choose", false):
+			var cur: Dictionary = game.prize_log[e["log"]] if e.has("log") else e
+			out.append([cur["id"], all_up or cur.get("up", false)])
+	return out
+
+
 func _draw_prize_choice(pz: Dictionary) -> void:
 	draw_rect(Rect2(0, 0, W, BOX_Y), Color(0, 0, 0, 0.5))
 	var n := _prize_pile_size(pz["p"])
+	var pile := _prize_pile(pz["p"])
 	prize_cursor = clampi(prize_cursor, 0, n - 1)
 	var now := Time.get_ticks_msec() / 1000.0
+	var downs := 0
 	for i in n:
 		var c := _prize_slot_pos(i)
 		var sel := i == prize_cursor
 		var lift := -3.0 - sin(now * 6.0) if sel else 0.0
 		var r := Rect2(c - PRIZE_CARD / 2 + Vector2(0, lift), PRIZE_CARD)
 		draw_rect(Rect2(r.position + Vector2(1, 2), r.size), Color(0, 0, 0, 0.4))
-		_draw_card_back(r)
+		if i < pile.size() and pile[i][1]:
+			_draw_card_image(r, pile[i][0])      # boca arriba: se ve qué es
+		else:
+			_draw_card_back(r)
+			downs += 1
 		if sel:
 			draw_rect(r.grow(1), C_ACCENT, false, 2.0)
 			var tip := Vector2(r.position.x - 3, r.get_center().y)
 			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-5, -4), tip + Vector2(-5, 4)]), C_ACCENT)
 	_text(Vector2(W / 2.0 + 34, 12), "PRIZES", C_LIGHT)
-	_text(Vector2(W / 2.0 + 34, 23), "%d face down" % n, C_LIGHT)
+	_text(Vector2(W / 2.0 + 34, 23), "%d face down" % downs, C_LIGHT)
+	if downs < n:
+		_text(Vector2(W / 2.0 + 34, 34), "%d face up" % (n - downs), C_LIGHT)
 
 
 # ===========================================================================

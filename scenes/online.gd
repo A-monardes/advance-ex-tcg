@@ -3,7 +3,7 @@ extends RefCounted
 ## código de 4 letras para pasarle al otro) o unirte con el código que te pasaron.
 ## La conexión es engine/net_link.gd; la partida la arranca duel.start_net_duel.
 
-const PROTO := 1          # si cambia la forma de los mensajes, se sube y no se mezclan versiones
+const PROTO := 2          # si cambia la forma de los mensajes, se sube y no se mezclan versiones
 const CFG := "user://online.cfg"
 const ROWS := ["Your deck", "Format", "Battle", "Server", "Create a game", "Join a game"]
 
