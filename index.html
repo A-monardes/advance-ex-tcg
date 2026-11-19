@@ -13,7 +13,7 @@ html, body, #canvas {
 
 body {
 	color: white;
-	background-color: black;
+	background-color: #202838;
 	overflow: hidden;
 	touch-action: none;
 }
@@ -37,19 +37,26 @@ body {
 	bottom: 0;
 }
 
+/* Pantalla de carga de Advance EX TCG: fondo de cuadritos como el menú, el logo y una
+   barra como la de PS (se llena de rojo a amarillo y a verde) */
 #status {
-	background-color: #242424;
+	background-color: #202838;
+	background-image: repeating-conic-gradient(#242e40 0 25%, #202838 0 50%);
+	background-size: 32px 32px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 	visibility: hidden;
+	font-family: 'Courier New', monospace;
+	font-weight: bold;
 }
 
 #status-splash {
-	max-height: 100%;
-	max-width: 100%;
-	margin: auto;
+	position: static;
+	width: min(560px, 80vw);
+	image-rendering: pixelated;
+	margin: 0 0 6vh 0;
 }
 
 #status-progress, #status-notice {
@@ -57,9 +64,59 @@ body {
 }
 
 #status-progress {
-	bottom: 10%;
-	width: 50%;
-	margin: 0 auto;
+	position: static;
+	width: min(460px, 70vw);
+}
+
+#bar-row {
+	display: flex;
+	align-items: stretch;
+	height: 22px;
+}
+
+#bar-tag {
+	background: #f0a030;
+	color: #f8f8f8;
+	border: 3px solid #202838;
+	outline: 2px solid #f8f8f8;
+	padding: 0 8px;
+	font-size: 13px;
+	line-height: 16px;
+	letter-spacing: 1px;
+	text-shadow: 1px 1px 0 #a05818;
+}
+
+#bar {
+	flex: 1;
+	background: #384058;
+	border: 3px solid #202838;
+	outline: 2px solid #f8f8f8;
+	margin-left: 4px;
+	position: relative;
+}
+
+#bar-fill {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 0;
+	background: #e04030;
+	box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.35);
+	transition: width 0.2s;
+}
+
+#bar-pct, #bar-tip {
+	text-align: center;
+	margin-top: 14px;
+	font-size: 15px;
+	color: #f8f8f8;
+	text-shadow: 2px 2px 0 #101420;
+}
+
+#bar-tip {
+	margin-top: 6px;
+	color: #a0b0d0;
 }
 
 #status-notice {
@@ -91,13 +148,17 @@ body {
 
 		<div id="status">
 			<img id="status-splash" src="index.png" alt="">
-			<progress id="status-progress"></progress>
+			<div id="status-progress">
+				<div id="bar-row"><div id="bar-tag">LOAD</div><div id="bar"><div id="bar-fill"></div></div></div>
+				<div id="bar-pct">0%</div>
+				<div id="bar-tip">Shuffling the deck...</div>
+			</div>
 			<div id="status-notice"></div>
 		</div>
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"mainPack":"index-8e86173.pck","args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index-8e86173.pck":33832544,"index.wasm":35376909},"focusCanvas":true,"gdextensionLibs":[]};
+const GODOT_CONFIG = {"mainPack":"index-991f91c.pck","args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index-991f91c.pck":33861184,"index.wasm":35376909},"focusCanvas":true,"gdextensionLibs":[]};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -178,17 +239,27 @@ const engine = new Engine(GODOT_CONFIG);
 		}
 	} else {
 		setStatusMode('progress');
+		const barFill = document.getElementById('bar-fill');
+		const barPct = document.getElementById('bar-pct');
+		const barTip = document.getElementById('bar-tip');
+		const tips = ['Shuffling the deck...', 'Drawing 7 cards...', 'Placing the Prize cards...',
+			'Flipping the coin...', 'Choosing the Active Pokémon...', 'Polishing the holos...'];
+		let tipIdx = 0;
+		const tipTimer = setInterval(() => {
+			tipIdx = (tipIdx + 1) % tips.length;
+			barTip.textContent = tips[tipIdx];
+		}, 1600);
 		engine.startGame({
 			'onProgress': function (current, total) {
 				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
-				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
+					const p = Math.min(1, current / total);
+					barFill.style.width = (p * 100).toFixed(1) + '%';
+					barFill.style.background = p > 0.5 ? '#58d080' : (p > 0.2 ? '#f8d030' : '#e04030');
+					barPct.textContent = Math.floor(p * 100) + '%';
 				}
 			},
 		}).then(() => {
+			clearInterval(tipTimer);
 			setStatusMode('hidden');
 		}, displayFailureNotice);
 	}
