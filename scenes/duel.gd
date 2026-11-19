@@ -2160,6 +2160,8 @@ func _draw_info_box(r: Rect2, m: PokemonInPlay) -> void:
 	if _shows_reverse(m):
 		_draw_reverse_box(Rect2(r.position + Vector2(4, 1), r.size - Vector2(5, 2)), m.top())
 	_fill_types(Rect2(r.position + Vector2(1, 1), Vector2(3, r.size.y - 2)), m)
+	if CardDB.card_name(m.top()).contains("★"):
+		_draw_star_mark(r)
 	if CardDB.is_delta(m.top()):
 		_draw_delta_mark(r, m.top(), r.position.y + 19)
 	var name := m.display_name()
@@ -2259,6 +2261,77 @@ func _draw_delta_mark(r: Rect2, id: String, top: float) -> void:
 			if int(rc[x]) >= 5 and absf(x + y * 0.6 - sweep) < 2.0:
 				c = Color(col.lightened(0.5), minf(1.0, a + 0.4))
 			draw_rect(Rect2(o + Vector2(x, y), Vector2(1, 1)), c)
+
+
+## Pokémon ★: una estrella amarilla de todo el alto del recuadro, detrás del nombre y los PS,
+## que late, brilla alrededor, la cruza un destello y le titilan las puntas. La silueta se
+## calcula una vez por tamaño: cada píxel es [x, y, opacidad del cuerpo, del brillo].
+var _star_px := {}
+
+
+func _star_pixels(h: int) -> Dictionary:
+	if _star_px.has(h):
+		return _star_px[h]
+	var rad := h / 2.0 + 1.0
+	var c := Vector2(rad + 2, rad + 2)
+	var poly := PackedVector2Array()
+	for i in 10:
+		var rr := rad if i % 2 == 0 else rad * 0.45
+		var ang := -PI / 2 + i * PI / 5
+		poly.append(c + Vector2(cos(ang), sin(ang)) * rr)
+	var size := int(ceil(rad * 2 + 4))
+	var inside := {}
+	for y in size:
+		for x in size:
+			if Geometry2D.is_point_in_polygon(Vector2(x + 0.5, y + 0.5), poly):
+				inside[Vector2i(x, y)] = true
+	# Dos texturas blancas (cuerpo y brillo) que se tiñen al dibujar: 2 llamadas por cuadro
+	var core := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var glow := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var pts: Array = []
+	for y in size:
+		for x in size:
+			if inside.has(Vector2i(x, y)):
+				core.set_pixel(x, y, Color(1, 1, 1, 1))
+				pts.append(Vector2i(x, y))
+				continue
+			var gl := 0.0
+			for dy in range(-2, 3):
+				for dx in range(-2, 3):
+					if inside.has(Vector2i(x + dx, y + dy)):
+						gl = maxf(gl, 1.0 - (absf(dx) + absf(dy)) / 4.0)
+			if gl > 0.0:
+				glow.set_pixel(x, y, Color(1, 1, 1, gl))
+	_star_px[h] = {"core": ImageTexture.create_from_image(core), "glow": ImageTexture.create_from_image(glow),
+			"pts": pts, "c": c, "rad": rad}
+	return _star_px[h]
+
+
+func _draw_star_mark(r: Rect2) -> void:
+	var data: Dictionary = _star_pixels(int(r.size.y - 4))
+	var c: Vector2 = data["c"]
+	var rad: float = data["rad"]
+	var o := Vector2(roundf(r.position.x + 3 + (r.size.x - 3) / 2.0 - c.x), roundf(r.position.y + r.size.y / 2.0 + 1 - c.y))
+	var t := Time.get_ticks_msec() / 1000.0
+	var pulse := 0.5 + 0.5 * sin(t * TAU / 1.5)
+	var yel := Color("#f8d030")
+	draw_texture(data["glow"], o, Color(yel, 0.25 + 0.22 * pulse))
+	draw_texture(data["core"], o, Color(yel, 0.30 + 0.12 * pulse))
+	# Destello diagonal (una pasada cada 3 s) y puntas que titilan de a una
+	var sweep := fmod(t / 3.0, 1.0) * 2.8 - 1.4
+	if absf(sweep) < 1.1:
+		for q: Vector2i in data["pts"]:
+			if absf(((q.x - c.x) + (q.y - c.y)) / (2.0 * rad) - sweep) < 0.08:
+				draw_rect(Rect2(o + Vector2(q), Vector2(1, 1)), Color("#fffac8", 0.75))
+	var clip := r.grow(-1)
+	for k in 5:
+		if sin(t * TAU / 0.75 + k * 1.3) <= 0.6:
+			continue
+		var ang := -PI / 2 + k * TAU / 5
+		var tip := (o + c + Vector2(cos(ang), sin(ang)) * rad * 0.95).round()
+		for dd in [Vector2.ZERO, Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
+			if clip.has_point(tip + dd):
+				draw_rect(Rect2(tip + dd, Vector2(1, 1)), Color("#fff8be"))
 
 
 ## Barra de PS con la etiqueta naranja: verde, amarilla o roja según lo que queda.
@@ -2453,6 +2526,8 @@ func _draw_compact_info(r: Rect2, m: PokemonInPlay, mine: bool) -> void:
 	draw_rect(r.grow(-1), Color("#f8f8e8"))
 	draw_rect(Rect2(r.position.x + 1, r.end.y - 3, r.size.x - 2, 2), Color("#d8d8b8"))
 	_fill_types(Rect2(r.position + Vector2(1, 1), Vector2(3, r.size.y - 2)), m)
+	if CardDB.card_name(m.top()).contains("★"):
+		_draw_star_mark(r)
 	if CardDB.is_delta(m.top()):
 		_draw_delta_mark(r, m.top(), r.position.y + 17)
 	var name := m.display_name()
