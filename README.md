@@ -596,8 +596,9 @@ dos partidas se separaran. El formato y el tipo de batalla los elige quien crea 
 Hace falta un relay: `server/relay.js` (Node). Solo une a los dos jugadores por el código y
 les pasa los mensajes; no sabe nada del juego. Para probar en la misma red:
 `cd server && npm install && npm start` y en el juego, Server = `ws://<ip>:8080`. La web
-(https) necesita un relay con `wss://`, alojado en algún servicio (por ejemplo Render, con
-la carpeta `server` como raíz, `npm install` y `npm start`).
+(https) necesita un relay con `wss://`. El del juego está en Render
+(`wss://advance-ex-tcg.onrender.com`, carpeta `server` como raíz, `npm install` y `npm start`);
+el plan gratis se duerme si nadie lo usa, así que la primera conexión puede tardar un minuto.
 
 `tests/net_duel.gd` juega una partida entera entre dos procesos a través de un relay local y
 compara el resultado de los dos lados.
