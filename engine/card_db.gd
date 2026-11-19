@@ -134,6 +134,11 @@ static func evolves_from(id: String) -> String:
 	return get_card(id).get("evolves_from", "")
 
 
+## Nombre de archivo para una carta: Windows no admite "?" (Unown ? es ex10-question).
+static func file_id(id: String) -> String:
+	return id.replace("?", "question")
+
+
 ## La δ no forma parte del nombre para evolucionar: Charmeleon δ va sobre cualquier
 ## Charmander (con δ o sin), y Fearow sobre Spearow δ.
 static func evo_name(n: String) -> String:

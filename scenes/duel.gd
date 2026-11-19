@@ -3360,7 +3360,7 @@ func _load_card_image_raw(id: String) -> Image:
 	var name := CardDB.card_name(id)
 	var species := name.replace("Team Aqua's ", "").replace("Team Magma's ", "").replace("Rocket's ", "").trim_suffix(" ex").trim_suffix(" ★")
 	for dir in SPRITE_DIRS:
-		for n in [id, name, species, species.to_lower()]:
+		for n in [id, CardDB.file_id(id), name, species, species.to_lower()]:
 			for ext in ["png", "jpg", "webp"]:
 				var path := "%s/%s.%s" % [dir, n, ext]
 				if ImgLoad.exists(path):
@@ -3489,7 +3489,7 @@ func _draw_sq_edit(id: String, img: Image, r: Rect2) -> void:
 ## ¿Hay un cuadrado propio en sprites/ para esta carta? (ese manda sobre el ajuste)
 func _has_own_square(id: String) -> bool:
 	for d in SPRITE_DIRS:
-		for n in [id, CardDB.card_name(id)]:
+		for n in [id, CardDB.file_id(id), CardDB.card_name(id)]:
 			var pth := "%s/%s.png" % [d, n]
 			if ImgLoad.exists(pth) or ResourceLoader.exists(pth):
 				return true
