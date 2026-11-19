@@ -1609,3 +1609,8 @@ func test_delta_evolution() -> void:
 		var ok := g.legal_actions().any(func(a): return a.get("t") == "evolve" and a.get("h") == h)
 		check(ok, cs[2])
 	check(CardDB.evolves_onto("ex14-30", "Charmander δ") and not CardDB.evolves_onto("ex14-30", "Charmeleon"), "evolves_onto ignora δ")
+	var dk: Array[String] = []
+	for i in 3:
+		dk.append("ex14-48")
+		dk.append("ex14-49")
+	check(Game.validate_deck(dk).any(func(e): return "copies of Charmander" in e), "4 copias: Charmander y Charmander δ cuentan juntos")

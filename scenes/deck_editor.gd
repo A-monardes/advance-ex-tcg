@@ -206,10 +206,10 @@ func _matches(id: String, query: String) -> bool:
 
 
 func _copies_by_name(id: String) -> int:
-	var n := CardDB.card_name(id)
+	var n := CardDB.evo_name(CardDB.card_name(id))   # Charmander y Charmander δ cuentan juntos
 	var t := 0
 	for k in counts:
-		if CardDB.card_name(k) == n:
+		if CardDB.evo_name(CardDB.card_name(k)) == n:
 			t += counts[k]
 	return t
 
@@ -220,7 +220,7 @@ func _add(id: String) -> void:
 		msg = "The deck already has 60 cards."
 		return
 	if not CardDB.is_basic_energy(id) and _copies_by_name(id) >= 4:
-		msg = "No more than 4 copies of %s." % CardDB.card_name(id)
+		msg = "No more than 4 copies of %s." % CardDB.evo_name(CardDB.card_name(id))
 		return
 	if camp != null and counts.get(id, 0) >= camp.owned(id):
 		msg = "You have %d %s." % [camp.owned(id), CardDB.card_name(id)]

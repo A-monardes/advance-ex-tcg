@@ -256,7 +256,7 @@ static func validate_deck(deck: Array[String], r: RuleSet = null) -> Array[Strin
 		if CardDB.is_star(id):
 			stars += 1
 		if not CardDB.is_basic_energy(id):
-			var n := CardDB.card_name(id)
+			var n := CardDB.evo_name(CardDB.card_name(id))   # δ no es parte del nombre
 			counts[n] = counts.get(n, 0) + 1
 	for n in counts:
 		if counts[n] > r.max_copies:
