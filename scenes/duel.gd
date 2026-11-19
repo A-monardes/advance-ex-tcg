@@ -5,6 +5,8 @@ extends Node2D
 ## Controles: Flechas = mover · Z / Enter = aceptar · X / Esc = volver
 ##            Tab = registro · C = ver carta · ←/→ en el título = cambiar opción
 
+## Poké-Powers cuya elección ("b"/"tg") es un Pokémon del rival.
+const OPP_POWERS := ["Dragon Wind", "Magnetic Flow", "Nectar Pod", "Splash Back", "Magnetic Reversal", "Dark Spell", "Distortion", "Dragon Curse", "Spike Storm", "Imprison"]
 const W := 240
 const H := 160
 const FONT_SIZE := 10   # letra pixel propia (fonts/gba.fnt): celdas de 10 px
@@ -5870,13 +5872,15 @@ func _menu_targets() -> Array:
 			if from_slot:
 				# Call for Power: hacia el que usa el poder; Metal Juncture: hacia el Activo
 				return [[me, p["from"], "source"], [me, a["s"] if name == "Call for Power" else -1, "target"]]
+			# Poderes que apuntan al rival; el resto (p. ej. Delta Transport) a lo propio.
+			var vs_opp: bool = name == "Energy Removal 2" or (power and name in OPP_POWERS)
 			if p.has("tg"):
-				return [[opp if name == "Energy Removal 2" else me, p["tg"], "target"]]
+				return [[opp if vs_opp else me, p["tg"], "target"]]
 			if p.has("mb"):
 				return [[me, p["mb"], "target"]]
 			if p.has("b"):
 				if power:
-					return [[opp, p["b"], "target"]]          # Dragon Wind
+					return [[opp if vs_opp else me, p["b"], "target"]]          # Dragon Wind
 				return [[me, -1, "source"], [me, p["b"], "target"]]   # Switch
 			if power:
 				return [[me, a["s"], "target"]]

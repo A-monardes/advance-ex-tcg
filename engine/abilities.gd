@@ -507,7 +507,7 @@ static func _options(g: Game, me: PlayerState, s: int, p: PokemonInPlay, n: Stri
 		"Evolution Helper":
 			if not me.is_active(p) and s >= 0:
 				var base := me.active.display_name()
-				for c in _distinct(me.deck, func(c): return CardDB.is_evolution(c) and CardDB.evolves_from(c) == base):
+				for c in _distinct(me.deck, func(c): return CardDB.is_evolution(c) and CardDB.evolves_onto(c, base)):
 					out.append({"pick": c})
 		"Strange Spiral":
 			if me.is_active(p) and p.basic_energy_count() > 0:
@@ -671,7 +671,7 @@ static func _options(g: Game, me: PlayerState, s: int, p: PokemonInPlay, n: Stri
 			if not p.energy.any(func(e): return CardDB.card_name(e) == "React Energy") and me.deck.any(func(c): return CardDB.card_name(c) == "React Energy"):
 				out.append({})
 		"Emerge":
-			if me.is_active(p) and me.deck.any(func(c): return CardDB.evolves_from(c) == p.display_name()):
+			if me.is_active(p) and me.deck.any(func(c): return CardDB.evolves_onto(c, p.display_name())):
 				out.append({})
 		"Power Circulation":
 			if me.discard.any(func(c): return CardDB.is_basic_energy(c)):
@@ -1349,7 +1349,7 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 			g.shuffle(me.deck)
 		"Emerge":
 			if g.flip():
-				var evo := _take(me.deck, func(c): return CardDB.evolves_from(c) == p.display_name())
+				var evo := _take(me.deck, func(c): return CardDB.evolves_onto(c, p.display_name()))
 				if evo != "":
 					g.evolve(me, p, evo)
 				g.shuffle(me.deck)
@@ -2261,7 +2261,7 @@ static func on_energy_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, card
 					me.hand.append(o["id"]))
 	if p.has_ability("Energy Evolution") and not power_blocked(g, me, p) and (CardDB.is_energy(card_id) or CardDB.is_holon_energy(card_id)):
 		var et := CardDB.basic_energy_type(card_id) if CardDB.is_basic_energy(card_id) else ""
-		var evos := _distinct(me.deck, func(c): return CardDB.evolves_from(c) == p.display_name() and (et == "" or et in CardDB.types(c)))
+		var evos := _distinct(me.deck, func(c): return CardDB.evolves_onto(c, p.display_name()) and (et == "" or et in CardDB.types(c)))
 		if not evos.is_empty() and et != "":
 			var opts := Trainers._card_options(evos, false)
 			opts.append({"label": "Don't evolve", "id": "", "ai": 0.0})
@@ -2551,7 +2551,7 @@ static func between_turns(g: Game) -> void:
 				"Star Piece":
 					if not pl.is_active(p) and p.damage >= 20:
 						var nm := p.display_name()
-						var evos := Trainers._distinct(pl.deck, func(c): return CardDB.evolves_from(c) == nm)
+						var evos := Trainers._distinct(pl.deck, func(c): return CardDB.evolves_onto(c, nm))
 						if not evos.is_empty():
 							var piece := p.tool
 							p.tool = ""
@@ -2579,7 +2579,7 @@ static func between_turns(g: Game) -> void:
 				"Team Aqua Belt", "Team Magma Belt":
 					if pl.is_active(p):
 						var nm := p.display_name()
-						var evos := Trainers._distinct(pl.deck, func(c): return CardDB.evolves_from(c) == nm)
+						var evos := Trainers._distinct(pl.deck, func(c): return CardDB.evolves_onto(c, nm))
 						if not evos.is_empty():
 							var belt := p.tool
 							p.tool = ""            # se descarta igual; así no se vuelve a activar mientras elegís

@@ -193,7 +193,7 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 		"Wally's Training":
 			var a := me.active
 			if me.turns_taken > 1 and a.turn_played < g.turn_number and not Abilities.evolve_active_blocked(g, me):
-				for pick in _distinct(me.deck, func(c): return CardDB.evolves_from(c) == a.display_name()):
+				for pick in _distinct(me.deck, func(c): return CardDB.evolves_onto(c, a.display_name())):
 					out.append({"pick": pick})
 		"Mr. Briney's Compassion":
 			for s in me.slots():
@@ -780,7 +780,7 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 			t.clear_conditions()
 			g.log_msg("  %s goes back into the deck." % CardDB.card_name(c))
 			var nm := t.display_name()
-			var evos := _distinct(me.deck, func(x): return CardDB.evolves_from(x) == nm)
+			var evos := _distinct(me.deck, func(x): return CardDB.evolves_onto(x, nm))
 			if evos.is_empty():
 				g.shuffle(me.deck)
 			else:
@@ -1160,9 +1160,9 @@ static func _candy_fits(evo_id: String, basic: PokemonInPlay) -> bool:
 		return false
 	var from := CardDB.evolves_from(evo_id)
 	if CardDB.stage(evo_id) == 1:
-		return from == basic.display_name()
+		return CardDB.evolves_onto(evo_id, basic.display_name())
 	var stage1 := CardDB.find(from)
-	return stage1 != "" and CardDB.evolves_from(stage1) == basic.display_name()
+	return stage1 != "" and CardDB.evolves_onto(stage1, basic.display_name())
 
 
 static func _distinct(cards: Array, pred: Callable) -> Array:

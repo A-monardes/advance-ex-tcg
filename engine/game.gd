@@ -383,7 +383,7 @@ func _main_actions() -> Array:
 			if me.turns_taken > 1:
 				for s in me.slots():
 					var p := me.slot(s)
-					if p.display_name() == CardDB.evolves_from(id) and p.turn_played < turn_number \
+					if CardDB.evolves_onto(id, p.display_name()) and p.turn_played < turn_number \
 							and not (s == -1 and Abilities.evolve_active_blocked(self, me)) \
 							and not (not PlayerState.is_active_slot(s) and Abilities.evolve_bench_blocked(self)):
 						out.append({"t": "evolve", "h": h, "tg": s})

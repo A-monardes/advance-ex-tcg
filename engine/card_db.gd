@@ -134,6 +134,18 @@ static func evolves_from(id: String) -> String:
 	return get_card(id).get("evolves_from", "")
 
 
+## La δ no forma parte del nombre para evolucionar: Charmeleon δ va sobre cualquier
+## Charmander (con δ o sin), y Fearow sobre Spearow δ.
+static func evo_name(n: String) -> String:
+	return n.replace(" δ", "").replace("δ", "").strip_edges()
+
+
+## ¿La carta evo evoluciona de un Pokémon que se llama base_name?
+static func evolves_onto(evo: String, base_name: String) -> bool:
+	var f := evolves_from(evo)
+	return f != "" and evo_name(f) == evo_name(base_name)
+
+
 static func types(id: String) -> Array:
 	return get_card(id).get("types", [])
 

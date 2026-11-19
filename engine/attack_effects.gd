@@ -2350,7 +2350,7 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 			var opts: Array = []
 			for sl in me.slots():
 				var p := me.slot(sl)
-				for c in Trainers._distinct(me.deck, func(x): return CardDB.evolves_from(x) == p.display_name()):
+				for c in Trainers._distinct(me.deck, func(x): return CardDB.evolves_onto(x, p.display_name())):
 					opts.append({"label": "%s → %s" % [p.display_name(), CardDB.card_name(c)], "s": sl, "id": c, "ai": 2.0})
 			if not opts.is_empty():
 				g.ask(me.index, "Evolve", opts, func(o):
@@ -2577,7 +2577,7 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 					func(): g.shuffle(me.deck))
 		"self_evolve":
 			var nm := a.display_name()
-			var idx := g.best_in_deck(me, func(c): return CardDB.evolves_from(c) == nm)
+			var idx := g.best_in_deck(me, func(c): return CardDB.evolves_onto(c, nm))
 			if idx != -1:
 				var evo: String = me.deck[idx]
 				me.deck.remove_at(idx)
@@ -2701,7 +2701,7 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 				me.discard.append_array(keep)
 				g.return_to_hand(me, a)
 		"evolve_from_deck":
-			var evo := Abilities._take(me.deck, func(c): return CardDB.evolves_from(c) == a.display_name())
+			var evo := Abilities._take(me.deck, func(c): return CardDB.evolves_onto(c, a.display_name()))
 			if evo != "":
 				g.evolve(me, a, evo)
 			g.shuffle(me.deck)
@@ -3418,7 +3418,7 @@ static func _search_pred(filter: String, a: PokemonInPlay, picked: Array) -> Cal
 			return func(c): return CardDB.is_basic_energy(c) and CardDB.basic_energy_type(c) not in types
 		"evolves_from_self":
 			var nm := a.display_name()
-			return func(c): return CardDB.evolves_from(c) == nm
+			return func(c): return CardDB.evolves_onto(c, nm)
 		"team_aqua": return func(c): return CardDB.is_pokemon(c) and CardDB.card_name(c).contains("Team Aqua")
 		"stadium": return func(c): return CardDB.is_stadium(c)
 		"supporter": return func(c): return CardDB.is_supporter(c)

@@ -42,6 +42,7 @@ func _init() -> void:
 	test_frlg_to_emerald()
 	test_holon()
 	test_rock_slide()
+	test_delta_evolution()
 	test_dx()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
@@ -1591,3 +1592,20 @@ func test_rock_slide() -> void:
 		guard += 1
 	check(act.damage >= 20, "el Activo recibe el daño base (%d)" % act.damage)
 	check(opp.bench.filter(func(x): return x.damage == 10).size() == 2, "dos de la Banca reciben 10")
+
+
+func test_delta_evolution() -> void:
+	print("δ no es parte del nombre al evolucionar")
+	var cases := [["ex14-49", "ex14-30", "Charmander δ → Charmeleon δ"],
+		["ex14-48", "ex14-30", "Charmander → Charmeleon δ"]]
+	for cs in cases:
+		var g := board(cs[0], id_of("Torchic"))
+		g.turn_number += 2
+		var me := g.current_player()
+		me.turns_taken = 3
+		me.active.turn_played = 0
+		me.hand.append(cs[1])
+		var h := me.hand.size() - 1
+		var ok := g.legal_actions().any(func(a): return a.get("t") == "evolve" and a.get("h") == h)
+		check(ok, cs[2])
+	check(CardDB.evolves_onto("ex14-30", "Charmander δ") and not CardDB.evolves_onto("ex14-30", "Charmeleon"), "evolves_onto ignora δ")
