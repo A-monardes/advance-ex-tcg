@@ -36,19 +36,31 @@ var np_ok: Array = []
 const SEASONS := [
 	{"id": "2003-04", "name": "2003-04 · Expedition to Hidden Legends",
 		"sets": ["ecard1", "ecard2", "ecard3", "ex1", "ex2", "ex3", "ex4", "ex5", "np"], "np_max": 26,
+		"worlds": "Worlds 2004", "where": "Orlando · Aug 20-22, 2004",
+		"start": ["ecard1", "ecard2", "ecard3", "ex1", "np"],
+		"steps": [["ex2", "Sep 2003"], ["ex3", "Nov 2003"], ["ex4", "Mar 2004"], ["ex5", "Jun 2004"]],
 		"first_player_supporter": true, "coin_winner_chooses": false},
 	{"id": "2004-05", "name": "2004-05 · Ruby & Sapphire to Emerald",
 		"sets": ["ex1", "ex2", "ex3", "ex4", "ex5", "ex6", "ex7", "ex8", "ex9", "pop1", "np"], "np_max": 27,
+		"worlds": "Worlds 2005", "where": "San Diego · Aug 19-21, 2005",
+		"start": ["ex1", "ex2", "ex3", "ex4", "ex5", "ex6", "pop1", "np"],
+		"steps": [["ex7", "Nov 2004"], ["ex8", "Feb 2005"], ["ex9", "May 2005"]],
 		"first_player_supporter": false, "coin_winner_chooses": true},
 	{"id": "2005-06", "name": "2005-06 · Hidden Legends to Holon Phantoms",
 		"sets": ["ex5", "ex6", "ex7", "ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "pop1", "pop2", "pop3", "np"],
 		"np_ok": [27, 28, 29, 30, 31, 32, 33, 35, 36],
+		"worlds": "Worlds 2006", "where": "Anaheim · Aug 18-20, 2006",
+		"start": ["ex5", "ex6", "ex7", "ex8", "ex9", "ex10", "pop1", "pop2", "np"],
+		"steps": [["ex11", "Oct 2005"], ["ex12", "Feb 2006"], ["pop3", "Apr 2006"], ["ex13", "May 2006"]],
 		"first_player_supporter": false, "coin_winner_chooses": true},
 	# Mundial 2007 (DX-on): de EX Deoxys en adelante. Diamond & Pearl también era legal, pero
 	# todavía no está en el juego.
 	{"id": "2006-07", "name": "2006-07 · Deoxys to Power Keepers",
 		"sets": ["ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "ex14", "ex15", "ex16", "pop2", "pop3", "pop4", "pop5", "np"],
 		"np_ok": [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+		"worlds": "Worlds 2007", "where": "Hawaii · Aug 10-12, 2007",
+		"start": ["ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "ex14", "pop2", "pop3", "pop4", "np"],
+		"steps": [["ex15", "Nov 2006"], ["ex16", "Feb 2007"], ["pop5", "Mar 2007"]],
 		"first_player_supporter": false, "coin_winner_chooses": true},
 ]
 
@@ -71,6 +83,7 @@ static func ex_2005() -> RuleSet:
 static func from_season(i: int) -> RuleSet:
 	var d: Dictionary = SEASONS[clampi(i, 0, SEASONS.size() - 1)]
 	var r := RuleSet.new()
+	r.season_index = clampi(i, 0, SEASONS.size() - 1)
 	r.season = d["id"]
 	r.name = d["name"]
 	r.legal_sets = d["sets"]
@@ -79,6 +92,40 @@ static func from_season(i: int) -> RuleSet:
 	r.first_player_supporter = d["first_player_supporter"]
 	r.coin_winner_chooses = d["coin_winner_chooses"]
 	return r
+
+
+## Un momento de la temporada i: el principio (upto = 0) más los primeros `upto` sets que
+## salieron durante el año ("steps", en orden). upto < 0 o todos = el formato del Mundial.
+## Los sets nuevos eran legales desde que salían a la venta; los POP desde que empezaba su
+## período. Las Black Star Promos se toman como en el Mundial (no hay fechas por promo).
+var custom := false
+var season_index := 0
+var upto := -1
+
+
+static func from_point(i: int, n: int) -> RuleSet:
+	var r := from_season(i)
+	var d: Dictionary = SEASONS[r.season_index]
+	var steps: Array = d.get("steps", [])
+	r.name = "%s · %s" % [d.get("worlds", d["id"]), str(d["name"]).split(" · ")[1]]
+	if n < 0 or n >= steps.size():
+		return r
+	r.custom = true
+	r.upto = n
+	var sets: Array = d["start"].duplicate()
+	for j in n:
+		sets.append(steps[j][0])
+	r.legal_sets = sets
+	r.name = "Custom %s · %s" % [d["id"], "start of season" if n == 0 else "up to " + set_title(steps[n - 1][0])]
+	return r
+
+
+## Nombre de un set como lo dice el juego ("Sandstorm", "POP Series 3").
+static func set_title(code: String) -> String:
+	for id in CardDB.all_ids():
+		if CardDB.set_of(id) == code:
+			return str(CardDB.get_card(id).get("set", code))
+	return code
 
 
 ## Sets de la temporada que todavía no están en el juego.

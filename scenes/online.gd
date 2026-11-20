@@ -3,7 +3,7 @@ extends RefCounted
 ## código de 4 letras para pasarle al otro) o unirte con el código que te pasaron.
 ## La conexión es engine/net_link.gd; la partida la arranca duel.start_net_duel.
 
-const PROTO := 2          # si cambia la forma de los mensajes, se sube y no se mezclan versiones
+const PROTO := 3          # si cambia la forma de los mensajes, se sube y no se mezclan versiones
 const CFG := "user://online.cfg"
 const ROWS := ["Your deck", "Format", "Battle", "Server", "Create a game", "Join a game"]
 
@@ -83,7 +83,9 @@ func input(event: InputEventKey) -> void:
 			var s := 1 if k == KEY_RIGHT else -1
 			match row:
 				0: d.my_deck = (d.my_deck + s + n) % n
-				1: d.season_idx = (d.season_idx + s + RuleSet.SEASONS.size()) % RuleSet.SEASONS.size()
+				1:
+					d.season_idx = (d.season_idx + s + RuleSet.SEASONS.size()) % RuleSet.SEASONS.size()
+					d.format_upto = -1
 				2: d.doubles_mode = not d.doubles_mode
 			if row <= 2:
 				d.snd.play("move")
@@ -97,12 +99,15 @@ func input(event: InputEventKey) -> void:
 		return
 	msg = ""
 	match row:
+		1:
+			d.snd.play("ok")
+			d.fmt_menu.open("online")      # todos los formatos: Mundiales y Custom
 		3:
 			screen = "server"
 			typed = server_url
 			d.snd.play("ok")
 		4:
-			var errs := Game.validate_deck(_my_deck(), RuleSet.from_season(d.season_idx))
+			var errs := Game.validate_deck(_my_deck(), d.format_rules())
 			if not errs.is_empty():
 				msg = "Your deck can't be used in this format: " + errs[0]
 				d.snd.play("error")
@@ -189,7 +194,7 @@ func update(delta: float) -> void:
 						return
 					var l := link
 					link = null
-					d._go(func(): d.start_net_duel(l, m["decks"], int(m["seed"]), int(m["season"]), bool(m["doubles"])))
+					d._go(func(): d.start_net_duel(l, m["decks"], int(m["seed"]), int(m["season"]), bool(m["doubles"]), int(m.get("upto", -1))))
 					return
 			"bad":
 				link.inbox.remove_at(j)
@@ -200,7 +205,7 @@ func update(delta: float) -> void:
 
 ## Quien creó la sala recibe el mazo del otro, lo revisa y arranca (manda la semilla).
 func _host_answer(m: Dictionary) -> void:
-	var rules := RuleSet.from_season(d.season_idx)
+	var rules: RuleSet = d.format_rules()
 	var theirs: Array[String] = []
 	theirs.assign(m.get("deck", []))
 	var why := ""
@@ -217,10 +222,10 @@ func _host_answer(m: Dictionary) -> void:
 		return
 	var seed_value := randi() % 2000000000 + 1
 	var decks := [_my_deck(), theirs]
-	link.send({"k": "go", "decks": decks, "seed": seed_value, "season": d.season_idx, "doubles": d.doubles_mode, "ver": version()})
+	link.send({"k": "go", "decks": decks, "seed": seed_value, "season": d.season_idx, "upto": d.format_upto, "doubles": d.doubles_mode, "ver": version()})
 	var l := link
 	link = null
-	d._go(func(): d.start_net_duel(l, decks, seed_value, d.season_idx, d.doubles_mode))
+	d._go(func(): d.start_net_duel(l, decks, seed_value, d.season_idx, d.doubles_mode, d.format_upto))
 
 
 # ===========================================================================
@@ -243,7 +248,7 @@ func draw() -> void:
 		_draw_link(panel)
 		return
 	var names: Array = Decks.names()
-	var r := RuleSet.from_season(d.season_idx)
+	var r: RuleSet = d.format_rules()
 	var vals := [names[d.my_deck], r.name, "Doubles (2 vs 2)" if d.doubles_mode else "Singles", server_url, "", ""]
 	for i in ROWS.size():
 		var y := 61 + i * 12 + (3 if i >= 4 else 0)

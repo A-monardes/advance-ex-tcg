@@ -44,6 +44,7 @@ func _init() -> void:
 	test_rock_slide()
 	test_delta_evolution()
 	test_prize_pick()
+	test_format_points()
 	test_dx()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
@@ -1643,3 +1644,18 @@ func test_prize_pick() -> void:
 	g2._check_knockouts()
 	g2._continue_after_choices()
 	check(g2.pending_choice_kind() == "promote", "la IA no elige Premio (sin prize_pick)")
+
+
+func test_format_points() -> void:
+	print("Formatos: principio de temporada, momentos y Mundial")
+	for i in RuleSet.SEASONS.size():
+		var d: Dictionary = RuleSet.SEASONS[i]
+		var all: Array = d["start"] + d["steps"].map(func(x): return x[0])
+		all.sort()
+		var sets: Array = d["sets"].duplicate()
+		sets.sort()
+		check(all == sets, "%s: principio + sets del año = Mundial" % d["id"])
+		check(RuleSet.from_point(i, -1).legal_sets == d["sets"] and not RuleSet.from_point(i, -1).custom, "%s: -1 es el Mundial" % d["id"])
+	var r := RuleSet.from_point(1, 2)
+	check(r.custom and r.is_legal("ex8-1") and not r.is_legal("ex9-1"), "2004-05 hasta Deoxys: Deoxys sí, Emerald no")
+	check(not RuleSet.from_point(2, 0).is_legal("ex11-1"), "principio 2005-06: Delta Species todavía no")

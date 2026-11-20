@@ -145,6 +145,8 @@ var opt_cursor := 0
 var my_deck := 0
 var opp_deck := 1
 var season_idx := 0            # temporada elegida (RuleSet.SEASONS): sets legales y reglas de ese año
+var format_upto := -1          # momento de la temporada (RuleSet.from_point): -1 = Mundial
+var fmt_menu                   # pantalla para elegir el formato (scenes/format_menu.gd)
 var doubles_mode := false      # duelo libre en batalla doble (2 contra 2)
 
 var game: Game
@@ -261,6 +263,7 @@ func _ready() -> void:
 	CardDB.load_db()
 	editor = DeckEditorScript.new(self)
 	online = load("res://scenes/online.gd").new(self)
+	fmt_menu = load("res://scenes/format_menu.gd").new(self)
 	campaign = CampaignScript.new(self)
 	snd = SoundScript.new()
 	add_child(snd)
@@ -308,7 +311,12 @@ func start_campaign_duel(mine: Array[String], theirs: Array[String], level: int,
 
 
 ## Partida en línea: los dos juegos la arman igual (mazo del que creó la sala primero).
-func start_net_duel(link: NetLink, decks: Array, seed_value: int, season: int, doubles: bool) -> void:
+## Las reglas del formato elegido (temporada y momento).
+func format_rules() -> RuleSet:
+	return RuleSet.from_point(season_idx, format_upto)
+
+
+func start_net_duel(link: NetLink, decks: Array, seed_value: int, season: int, doubles: bool, upto: int = -1) -> void:
 	net = link
 	net_in = 0
 	net_out = 0
@@ -316,6 +324,7 @@ func start_net_duel(link: NetLink, decks: Array, seed_value: int, season: int, d
 	campaign_rival = ""
 	reverse_ids = {}
 	season_idx = season
+	format_upto = upto
 	doubles_mode = doubles
 	var a: Array[String] = []
 	var b: Array[String] = []
@@ -329,7 +338,7 @@ func _begin_duel(mine: Array[String], theirs: Array[String], level: int, intro_l
 	if seed_value == 0:
 		_net_close()
 		human = 0
-	var rules := RuleSet.from_season(season_idx)
+	var rules := format_rules() if campaign_rival == "" else RuleSet.from_season(season_idx)
 	if doubles_mode and campaign_rival == "":
 		rules = RuleSet.make_doubles(rules)
 	game = Game.new(mine, theirs, seed_value, rules)
@@ -847,6 +856,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if title_view == "online":
 			online.input(event)
 			return
+		if title_view == "format":
+			fmt_menu.input(k, accept and not event.echo, k in [KEY_X, KEY_ESCAPE, KEY_BACKSPACE] and not event.echo)
+			return
 		_title_input(k, accept and not event.echo)
 		return
 	if mode == "campaign":
@@ -1154,17 +1166,23 @@ func _duel_setup_input(k: int, accept: bool, n: int) -> void:
 					ai_level = (ai_level - 1 + d + 5) % 5 + 1
 					_save_settings()
 				3:
+					# ◀▶ recorre los Mundiales; Z abre la pantalla de formatos (también Custom)
 					season_idx = (season_idx + d + RuleSet.SEASONS.size()) % RuleSet.SEASONS.size()
+					format_upto = -1
 					_save_settings()
 				4: doubles_mode = not doubles_mode      # batalla simple o doble (2 contra 2)
 	if not accept:
+		return
+	if duel_row == 3:
+		snd.play("ok")
+		fmt_menu.open("duel")
 		return
 	if duel_row < DUEL_ROWS - 1:
 		duel_row = DUEL_ROWS - 1
 		snd.play("move")
 		return
 	var names := Decks.names()
-	var fmt_rules := RuleSet.from_season(season_idx)
+	var fmt_rules := format_rules()
 	for pair in [[my_deck, "Your deck"], [opp_deck, "The opponent's deck"]]:
 		var errs := Game.validate_deck(Decks.get_deck(names[pair[0]]), fmt_rules)
 		if not errs.is_empty():
@@ -2836,6 +2854,9 @@ func _draw_title() -> void:
 	draw_rect(Rect2(0, 0, W, H), C_BG)
 	draw_texture_rect(_table_tex, Rect2(0, 0, W, H), false, Color(1, 1, 1, 0.35))
 	_draw_logo(1)
+	if title_view == "format":
+		fmt_menu.draw()
+		return
 	if title_view == "duel":
 		_draw_duel_setup()
 	elif title_view == "online":
@@ -2872,7 +2893,7 @@ func _draw_title() -> void:
 	if title_msg != "":
 		_text_scroll(Vector2(6, 149), title_msg, Color("#f8a090"), 228, "title_msg")
 	elif title_view == "duel":
-		_text(Vector2(6, 149), "▲▼ select · ◀▶ change · Z start · X back", C_LIGHT)
+		_text(Vector2(6, 149), "Z: all formats (Official / Custom)" if duel_row == 3 else "▲▼ select · ◀▶ change · Z start · X back", C_LIGHT)
 	elif title_view == "online":
 		_text_scroll(Vector2(6, 149), online.keys_text(), C_LIGHT, 228, "online_keys")
 	else:
@@ -2882,7 +2903,7 @@ func _draw_title() -> void:
 ## Armado del duelo libre (se entra desde "Free duel" del menú principal).
 func _draw_duel_setup() -> void:
 	var names := Decks.names()
-	var r := RuleSet.from_season(season_idx)
+	var r := format_rules()
 	var fmt := r.name
 	if not r.missing_sets().is_empty():
 		fmt += " (in progress: %d/%d sets)" % [r.legal_sets.size() - r.missing_sets().size(), r.legal_sets.size()]
@@ -7500,6 +7521,7 @@ func _load_settings() -> void:
 		for i in RuleSet.SEASONS.size():
 			if RuleSet.SEASONS[i]["id"] == sid:
 				season_idx = i
+		format_upto = clampi(int(cfg.get_value("juego", "temporada_hasta", -1)), -1, RuleSet.SEASONS[season_idx].get("steps", []).size() - 1)
 		sfx_level = clampi(int(cfg.get_value("sonido", "efectos", 2)), 0, 3)
 		music_level = clampi(int(cfg.get_value("sonido", "musica", 2)), 0, 3)
 	_apply_graphics()
@@ -7517,6 +7539,7 @@ func _save_settings() -> void:
 	cfg.set_value("graficos", "batallas_modo", battle_mode)
 	cfg.set_value("juego", "dificultad", ai_level)
 	cfg.set_value("juego", "temporada", RuleSet.SEASONS[season_idx]["id"])
+	cfg.set_value("juego", "temporada_hasta", format_upto)
 	cfg.set_value("sonido", "efectos", sfx_level)
 	cfg.set_value("sonido", "musica", music_level)
 	cfg.save(SETTINGS_PATH)
