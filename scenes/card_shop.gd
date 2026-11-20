@@ -205,7 +205,7 @@ func _menu_input(k: int, accept: bool, back: bool) -> void:
 			win_t = 0.0
 		"TALK":
 			d.snd.play("ok")
-			_say(_lines("charla", ["..."]), _to_menu.bind(true))
+			_say(camp.st.next_talk(id, _lines("charla", ["..."])), _to_menu.bind(true))
 		"EXIT":
 			d.snd.play("back" if back else "ok")
 			_say(_lines("adios", ["Please come again!"]), camp.leave_shop, false, true)

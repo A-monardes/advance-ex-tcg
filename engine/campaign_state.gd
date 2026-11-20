@@ -37,6 +37,7 @@ var place := {}              # dónde quedaste: {"mapa", "x", "y", "dir"} ({} = 
 var money := 0               # dinero (₽): se gana en los duelos y se gasta en las tiendas
 var visited := {}            # tiendas en las que ya entraste: id -> true
 var marks := {}              # marcas de eventos ("marcar" en los datos): id -> true
+var talks := {}              # charlas (TALK) de cada tienda: id -> cuántas ya se escucharon
 var rng := RandomNumberGenerator.new()
 
 
@@ -89,14 +90,26 @@ func load_save() -> bool:
 	money = int(d.get("dinero", 0))
 	visited = d.get("visitas", {})
 	marks = d.get("marcas", {})
+	talks = d.get("charlas", {})
 	return starter != ""
+
+
+## La próxima charla de una tienda: si "charla" es una lista de conversaciones, van en
+## orden (una por cada TALK) y al terminar vuelve a la primera. Queda guardado.
+func next_talk(shop_id: String, talk: Array) -> Array:
+	if talk.is_empty() or not talk[0] is Array:
+		return talk                      # una sola conversación: siempre la misma
+	var n := int(talks.get(shop_id, 0)) % talk.size()
+	talks[shop_id] = n + 1
+	save()
+	return talk[n]
 
 
 func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f != null:
 		f.store_string(JSON.stringify({"starter": starter, "nombre": player_name, "collection": collection, "reverse": reverse, "regalos": gifts, "deck": deck,
-				"mazos": decks, "mazo_activo": active_deck, "beaten": beaten, "lugar": place, "dinero": money, "perdidos": lost, "visitas": visited, "marcas": marks}, "  "))
+				"mazos": decks, "mazo_activo": active_deck, "beaten": beaten, "lugar": place, "dinero": money, "perdidos": lost, "visitas": visited, "marcas": marks, "charlas": talks}, "  "))
 
 
 func reset() -> void:
@@ -114,6 +127,7 @@ func reset() -> void:
 	money = 0
 	visited = {}
 	marks = {}
+	talks = {}
 	if FileAccess.file_exists(save_path):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
 

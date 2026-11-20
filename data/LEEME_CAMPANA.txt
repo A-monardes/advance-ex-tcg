@@ -167,6 +167,11 @@ Todo lo de la tienda está en data/campana.json > "tiendas" > "bridgette":
     "pregunta": "Lo que dice mientras elegís BUY / TALK / EXIT.",
     "otra_cosa": "Lo mismo, pero después de comprar o charlar.",
     "charla": ["Lo que dice con TALK."],     <- si lo sacás, no aparece TALK
+                                             Varias charlas: una lista de listas, cada una
+                                             es una conversación y van en orden (una por
+                                             cada TALK; al terminar vuelve a la primera):
+                                             "charla": [["Charla 1, pág. 1", "pág. 2"],
+                                                        ["Charla 2"], ["Charla 3"]]
     "confirmar": "{sobre}? That will be ₽{precio}. OK?",   <- antes de comprar (Sí/No)
     "gracias": ["Después de comprar (y se abre el sobre)."],
     "sin_dinero": ["Si no te alcanza."],
