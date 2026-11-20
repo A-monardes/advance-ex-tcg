@@ -18,6 +18,9 @@ var c_season := 0        # temporada que se está mirando en Custom
 const TABS := ["Official", "Custom"]
 const C_WORLDS := Color("#b87810")
 const C_ON := Color("#388850")
+## Logos de los Mundiales (los pone el jugador): mundo/propios/mundiales/2004.png, 2005.png...
+const LOGO_DIR := "res://mundo/propios/mundiales"
+var _logos := {}
 
 
 func _init(duel) -> void:
@@ -49,14 +52,11 @@ func input(k: int, accept: bool, back: bool) -> void:
 		return
 	if tab == 0:
 		match k:
-			KEY_UP: row = (row + n_seasons - 1) % n_seasons
-			KEY_DOWN: row = (row + 1) % n_seasons
-			KEY_LEFT, KEY_RIGHT:
-				tab = 1
-				row = 0
-				c_season = d.season_idx
+			KEY_UP, KEY_LEFT: row = (row + n_seasons - 1) % n_seasons
+			KEY_DOWN, KEY_RIGHT: row = (row + 1) % n_seasons
 		if k in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
 			d.snd.play("move")
+			_list_t0 = Time.get_ticks_msec()
 		if accept:
 			_choose(row, -1)
 		return
@@ -107,30 +107,81 @@ func draw() -> void:
 		_draw_custom()
 
 
+func _logo(year: String) -> Texture2D:
+	if not _logos.has(year):
+		var tex: Texture2D = null
+		for ext in ["png", "webp", "jpg"]:
+			var p := "%s/%s.%s" % [LOGO_DIR, year, ext]
+			if ImgLoad.exists(p):
+				tex = ImageTexture.create_from_image(ImgLoad.load(p))
+				break
+		_logos[year] = tex
+	return _logos[year]
+
+
+var _list_t0 := 0
+
+
 func _draw_official() -> void:
-	d._frame(Rect2(0, 33, 120, 86))
+	var left := Rect2(0, 33, 120, 86)
+	d._frame(left)
 	d._frame(Rect2(118, 33, d.W - 118, 86))
-	for i in RuleSet.SEASONS.size():
-		var s: Dictionary = RuleSet.SEASONS[i]
-		var y := 38 + i * 12
-		if i == row:
-			d.draw_rect(Rect2(4, y - 1, 112, 11), Color("#d8e4f8"))
-			d._text(Vector2(6, y), "▶", d.C_TEXT)
-		d._text(Vector2(15, y), str(s["worlds"]), C_WORLDS)
-		if i == d.season_idx and d.format_upto < 0:
-			d._text(Vector2(104, y), "✓", C_ON)
 	var s: Dictionary = RuleSet.SEASONS[row]
-	var sets: Array = s["sets"].filter(func(c): return not str(c).begins_with("pop") and c != "np")
-	var pops: int = s["sets"].filter(func(c): return str(c).begins_with("pop")).size()
-	d._text(Vector2(123, 37), "%d sets + %s promos" % [sets.size(), ("%d POP +" % pops) if pops > 0 else ""], d.C_DIM)
-	for j in mini(6, sets.size()):
-		d._text_fit(Vector2(125, 48 + j * 9), RuleSet.set_title(sets[j]).replace("EX ", ""), d.C_TEXT, d.W - 132)
-	if sets.size() > 6:
-		d._text(Vector2(125, 48 + 6 * 9), "+%d more" % (sets.size() - 6), d.C_DIM)
+	# Arriba: ◀ Worlds 2005 ▶ (con ✓ si es el elegido)
+	d.draw_rect(Rect2(4, 37, 112, 12), Color("#d8e4f8"))
+	d._text(Vector2(6, 38), "◀", d.C_TEXT)
+	d._text(Vector2(108, 38), "▶", d.C_TEXT)
+	var title := str(s["worlds"])
+	d._text(Vector2(60 - d._text_w(title) / 2.0, 38), title, C_WORLDS)
+	if row == d.season_idx and d.format_upto < 0:
+		d._text(Vector2(96, 38), "✓", C_ON)
+	# El logo de ese Mundial (si el jugador lo puso); si no, el lugar
+	var year := str(title).right(4)
+	var logo := _logo(year)
+	var box := Rect2(6, 51, 108, 64)
+	if logo != null:
+		var sc := minf(box.size.x / logo.get_width(), box.size.y / logo.get_height())
+		var sz := Vector2(logo.get_width(), logo.get_height()) * sc
+		d.draw_texture_rect(logo, Rect2(box.position + (box.size - sz) / 2.0, sz), false)
+	else:
+		var where := str(s["where"]).split(" · ")
+		d._text(Vector2(60 - d._text_w(where[0]) / 2.0, 70), where[0], d.C_DIM)
+		d._text(Vector2(60 - d._text_w(where[1]) / 2.0, 82), where[1], d.C_DIM)
+	# Derecha: todos los sets (y los POP); si no entran, la lista sube sola y vuelve
+	var sets: Array = s["sets"].filter(func(c): return c != "np")
+	var n_sets: int = sets.filter(func(c): return not str(c).begins_with("pop")).size()
+	var pops: int = sets.size() - n_sets
+	d._text(Vector2(123, 37), "%d sets + %s promos" % [n_sets, ("%d POP +" % pops) if pops > 0 else ""], d.C_DIM)
+	var vis := 7
+	var extra := maxi(0, sets.size() - vis)
+	var off := 0
+	if extra > 0:
+		# quieto 2 s arriba, baja un renglón cada 0.7 s, quieto 2 s abajo, y vuelve
+		var t := (Time.get_ticks_msec() - _list_t0) / 1000.0
+		var cycle := 4.0 + extra * 0.7 * 2.0
+		var u := fmod(t, cycle)
+		if u < 2.0:
+			off = 0
+		elif u < 2.0 + extra * 0.7:
+			off = int((u - 2.0) / 0.7) + 1
+		elif u < 4.0 + extra * 0.7:
+			off = extra
+		else:
+			off = extra - int((u - 4.0 - extra * 0.7) / 0.7) - 1
+		off = clampi(off, 0, extra)
+	for j in mini(vis, sets.size()):
+		var c: String = sets[j + off]
+		var nm := RuleSet.set_title(c).replace("EX ", "")
+		d._text_fit(Vector2(125, 47 + j * 9), nm, d.C_DIM if c.begins_with("pop") else d.C_TEXT, d.W - (142 if extra > 0 else 132))
+	if extra > 0:
+		if off > 0:
+			d._text(Vector2(d.W - 14, 45), "▲", d.C_DIM)
+		if off < extra:
+			d._text(Vector2(d.W - 14, 103), "▼", d.C_DIM)
 	d._frame(Rect2(0, 117, d.W, 43))
 	d._text_fit(Vector2(9, 121), "%s · %s" % [s["worlds"], s["where"]], d.C_TEXT, 222)
 	d._text_fit(Vector2(9, 132), "Season %s: %s." % [s["id"], str(s["name"]).split(" · ")[1]], d.C_DIM, 222)
-	d._text_fit(Vector2(9, 143), "▲▼ choose · Z use · Tab custom · X back", d.C_DIM, 222)
+	d._text_fit(Vector2(9, 143), "◀▶ choose · Z use · Tab custom · X back", d.C_DIM, 222)
 
 
 func _draw_custom() -> void:
