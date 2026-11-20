@@ -30,6 +30,7 @@ const SETTINGS_PATH := "user://ajustes.cfg"
 const SPRITE_DIRS := ["res://sprites", "user://sprites"]
 const C_POWER := Color("#8c1c1c")    # Poké-Power: rojo oscuro
 const C_BODY := Color("#1c6a2c")     # Poké-Body: verde oscuro
+const C_ENERGY_RULE := Color("#28488c")   # Pokémon Holon's: su uso como Energía
 const ANIM_TIME := 1.0
 const ANIM_IMPACT := 0.55
 const ENERGY_TIME := 0.7    # segundos por Energía unida
@@ -1231,6 +1232,11 @@ func _card_lines(id: String, p: PokemonInPlay) -> Array:
 		if p != null:
 			lines.append("Damage %d · Energy %d %s" % [p.damage, Energy.total(p), p.conditions_text()])
 			lines.append(_attached_text(p))
+		if CardDB.is_holon_energy(id):
+			# Pokémon Holon's: también se juegan como Energía (texto del recuadro de la carta)
+			lines.append({"gap": INFO_GAP})
+			lines.append({"row": [["bold", "As Energy", C_ENERGY_RULE]]})
+			lines.append_array(_para(CardDB.holon_energy_text(id), C_ENERGY_RULE))
 		for ab in c.get("abilities", []):
 			lines.append({"gap": INFO_GAP})
 			var col: Color = C_POWER if ab["kind"] == "Poké-Power" else C_BODY

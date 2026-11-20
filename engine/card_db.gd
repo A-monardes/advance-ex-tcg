@@ -107,6 +107,13 @@ static func is_delta(id: String) -> bool:
 	return card_name(id).contains("δ") or veil_delta.has(id)
 
 
+## Texto de la carta (recuadro de reglas) de los Pokémon Holon's que van como Energía.
+static func holon_energy_text(id: String) -> String:
+	if card_name(id) in ["Holon's Magnemite", "Holon's Voltorb"]:
+		return "You may attach this as an Energy card from your hand to 1 of your Pokémon. While attached, this card is a Special Energy card and provides Colorless Energy."
+	return "You may attach this as an Energy card from your hand to 1 of your Pokémon that already has an Energy card attached to it. When you attach this card, return an Energy card attached to that Pokémon to your hand. While attached, this card is a Special Energy card and provides every type of Energy but 2 Energy at a time. (Has no effect other than providing Energy.)"
+
+
 ## Pokémon Holon's que se pueden unir como Energía desde la mano.
 static func is_holon_energy(id: String) -> bool:
 	return is_pokemon(id) and card_name(id).begins_with("Holon's ")
