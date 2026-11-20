@@ -3074,6 +3074,9 @@ func _draw_reverse_box(box: Rect2, id: String) -> void:
 ## arcoíris. small = solo la franja (Banca y miniaturas).
 const HOLO_PERIOD := 3.4       # segundos entre pasadas de la franja
 func _draw_holo(r: Rect2, id: String, small: bool = false, cosmos: Dictionary = {}) -> void:
+	if id in ICE_IDS:
+		_draw_ice(r, id)
+		return
 	var rar := _rarity_of(id)
 	if not ("Holo" in rar or "Secret" in rar) or r.size.x < 6:
 		return
@@ -3150,7 +3153,7 @@ func _is_holo_card(id: String) -> bool:
 
 
 func _build_cosmos(key: String, id: String, img: Image) -> void:
-	if not _is_holo_card(id) or img.get_width() < 12:
+	if not _is_holo_card(id) or img.get_width() < 12 or id in ICE_IDS:
 		return
 	var w := img.get_width()
 	var h := img.get_height()
@@ -8980,3 +8983,34 @@ func _draw_prize_view_text(x: float, y: float) -> void:
 	else:
 		_text(Vector2(x, y + LINE), "Face down.", C_DIM)
 		_text(Vector2(x, y + LINE * 2), "R/X: close", C_DIM)
+
+
+# ===========================================================================
+# Holo "cracked ice"
+# ===========================================================================
+# Las Regi ex de Hidden Legends y las aves ex de FireRed & LeafGreen tienen la lámina de
+# "hielo quebrado": esquirlas irregulares de colores del arcoíris que destellan cada una a
+# su ritmo, con una franja de luz que las cruza. La animación está horneada en
+# ui/holo_hielo_96.png y _48.png (tools/hornear_hielo.py): 72 cuadros en 6 filas de 12,
+# una capa transparente que va encima del arte de la carta.
+
+const ICE_IDS := ["ex5-97", "ex5-98", "ex5-99", "ex6-114", "ex6-115", "ex6-116"]
+const ICE_FPS := 12.0
+const ICE_FRAMES := 72
+var _ice_sheets := {}
+
+
+func _draw_ice(r: Rect2, id: String) -> void:
+	if r.size.x < 6:
+		return
+	var s := 96 if r.size.x >= 60 else 48
+	if not _ice_sheets.has(s):
+		_ice_sheets[s] = load("res://ui/holo_hielo_%d.png" % s)
+	var tex: Texture2D = _ice_sheets[s]
+	if tex == null:
+		return
+	# Cada carta arranca en otro momento y tres de ellas van traspuestas: no se ven iguales
+	var h: int = absi(hash(id))
+	var f := (int(Time.get_ticks_msec() / 1000.0 * ICE_FPS) + h % ICE_FRAMES) % ICE_FRAMES
+	var src := Rect2((f % 12) * s, (f / 12) * s, s, s)
+	draw_texture_rect_region(tex, r, src, Color.WHITE, (h / 7) % 2 == 0)
