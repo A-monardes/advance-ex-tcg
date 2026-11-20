@@ -155,12 +155,34 @@ func _sort_key(id: String) -> String:
 func _make_sort_key(id: String) -> String:
 	var cat := 0 if CardDB.is_pokemon(id) else (2 if CardDB.is_energy(id) else 1)
 	var parts := id.split("-")
-	var set_rank := "z" + parts[0] if parts[0].begins_with("ecard") else parts[0]   # los ecard al final
-	return "%d|%s|%04d" % [cat, set_rank, int(parts[1]) if parts.size() > 1 else 0]
+	return "%d|%02d|%04d" % [cat, _set_rank(parts[0]), int(parts[1]) if parts.size() > 1 else 0]
+
+
+## Orden de los sets: como salieron (ex1, ex2... ex16, POP, Black Star) y los e-card al
+## final. (Antes se ordenaba como texto y "ex10" quedaba antes que "ex2".)
+static var _set_order: Array = []
+
+static func set_list() -> Array:
+	if _set_order.is_empty():
+		var ecard: Array = []
+		for id in CardDB.all_ids():
+			var st := CardDB.set_of(id)
+			if st.begins_with("ecard"):
+				if not ecard.has(st):
+					ecard.append(st)
+			elif not _set_order.has(st):
+				_set_order.append(st)
+		_set_order.append_array(ecard)
+	return _set_order
+
+
+static func _set_rank(st: String) -> int:
+	var i := set_list().find(st)
+	return i if i >= 0 else 99
 
 
 func _tab_cards() -> Array:
-	var key := [tab, search, _pool.size(), camp != null, counts.hash() if tab == 0 else 0]
+	var key := [tab, search, _pool.size(), camp != null, counts.hash() if tab == 0 else 0, str(filters[tab]).hash(), family]
 	if key == _tab_memo_key:
 		return _tab_memo
 	_tab_memo = _tab_cards_build()
@@ -170,6 +192,8 @@ func _tab_cards() -> Array:
 
 func _tab_cards_build() -> Array:
 	var ids: Array = []
+	if tab == 1 and not family.is_empty():
+		return _family_cards()
 	match tab:
 		0:
 			ids = counts.keys().filter(func(id): return counts[id] > 0)
@@ -179,8 +203,14 @@ func _tab_cards_build() -> Array:
 			ids = _pool.filter(func(id): return CardDB.is_trainer(id))
 		3:
 			ids = _pool.filter(func(id): return CardDB.is_energy(id))
+			if "Holon's" in filters[3].get("ekind", []):
+				ids += _pool.filter(func(id): return CardDB.is_holon_energy(id))
 	if search != "":
 		ids = ids.filter(func(id): return _matches(id, search))
+	if tab > 0:
+		var f: Dictionary = filters[tab]
+		ids = ids.filter(func(id): return _passes(id, f))
+		return _sort_by(ids, f.get("sort", 0))
 	return _sorted(ids)
 
 
@@ -410,6 +440,14 @@ func _edit_input(event: InputEventKey, k: int, back: bool) -> void:
 	if searching:
 		_search_input(event, k)
 		return
+	if fpanel:
+		_filter_input(k, event.echo)
+		return
+	if not family.is_empty() and k in [KEY_X, KEY_ESCAPE] and not event.echo:
+		family = []              # X sale de la familia y vuelve a la lista entera
+		cursor = 0
+		scroll = 0
+		return
 	var cards := _tab_cards()
 	var id: String = cards[cursor] if cursor < cards.size() else ""
 	match k:
@@ -429,6 +467,7 @@ func _edit_input(event: InputEventKey, k: int, back: bool) -> void:
 			tab = (tab + (-1 if event.shift_pressed else 1) + TABS.size()) % TABS.size()
 			cursor = 0
 			scroll = 0
+			family = []
 		KEY_C:
 			if id != "" and not event.echo:
 				var tab_list := _tab_cards()
@@ -462,6 +501,25 @@ func _edit_input(event: InputEventKey, k: int, back: bool) -> void:
 		KEY_F, KEY_SLASH:
 			if not event.echo:
 				searching = true            # F abre el buscador; Enter lo cierra y deja el filtro
+		KEY_V:
+			if not event.echo and tab > 0:
+				fpanel = true
+				frow = 0
+				fcol = 0
+				family = []
+				d.snd.play("ok")
+			elif not event.echo:
+				msg = "Filters work in the Pokémon, Trainers and Energy tabs."
+		KEY_G:
+			if not event.echo:
+				if not family.is_empty():
+					family = []
+					cursor = 0
+					scroll = 0
+				elif id != "" and CardDB.is_pokemon(id):
+					_open_family(id)
+				else:
+					msg = "G shows the evolution family of a Pokémon."
 	if cursor < scroll:
 		scroll = cursor
 	if cursor >= scroll + ROWS:
@@ -717,7 +775,7 @@ func _draw_edit() -> void:
 		elif n > 0:
 			d._text(Vector2(list_w - 21, y), "×%d" % n, Color("#c03028"))
 	if cards.is_empty():
-		d._text_fit(Vector2(9, LIST_Y), "The deck is empty: Tab switches tabs." if tab == 0 else "Nothing matches the search.", d.C_DIM, list_w - 18)
+		d._text_fit(Vector2(9, LIST_Y), "The deck is empty: Tab switches tabs." if tab == 0 else "Nothing matches the search or filter.", d.C_DIM, list_w - 18)
 	if scroll > 0:
 		d._text(Vector2(list_w - 12, LIST_Y - 3), "▲", d.C_DIM)
 	if scroll + ROWS < cards.size():
@@ -759,7 +817,15 @@ func _draw_edit() -> void:
 	if status == "":
 		status = "Valid deck: ready to use." if errs.is_empty() else errs[0]
 	d._text_fit(Vector2(9, 132), status, d.C_HP_LOW if msg != "" or not errs.is_empty() else d.C_HP_OK.darkened(0.35), 222)
-	d._text_scroll(Vector2(9, 143), ("Name, code (ex2, ecard1-33) or set · Enter done · Esc clear" if searching else "◀▶ remove/add · Tab tab · F search · C card · X done"), d.C_DIM, 222, "ed_keys")
+	var summary := _filter_summary()
+	if searching:
+		d._text_scroll(Vector2(9, 143), "Name, code (ex2, ecard1-33) or set · Enter done · Esc clear", d.C_DIM, 222, "ed_keys")
+	elif summary != "":
+		d._text_scroll(Vector2(9, 143), "%s  (%d)" % [summary, cards.size()], C_FILTER, 222, "ed_filt")
+	else:
+		d._text_scroll(Vector2(9, 143), "◀▶ remove/add · Tab tab · F search · V filter · G family · C card · X done", d.C_DIM, 222, "ed_keys")
+	if fpanel:
+		_draw_filter_panel()
 
 
 ## En qué temporadas se puede jugar el mazo ("2003-04 · 2004-05", o "none").
@@ -769,3 +835,382 @@ static func legal_formats(deck: Array) -> String:
 		if RuleSet.from_season(i).illegal_cards(deck).is_empty():
 			out.append(RuleSet.SEASONS[i]["id"])
 	return " · ".join(out) if not out.is_empty() else "none"
+
+
+# ===========================================================================
+# Filtros (V) y familia evolutiva (G)
+# ===========================================================================
+# Cada pestaña (Pokémon, Entrenadores, Energías) tiene su propio filtro. El panel se abre
+# con V: filas de opciones que se prenden con Z (varias a la vez valen "cualquiera de"),
+# filas que se giran con ◀▶ (temporada y expansión) y el orden de la lista.
+# G sobre un Pokémon muestra toda su línea evolutiva, con todas sus versiones.
+
+const C_FILTER := Color("#3868c8")
+const POKE_TYPES := ["Grass", "Fire", "Water", "Lightning", "Psychic", "Fighting", "Darkness", "Metal", "Colorless"]
+const STAGES := ["Basic", "Stage 1", "Stage 2", "ex", "δ", "★"]
+const T_KINDS := ["Supporter", "Item", "Stadium", "Tool", "TM"]
+const E_KINDS := ["Basic", "Special", "Holon's"]
+## Qué hace un Entrenador, deducido de su texto (en minúsculas).
+const DOES_RX := {
+	"Draw": "\\bdraw",
+	"Search": "search your (deck|discard)",
+	"Energy": "energy card.*(from your discard|from your hand|to your hand|attach)|attach.*energy|move .*energy",
+	"Switch": "switch",
+	"Heal": "remove .*damage counter|heal",
+	"Disrupt": "your opponent (shuffles|discards|reveals|can't)|opponent's hand|discard .*energy .*(defending|your opponent)|your opponent's .*(energy|prize|deck)",
+}
+
+var filters := [{}, {}, {}, {}]
+var fpanel := false
+var frow := 0
+var fcol := 0
+var family: Array = []           # nombres de la línea evolutiva que se está mirando (G)
+var _rules_cache := {}
+var _does_cache := {}
+var _rx_cache := {}
+
+
+## Filas del panel de la pestaña: key (dónde se guarda), label, opts, mode (multi / one / spin).
+func _filter_rows(t: int) -> Array:
+	var season := {"key": "season", "label": "Season", "mode": "spin"}
+	var set_row := {"key": "set", "label": "Set", "mode": "spin"}
+	match t:
+		1:
+			return [{"key": "type", "label": "Type", "opts": POKE_TYPES, "mode": "multi", "icons": true},
+				{"key": "stage", "label": "Stage", "opts": STAGES, "mode": "multi"},
+				season, set_row,
+				{"key": "sort", "label": "Sort", "opts": ["Set", "Name", "HP", "Type"], "mode": "one"}]
+		2:
+			return [{"key": "kind", "label": "Kind", "opts": T_KINDS, "mode": "multi"},
+				{"key": "does", "label": "Does", "opts": ["Draw", "Search", "Energy"], "mode": "multi"},
+				{"key": "does", "label": "", "opts": ["Switch", "Heal", "Disrupt"], "mode": "multi"},
+				season, set_row,
+				{"key": "sort", "label": "Sort", "opts": ["Set", "Name", "Kind"], "mode": "one"}]
+		3:
+			return [{"key": "ekind", "label": "Kind", "opts": E_KINDS, "mode": "multi", "labels": ["Basic", "Special", "Holon's Pokémon"]},
+				{"key": "gives", "label": "Gives", "opts": POKE_TYPES + ["Any"], "mode": "multi", "icons": true},
+				season, set_row,
+				{"key": "sort", "label": "Sort", "opts": ["Set", "Name", "Type"], "mode": "one"}]
+	return []
+
+
+func _spin_label(key: String, v: int) -> String:
+	if v < 0:
+		return "All"
+	if key == "season":
+		return str(RuleSet.SEASONS[v]["id"])
+	var st: String = set_list()[v]
+	for id in CardDB.all_ids():
+		if CardDB.set_of(id) == st:
+			return str(CardDB.get_card(id).get("set", st))
+	return st
+
+
+func _spin_count(key: String) -> int:
+	return RuleSet.SEASONS.size() if key == "season" else set_list().size()
+
+
+func _filter_input(k: int, echo: bool) -> void:
+	var rows := _filter_rows(tab)
+	var f: Dictionary = filters[tab]
+	var row: Dictionary = rows[frow]
+	var n: int = row.get("opts", []).size()
+	var changed := false
+	match k:
+		KEY_UP:
+			frow = (frow - 1 + rows.size()) % rows.size()
+		KEY_DOWN:
+			frow = (frow + 1) % rows.size()
+		KEY_LEFT, KEY_RIGHT:
+			var dir := -1 if k == KEY_LEFT else 1
+			if row["mode"] == "spin":
+				var cnt := _spin_count(row["key"])
+				f[row["key"]] = (int(f.get(row["key"], -1)) + 1 + dir + cnt + 1) % (cnt + 1) - 1
+				changed = true
+			else:
+				fcol = (fcol + dir + n) % n
+		KEY_Z, KEY_ENTER, KEY_SPACE:
+			if echo:
+				return
+			if row["mode"] == "multi":
+				var arr: Array = f.get(row["key"], []).duplicate()
+				var o: String = row["opts"][fcol]
+				if arr.has(o):
+					arr.erase(o)
+				else:
+					arr.append(o)
+				f[row["key"]] = arr
+				changed = true
+			elif row["mode"] == "one":
+				f["sort"] = fcol
+				changed = true
+		KEY_Y:
+			if not echo:
+				filters[tab] = {}
+				changed = true
+				d.snd.play("back")
+		KEY_V, KEY_X, KEY_ESCAPE:
+			if not echo:
+				fpanel = false
+				d.snd.play("back")
+			return
+	if k in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
+		d.snd.play("move")
+	elif changed and k != KEY_Y:
+		d.snd.play("ok")
+	rows = _filter_rows(tab)
+	fcol = clampi(fcol, 0, maxi(0, rows[frow].get("opts", []).size() - 1))
+	if changed:
+		cursor = 0
+		scroll = 0
+
+
+## Clase de Entrenador para el filtro.
+func _t_kind(id: String) -> String:
+	if CardDB.is_supporter(id):
+		return "Supporter"
+	if CardDB.is_stadium(id):
+		return "Stadium"
+	if CardDB.is_pokemon_tool(id):
+		return "Tool"
+	if CardDB.is_tm(id) or "Machine" in str(CardDB.get_card(id).get("subtypes", [])):
+		return "TM"
+	return "Item"
+
+
+func _does(id: String) -> Array:
+	if _does_cache.has(id):
+		return _does_cache[id]
+	var txt := str(CardDB.get_card(id).get("text", "")).to_lower()
+	var out: Array = []
+	for tag in DOES_RX:
+		if not _rx_cache.has(tag):
+			_rx_cache[tag] = RegEx.create_from_string(DOES_RX[tag])
+		if _rx_cache[tag].search(txt) != null:
+			out.append(tag)
+	_does_cache[id] = out
+	return out
+
+
+## Tipos de Energía que da una carta de Energía (o un Pokémon Holon's unido como Energía).
+func _gives(id: String) -> Array:
+	var out: Array = []
+	for u in Energy.units_of_card(id):
+		for t in u:
+			var name: String = "Any" if t == Energy.ANY else t
+			if not out.has(name):
+				out.append(name)
+	return out
+
+
+func _stage_tags(id: String) -> Array:
+	var out: Array = [["Basic", "Stage 1", "Stage 2"][CardDB.stage(id)]]
+	if CardDB.is_ex(id):
+		out.append("ex")
+	if CardDB.is_delta(id):
+		out.append("δ")
+	if "★" in CardDB.card_name(id):
+		out.append("★")
+	return out
+
+
+func _season_rules(i: int) -> RuleSet:
+	if not _rules_cache.has(i):
+		_rules_cache[i] = RuleSet.from_season(i)
+	return _rules_cache[i]
+
+
+func _any_in(a: Array, b: Array) -> bool:
+	for x in a:
+		if b.has(x):
+			return true
+	return false
+
+
+func _passes(id: String, f: Dictionary) -> bool:
+	if f.is_empty():
+		return true
+	var se := int(f.get("season", -1))
+	if se >= 0 and not _season_rules(se).is_legal(id):
+		return false
+	var st := int(f.get("set", -1))
+	if st >= 0 and CardDB.set_of(id) != set_list()[st]:
+		return false
+	match tab:
+		1:
+			if not f.get("type", []).is_empty() and not _any_in(CardDB.types(id), f["type"]):
+				return false
+			if not f.get("stage", []).is_empty() and not _any_in(_stage_tags(id), f["stage"]):
+				return false
+		2:
+			if not f.get("kind", []).is_empty() and not f["kind"].has(_t_kind(id)):
+				return false
+			if not f.get("does", []).is_empty() and not _any_in(_does(id), f["does"]):
+				return false
+		3:
+			var ek: Array = f.get("ekind", [])
+			if not ek.is_empty():
+				var kind := "Holon's" if CardDB.is_holon_energy(id) else ("Basic" if CardDB.is_basic_energy(id) else "Special")
+				if not ek.has(kind):
+					return false
+			# Una Energía de cualquier tipo (Rainbow, Holon's Castform...) también da el tipo pedido
+			var gv := _gives(id)
+			if not f.get("gives", []).is_empty() and not _any_in(gv, f["gives"]) and not (gv.has("Any") and not f["gives"].is_empty()):
+				return false
+	return true
+
+
+func _sort_by(ids: Array, mode: int) -> Array:
+	var labels: Array = _filter_rows(tab).back().get("opts", ["Set"])
+	var how: String = labels[mode] if mode < labels.size() else "Set"
+	var arr := _sorted(ids)            # base: por set (desempata siempre igual)
+	var pos := {}
+	for i in arr.size():
+		pos[arr[i]] = i
+	match how:
+		"Name":
+			arr.sort_custom(func(a, b): return [CardDB.card_name(a), pos[a]] < [CardDB.card_name(b), pos[b]])
+		"HP":
+			arr.sort_custom(func(a, b): return [-CardDB.hp(a), pos[a]] < [-CardDB.hp(b), pos[b]])
+		"Type":
+			arr.sort_custom(func(a, b): return [_type_rank(a), pos[a]] < [_type_rank(b), pos[b]])
+		"Kind":
+			arr.sort_custom(func(a, b): return [T_KINDS.find(_t_kind(a)), pos[a]] < [T_KINDS.find(_t_kind(b)), pos[b]])
+	return arr
+
+
+func _type_rank(id: String) -> int:
+	var t: Array = CardDB.types(id) if CardDB.is_pokemon(id) and not (tab == 3) else _gives(id)
+	if t.is_empty():
+		return 99
+	var i := POKE_TYPES.find(t[0])
+	return i if i >= 0 else 98
+
+
+## Texto del filtro activo para el renglón de abajo ("" si no hay).
+func _filter_summary() -> String:
+	if tab == 1 and not family.is_empty():
+		return "Family: " + " > ".join(family)
+	if tab == 0:
+		return ""
+	var f: Dictionary = filters[tab]
+	var parts: Array = []
+	for key in ["type", "stage", "kind", "does", "ekind", "gives"]:
+		var arr: Array = f.get(key, [])
+		if not arr.is_empty():
+			parts.append(", ".join(arr))
+	for key in ["season", "set"]:
+		if int(f.get(key, -1)) >= 0:
+			parts.append(_spin_label(key, int(f[key])))
+	if int(f.get("sort", 0)) > 0:
+		parts.append("by " + str(_filter_rows(tab).back()["opts"][int(f["sort"])]).to_lower())
+	return ("Filter: " + " · ".join(parts)) if not parts.is_empty() else ""
+
+
+# --- Familia evolutiva ------------------------------------------------------
+
+## Nombre "de especie" para unir versiones: sin δ y sin " ex" (Blaziken ex es de la familia de Blaziken).
+static func _fam_name(n: String) -> String:
+	return CardDB.evo_name(n).trim_suffix(" ex")
+
+
+func _open_family(id: String) -> void:
+	var parent := {}       # especie -> de qué evoluciona
+	var children := {}     # especie -> [especies que evolucionan de ella]
+	for c in _pool:
+		if not CardDB.is_pokemon(c):
+			continue
+		var me := _fam_name(CardDB.card_name(c))
+		var from := _fam_name(CardDB.evolves_from(c))
+		if from == "" or from == me:
+			continue
+		if not parent.has(me):
+			parent[me] = from
+		if not children.has(from):
+			children[from] = []
+		if not children[from].has(me):
+			children[from].append(me)
+	var root := _fam_name(CardDB.card_name(id))
+	for i in 5:
+		if parent.has(root) and _pool.any(func(c): return CardDB.is_pokemon(c) and _fam_name(CardDB.card_name(c)) == parent[root]):
+			root = parent[root]
+	var names: Array = [root]
+	var i := 0
+	while i < names.size():
+		for ch in children.get(names[i], []):
+			if not names.has(ch):
+				names.append(ch)
+		i += 1
+	family = names
+	tab = 1
+	var cards := _family_cards()
+	cursor = maxi(0, cards.find(id))
+	scroll = maxi(0, cursor - ROWS / 2)
+	d.snd.play("ok")
+
+
+func _family_cards() -> Array:
+	var ids := _pool.filter(func(c): return CardDB.is_pokemon(c) and family.has(_fam_name(CardDB.card_name(c))))
+	var arr := _sorted(ids)
+	var pos := {}
+	for i in arr.size():
+		pos[arr[i]] = i
+	arr.sort_custom(func(a, b): return [CardDB.stage(a), family.find(_fam_name(CardDB.card_name(a))), pos[a]] < [CardDB.stage(b), family.find(_fam_name(CardDB.card_name(b))), pos[b]])
+	return arr
+
+
+# --- Panel ------------------------------------------------------------------
+
+func _draw_filter_panel() -> void:
+	var r := Rect2(4, 22, d.W - 8, 134)
+	d.draw_rect(Rect2(0, 0, d.W, d.H), Color(0, 0, 0, 0.35))
+	d.draw_rect(Rect2(r.position + Vector2(2, 2), r.size), d.C_INK)
+	d.draw_rect(r, Color("#f8f8e8"))
+	d._outline(r, Color("#484850"))
+	d.draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, 12)), C_FILTER)
+	d._text(Vector2(r.position.x + 5, r.position.y + 1), "FILTER  (%s)" % TABS[tab], d.C_LIGHT)
+	var rows := _filter_rows(tab)
+	var f: Dictionary = filters[tab]
+	var blink := int(Time.get_ticks_msec() / 250) % 4 != 0
+	var row_h := 16.0 if rows.size() <= 5 else 15.0
+	for ri in rows.size():
+		var row: Dictionary = rows[ri]
+		var y := r.position.y + 18 + ri * row_h
+		d._text(Vector2(r.position.x + 5, y + 1), row["label"], d.C_DIM)
+		var x := r.position.x + 40
+		var here := ri == frow
+		match row["mode"]:
+			"spin":
+				var v := int(f.get(row["key"], -1))
+				var lbl := "◀ %s ▶" % _spin_label(row["key"], v)
+				var w: float = d._text_w(lbl) + 8
+				var cr := Rect2(x, y - 1, w, 13)
+				d.draw_rect(cr, C_FILTER if v >= 0 else Color("#e8e8e0"))
+				d._outline(cr, Color("#484850"))
+				d._text(Vector2(x + 4, y + 1), lbl, d.C_LIGHT if v >= 0 else d.C_TEXT)
+				if here and blink:
+					d._outline(cr.grow(2), d.C_ACCENT)
+			_:
+				var opts: Array = row["opts"]
+				for oi in opts.size():
+					var o: String = opts[oi]
+					var on: bool = (f.get(row["key"], []).has(o)) if row["mode"] == "multi" else int(f.get("sort", 0)) == oi
+					var cr: Rect2
+					if row.get("icons", false):
+						var c := Vector2(x + 7, y + 5)
+						cr = Rect2(c - Vector2(9, 9), Vector2(18, 18))
+						if on:
+							d.draw_arc(c, 8.0, 0, TAU, 24, C_FILTER, 2.0)
+						d._draw_energy_icon(c, 12, Energy.ANY if o == "Any" else o)
+						x += 18
+					else:
+						var lbl: String = row.get("labels", opts)[oi]
+						var w: float = d._text_w(lbl) + 7
+						cr = Rect2(x, y - 1, w, 13)
+						d.draw_rect(cr, C_FILTER if on else Color("#e8e8e0"))
+						d._outline(cr, Color("#484850"))
+						d._text(Vector2(x + 3, y + 1), lbl, d.C_LIGHT if on else d.C_TEXT)
+						x += w + 4
+					if here and oi == fcol and blink:
+						d._outline(cr.grow(2), d.C_ACCENT)
+	d._text_fit(Vector2(r.position.x + 5, r.end.y - 13), "Z on/off · ◀▶ change · Y clear all · V done", d.C_DIM, r.size.x - 10)
