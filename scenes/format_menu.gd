@@ -32,6 +32,7 @@ func open(from_view: String) -> void:
 	tab = 1 if d.format_upto >= 0 else 0
 	c_season = d.season_idx
 	row = d.season_idx if tab == 0 else d.format_upto + 1
+	_list_t0 = Time.get_ticks_msec()
 	d.title_view = "format"
 
 
@@ -113,7 +114,12 @@ func _logo(year: String) -> Texture2D:
 		for ext in ["png", "webp", "jpg"]:
 			var p := "%s/%s.%s" % [LOGO_DIR, year, ext]
 			if ImgLoad.exists(p):
-				tex = ImageTexture.create_from_image(ImgLoad.load(p))
+				# Se achica una vez, con buen filtro, al tamaño en que se dibuja
+				var img := ImgLoad.load(p)
+				var sc := minf(108.0 / img.get_width(), 64.0 / img.get_height())
+				if sc < 1.0:
+					img.resize(maxi(1, roundi(img.get_width() * sc)), maxi(1, roundi(img.get_height() * sc)), Image.INTERPOLATE_LANCZOS)
+				tex = ImageTexture.create_from_image(img)
 				break
 		_logos[year] = tex
 	return _logos[year]
@@ -151,7 +157,7 @@ func _draw_official() -> void:
 	var sets: Array = s["sets"].filter(func(c): return c != "np")
 	var n_sets: int = sets.filter(func(c): return not str(c).begins_with("pop")).size()
 	var pops: int = sets.size() - n_sets
-	d._text(Vector2(123, 37), "%d sets + %s promos" % [n_sets, ("%d POP +" % pops) if pops > 0 else ""], d.C_DIM)
+	d._text(Vector2(123, 37), ("%d sets + %d POP + promos" % [n_sets, pops]) if pops > 0 else "%d sets + promos" % n_sets, d.C_DIM)
 	var vis := 7
 	var extra := maxi(0, sets.size() - vis)
 	var off := 0
