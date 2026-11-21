@@ -370,7 +370,13 @@ static func setup(a: Dictionary, att: PlayerState, def: PlayerState, atk: Dictio
 	a["m_g_att"] = GROUND_ME if me_att else GROUND_OPP
 	a["m_g_def"] = GROUND_OPP if me_att else GROUND_ME
 	a["printed"] = int(str(atk.get("damage_text", "0")).to_int())
-	# Tiempos: el golpe cae en el HitFrame del ataque (o a los 2/3 si no lo dice)
+	_timing(a)
+
+
+## Tiempos: el golpe cae en el HitFrame del ataque (o a los 2/3 si no lo dice).
+static func _timing(a: Dictionary) -> void:
+	var asp: String = a["m_att"]
+	var kind: String = a["m_kind"]
 	var an := _anim(asp, kind) if kind != "" else {}
 	var hit_s := 0.3
 	var atk_s := 0.5
@@ -409,8 +415,14 @@ static func setup_bench(a: Dictionary, me_att: bool, target: Vector2) -> void:
 	a["m_row_mid"] = 4 if me_att else 0
 	a["m_g_bench"] = target
 	a["m_lunge"] = false
-	if a["m_kind"] != "":
-		a["m_ranged"] = true
+	# Siempre a distancia: un disparo que llega hasta la carta de la Banca
+	a["m_ranged"] = true
+	var asp: String = a["m_att"]
+	for k in ["Shoot", "SpAttack", "Charge", a["m_kind"], "Attack"]:
+		if k != "" and has_anim(asp, k):
+			a["m_kind"] = k
+			break
+	_timing(a)
 
 
 const HEAL_DELAY := 0.25   # la curación aparece un poco después del golpe

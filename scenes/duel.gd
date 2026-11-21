@@ -663,7 +663,17 @@ func _do(action: Dictionary) -> void:
 		"attack":
 			# Ataques que no le hacen daño a nadie (buscar, robar, unir Energía...): como un
 			# Poké-Power, el Pokémon sale de su carta y da dos saltos
-			if _attack_style(action) == "effect" and _start_effect_attack(action, coins):
+			var style := _attack_style(action)
+			if style == "effect" and _start_effect_attack(action, coins):
+				return
+			if style == "bench" and battle_mode == 1:
+				# Solo le pega a la Banca: se aplica ya (y se elige a quién) y después el atacante
+				# se gira y dispara a la carta elegida (ver _check_bench_hits)
+				_bench_shot = _bench_shot_info(action)
+				if not coins.is_empty():
+					_show_coins(coins, func(): _apply_now(action, coins[0].size()), _attack_label(action))
+				else:
+					_apply_now(action)
 				return
 			if not coins.is_empty():
 				_show_coins(coins, func(): _start_attack_anim(action, coins[0].size()), _attack_label(action))
@@ -4815,7 +4825,7 @@ func _start_attack_anim_raw(action: Dictionary, coins_shown: int = 0) -> void:
 	var target: PokemonInPlay = def.active
 	var to: Vector2 = _art_rect(def.index).get_center()
 	var tg: int = action.get("tg", -2)
-	var bench_only := _attack_style(action) == "bench" and not def.bench.is_empty()
+	var bench_only := false
 	if tg >= 0 and tg < def.bench.size():
 		target = def.bench[tg]
 		to = _bench_rect(def.index, tg).get_center()
@@ -4857,11 +4867,6 @@ func _start_attack_anim_raw(action: Dictionary, coins_shown: int = 0) -> void:
 		status_only = true
 	if battle_mode == 1 and (hits_active or status_only) and MiniBattle.can_use(att.active.top(), def.active.top()):
 		MiniBattle.setup(anim, att, def, atk, human)
-	elif battle_mode == 1 and bench_only and def.active != null and MiniBattle.can_use(att.active.top(), def.active.top()):
-		# Solo le pega a la Banca: el atacante se gira hacia ella y dispara (el daño se ve
-		# después, con el estallido sobre cada carta)
-		MiniBattle.setup(anim, att, def, atk, human)
-		MiniBattle.setup_bench(anim, att.index == human, to)
 	elif sig != "" and str(atk.get("damage_text", "")) != "":
 		anim["sig"] = sig
 		anim["power"] = SpecialFX.power(att.active.top())
@@ -5032,6 +5037,11 @@ func _attack_type(p: PokemonInPlay, atk: Dictionary) -> String:
 
 
 func _update_anim(delta: float) -> void:
+	# Disparo a la Banca: cuando llega, arrancan los estallidos de las cartas
+	if anim.get("m_bench", false) and float(anim["t"]) * float(anim["dur"]) >= float(anim["m_impact"]):
+		for e in bench_fx:
+			e["wait_shot"] = false
+		_update_bench_fx(delta)
 	if anim.get("waiting", false):
 		anim["waiting"] = false
 		if anim.get("hit_pending", false):
@@ -8172,11 +8182,7 @@ func _set_power_anim(pi: int, mon: PokemonInPlay, sp: String, cls: String, name:
 		short: bool, then: Callable, tag: String = "POKé-POWER", tag_col: Color = Color("#d83828")) -> void:
 	var id := mon.top()
 	var an := "Hop" if MiniBattle.has_anim(sp, "Hop") else "Idle"
-	var t_in := POWER_IN * (0.6 if short else 1.0)
 	var dur := POWER_SHORT if short else POWER_TIME
-	var hop := MiniBattle._anim(sp, an)
-	if an == "Hop" and not hop.is_empty():
-		dur = t_in * 2.0 + float(hop["total"]) * MiniBattle.TICK * 2.0 + 0.1     # justo dos saltos
 	var types := CardDB.types(id)
 	power_anim = {"p": pi, "id": id, "sp": sp, "anim": an, "cls": cls, "name": name, "mon": mon.display_name(),
 			"src": src, "t": 0.0, "dur": dur, "short": short, "then": then, "tag": tag, "tagcol": tag_col,
@@ -9140,6 +9146,35 @@ func _draw_ice(r: Rect2, id: String) -> void:
 # sale el "-10" y le bajan los PS. No se repite el ataque: solo se ve el daño.
 
 const BENCH_FX_TIME := 0.85
+var _bench_shot := {}          # ataque a la Banca que espera saber a quién le pegó (para el disparo)
+
+
+func _bench_shot_info(action: Dictionary) -> Dictionary:
+	var att := game.current_player()
+	var atk: Dictionary = att.active.attacks()[action["a"]]
+	return {"att": att.index, "atk": atk, "type": _attack_type(att.active, atk),
+			"label": "%s used %s!" % [att.active.display_name(), atk["name"]]}
+
+
+## El disparo a la Banca (mini pelea): el atacante se gira hacia la carta y le dispara; el
+## estallido y el "-10" de cada carta salen cuando llega el disparo.
+func _start_bench_shot(slot: int) -> void:
+	var att: PlayerState = game.players[int(_bench_shot["att"])]
+	var def := game.other(att)
+	if att.active == null or def.active == null or not MiniBattle.can_use(att.active.top(), def.active.top()):
+		return
+	var atk: Dictionary = _bench_shot["atk"]
+	var to := _bench_rect(def.index, slot).get_center()
+	anim = {"t": 0.0, "action": {}, "applied": true, "dmg": 0, "type": _bench_shot["type"],
+		"att_card": att.active.top(), "atk_name": str(atk.get("name", "")), "atk_text": str(atk.get("text", "")),
+		"atk_dmg_text": "", "att_mon_s": att.active, "att_dmg_s": att.active.damage,
+		"from": _art_rect(att.index).get_center(), "to": to, "att": att.index, "def": def.index,
+		"hp_before": 0, "def_mon": def.active, "label": _bench_shot["label"], "coins_shown": 0, "seed": randi(),
+		"dur": ANIM_TIME, "impact": ANIM_IMPACT, "poison": false, "weak": false}
+	MiniBattle.setup(anim, att, def, atk, human)
+	MiniBattle.setup_bench(anim, att.index == human, to)
+	for e in bench_fx:
+		e["wait_shot"] = true          # esperan a que llegue el disparo
 const BENCH_FX_STAGGER := 0.12
 
 
@@ -9156,11 +9191,15 @@ func _bench_damage() -> Array:
 
 func _check_bench_hits(before: Dictionary) -> void:
 	if not animations_on or not before.has("bench") or mode != "duel":
+		_bench_shot = {}
 		return
 	var typ := "Colorless"
 	if not anim.is_empty():
 		typ = str(anim.get("type", "Colorless"))
+	elif not _bench_shot.is_empty():
+		typ = str(_bench_shot["type"])
 	var n := bench_fx.size()
+	var first_hit := -1
 	for pi in game.players.size():
 		var old: Dictionary = before["bench"][pi]
 		for m in game.players[pi].bench:
@@ -9171,10 +9210,19 @@ func _check_bench_hits(before: Dictionary) -> void:
 			bench_fx.append({"p": pi, "mon": m, "dmg": dmg, "t": -BENCH_FX_STAGGER * n / BENCH_FX_TIME,
 					"col": TYPE_COLORS.get(typ, Color.WHITE), "rock": typ == "Fighting", "hit": false, "snd": "hit_" + typ})
 			n += 1
+			if first_hit < 0 and not _bench_shot.is_empty() and pi != int(_bench_shot["att"]):
+				first_hit = game.players[pi].bench.find(m)
+	# Ataque que solo le pegó a la Banca: ahora sí, el disparo hacia la carta
+	if not _bench_shot.is_empty() and game.pending_choice_kind() == "":
+		if first_hit >= 0:
+			_start_bench_shot(first_hit)
+		_bench_shot = {}
 
 
 func _update_bench_fx(delta: float) -> void:
 	for e in bench_fx:
+		if e.get("wait_shot", false):
+			continue
 		e["t"] = float(e["t"]) + delta / BENCH_FX_TIME
 		if not e["hit"] and float(e["t"]) >= 0.12:
 			e["hit"] = true
@@ -9191,11 +9239,11 @@ func _update_bench_fx(delta: float) -> void:
 
 
 func _draw_bench_fx() -> void:
-	if bench_fx.is_empty() or not anim.is_empty():
+	if bench_fx.is_empty() or (not anim.is_empty() and not anim.get("m_bench", false)):
 		return
 	for e in bench_fx:
 		var t: float = e["t"]
-		if t < 0.0:
+		if t < 0.0 or e.get("wait_shot", false):
 			continue
 		var pl: PlayerState = game.players[e["p"]]
 		var i := pl.bench.find(e["mon"])
