@@ -252,7 +252,7 @@ static func _anim(sp: String, name: String) -> Dictionary:
 		out["total"] = total
 		var shimg := ImgLoad.load(path(sp, src + "-Shadow.png"))
 		var ofimg := ImgLoad.load(path(sp, src + "-Offsets.png"))
-		for row in [ROW_ME, ROW_OPP, 0]:      # 0: mirando a la pantalla (Poké-Powers)
+		for row in [ROW_ME, ROW_OPP, 0, 1, 4, 5]:      # 0: a la pantalla (Poké-Powers); 1, 4, 5: hacia la Banca
 			var r := mini(row, rows - 1)
 			var sh := []
 			var ce := []
@@ -390,6 +390,27 @@ static func setup(a: Dictionary, att: PlayerState, def: PlayerState, atk: Dictio
 	a["dur"] = dur
 	a["impact"] = impact / dur
 	a["m_impact"] = impact
+
+
+## El ataque solo le pega a la Banca: el atacante se gira hacia ella (fila del sprite que
+## mira para ese lado), dispara y vuelve a mirar al rival. El rival no se mueve.
+static func setup_bench(a: Dictionary, me_att: bool, target: Vector2) -> void:
+	var ga: Vector2 = a["m_g_att"]
+	var dir := target - ga
+	# Filas de SpriteCollab: 0 abajo, 1 abajo-der., 2 der., 3 arriba-der., 4 arriba, 5 arriba-izq., 6 izq., 7 abajo-izq.
+	var ang := atan2(-dir.y, dir.x)           # 0 = derecha, sube en sentido antihorario
+	var octant := posmod(roundi(ang / (PI / 4.0)), 8)
+	var row: int = [2, 3, 4, 5, 6, 7, 0, 1][octant]
+	if not row in [1, 4, 5, 0]:
+		row = 5 if me_att else 1
+	a["m_bench"] = true
+	a["m_row_rival"] = a["m_row_att"]
+	a["m_row_bench"] = row
+	a["m_row_mid"] = 4 if me_att else 0
+	a["m_g_bench"] = target
+	a["m_lunge"] = false
+	if a["m_kind"] != "":
+		a["m_ranged"] = true
 
 
 const HEAL_DELAY := 0.25   # la curación aparece un poco después del golpe
@@ -605,6 +626,19 @@ static func draw(d, a: Dictionary) -> void:
 	var rd: int = a["m_row_def"]
 	var ga: Vector2 = a["m_g_att"]
 	var gd: Vector2 = a["m_g_def"]
+	var bench: bool = a.get("m_bench", false)
+	var gt := gd                       # adónde apunta el ataque
+	if bench:
+		gt = a["m_g_bench"]
+		# se gira hacia la Banca antes de atacar y vuelve a mirar al rival al final
+		var st := float(a["m_start"])
+		var back_t := st + float(a["m_atk_len"]) + 0.3
+		if s < st - 0.2 or s > back_t + 0.1:
+			ra = a["m_row_rival"]
+		elif s < st - 0.1 or s > back_t:
+			ra = a["m_row_mid"]
+		else:
+			ra = a["m_row_bench"]
 	var fade := clampf(s / T_IN, 0.0, 1.0) * clampf((dur - s) / T_OUT, 0.0, 1.0)
 	d.draw_rect(Rect2(0, 0, d.W, d.BOX_Y), Color(0.04, 0.05, 0.12, 0.72 * fade))
 	# Pokémon δ: aura de llamas del color de sus tipos
@@ -628,7 +662,9 @@ static func draw(d, a: Dictionary) -> void:
 		sleeping = mon.rotation == "asleep"
 	# --- Defensor: quieto (o durmiendo), daño (titila y tiembla) o KO (se hunde) ---
 	var dpos := {}
-	if s >= imp and landed:
+	if bench:
+		dpos = _rest(d, dsp, rd, s, gd, fade, sleeping)      # el Activo rival no recibe nada
+	elif s >= imp and landed:
 		var hu := _anim(dsp, "Hurt")
 		var shake := (2.0 if int(after * 30.0) % 2 == 0 else -2.0) if after < 0.3 else 0.0
 		var blink := after < 0.3 and int(after * 16.0) % 2 == 1
@@ -691,12 +727,12 @@ static func draw(d, a: Dictionary) -> void:
 			var hit_s := maxf(0.05, float(a["m_hit_s"]))
 			var back := maxf(0.05, float(a["m_atk_len"]) - hit_s)
 			var pr := clampf(k / hit_s, 0.0, 1.0) if k < hit_s else 1.0 - clampf((k - hit_s) / back, 0.0, 1.0)
-			g_at = ga + (gd - ga) * 0.55 * sin(pr * PI / 2.0)
+			g_at = ga + (gt - ga) * 0.55 * sin(pr * PI / 2.0)
 		apos = _put(d, asp, kind, ra, fr, g_at, fade)
 	elif kind == "" and k >= 0.0 and k < 0.5 and not a.get("m_heal_only", false) and not a["m_ranged"]:
 		# Sin animación de ataque: un empujón hacia el rival
 		var push := sin(clampf(k / 0.5, 0.0, 1.0) * PI) * 8.0
-		var dir := (gd - ga).normalized()
+		var dir := (gt - ga).normalized()
 		apos = _put(d, asp, "Idle", ra, 0, ga + dir * push, fade)
 	else:
 		var rk := s - imp - RECOIL_DELAY
@@ -710,7 +746,9 @@ static func draw(d, a: Dictionary) -> void:
 			apos = _put(d, asp, "Idle", ra, _idle_frame(asp, s), ga, fade)
 	# --- Efectos ---
 	if a["m_ranged"]:
-		_draw_stream(d, a, s, apos["h"], dpos["c"])
+		_draw_stream(d, a, s, apos["h"], gt if bench else dpos["c"])
+	if bench:
+		return                         # el daño a la Banca se ve en la mesa (estallido y número)
 	if s >= imp and applied:
 		if not landed and special_effect(a) != "":
 			var sfx := special_effect(a)

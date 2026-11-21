@@ -206,6 +206,7 @@ var _last_power := {}         # el último Poder mostrado (si se repite en el tu
 var supporter_table := [{}, {}]   # Supporter jugado este turno por cada jugador: {"id", "turn"}
 var ko_anim: Array = []       # [{"p", "slot", "id", "name", "t"}]
 var check_anim: Array = []    # daño de veneno/quemadura entre turnos, después del ataque: [{"p", "mon", "kind", "dmg", "t"}]
+var bench_fx: Array = []      # daño a la Banca: un estallido sobre cada carta: [{"p", "mon", "dmg", "t", "col", "rock"}]
 var checkup_seen := 0
 var hp_hold := {}             # Pokémon -> PS que se siguen mostrando hasta que se vea su daño de veneno/quemadura
 var ko_seen := 0
@@ -541,6 +542,8 @@ func _process(delta_real: float) -> void:
 		_update_evo(delta)
 	elif not anim.is_empty():
 		_update_anim(delta)
+	elif not bench_fx.is_empty():
+		_update_bench_fx(delta)
 	elif not check_anim.is_empty():
 		_update_check(delta)
 	elif not ko_anim.is_empty():
@@ -658,6 +661,10 @@ func _do(action: Dictionary) -> void:
 	var coins := _preview_coins(action)
 	match action["t"]:
 		"attack":
+			# Ataques que no le hacen daño a nadie (buscar, robar, unir Energía...): como un
+			# Poké-Power, el Pokémon sale de su carta y da dos saltos
+			if _attack_style(action) == "effect" and _start_effect_attack(action, coins):
+				return
 			if not coins.is_empty():
 				_show_coins(coins, func(): _start_attack_anim(action, coins[0].size()), _attack_label(action))
 			else:
@@ -738,7 +745,7 @@ func _attack_label(action: Dictionary) -> String:
 
 ## Estado antes de una acción, para saber qué animar después.
 func _snapshot() -> Dictionary:
-	return {"energy": _energy_snapshot(), "places": _places(), "phase": game.phase,
+	return {"energy": _energy_snapshot(), "places": _places(), "phase": game.phase, "bench": _bench_damage(),
 			"piles": [[game.players[0].discard.duplicate(), game.players[0].hand.duplicate()],
 					[game.players[1].discard.duplicate(), game.players[1].hand.duplicate()]]}
 
@@ -749,6 +756,7 @@ func _after_apply(before: Dictionary) -> void:
 	_check_energy(before["energy"])
 	_check_recovered(before["piles"])
 	_check_moves(before)
+	_check_bench_hits(before)
 
 
 ## Cartas que pasaron de la pila de descarte a la mano: vuelan del descarte a la mano.
@@ -1417,6 +1425,7 @@ func _draw_screen() -> void:
 	_draw_moves()
 	_draw_anim()
 	_draw_check()
+	_draw_bench_fx()
 	_draw_ko()
 	_draw_evo()
 	_draw_ex_shine()
@@ -3688,7 +3697,7 @@ func _draw_textbox() -> void:
 	if not power_anim.is_empty():
 		var whose := "Your" if power_anim["p"] == human else "The opponent's"
 		_text_scroll(Vector2(x, y), "%s %s uses %s!" % [whose, power_anim["mon"], power_anim["name"]], C_TEXT, tw, "power")
-		_text(Vector2(x, y + LINE), "Poké-Power", C_DIM)
+		_text(Vector2(x, y + LINE), "Attack" if power_anim.get("tag", "") == "ATTACK" else "Poké-Power", C_DIM)
 		return
 	if not trainer_anim.is_empty():
 		var who := "You play" if trainer_anim["p"] == human else "The opponent plays"
@@ -3697,6 +3706,14 @@ func _draw_textbox() -> void:
 		return
 	if _deck_showing():
 		_draw_deck_text(x, y, tw)
+		return
+	if not bench_fx.is_empty() and anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty():
+		# Daño a la Banca: a quién y cuánto
+		var parts: Array = []
+		for e in bench_fx:
+			parts.append("%s%s -%d" % ["" if e["p"] == human else "Foe ", e["mon"].display_name(), int(e["dmg"])])
+		_text_scroll(Vector2(x, y), "Damage to the Bench!", C_TEXT, tw, "bfx")
+		_text_scroll(Vector2(x, y + LINE), ", ".join(parts), C_DIM, tw, "bfx2")
 		return
 	if not check_anim.is_empty() and anim.is_empty() and coin_anim.is_empty() and evo_anim.is_empty():
 		var ck: Dictionary = check_anim[0]
@@ -4733,6 +4750,51 @@ func _menu_title() -> String:
 # t va de 0 a 1. Antes de ANIM_IMPACT el ataque "viaja"; en el impacto se aplica
 # la acción en el motor (baja la vida) y el defensor tiembla.
 
+## Cómo se ve un ataque: "effect" (no hace daño: sale como un Poké-Power), "bench" (solo
+## le pega a la Banca: el atacante se gira hacia ella) o "" (el golpe de siempre).
+func _attack_style(action: Dictionary) -> String:
+	if game.rules.doubles or action.has("ctx") or game.phase != "main":
+		return ""
+	var att := game.current_player()
+	if att.active == null:
+		return ""
+	var atks := att.active.attacks()
+	if int(action.get("a", 0)) >= atks.size():
+		return ""
+	var atk: Dictionary = atks[action["a"]]
+	if str(atk.get("damage_text", "")) != "":
+		return ""
+	var txt := str(atk.get("text", ""))
+	var low := txt.to_lower()
+	# "Choose 1 of your opponent's Benched Pokémon. This attack does 10 damage to that Pokémon."
+	if int(action.get("tg", -2)) >= 0 or (low.contains("of your opponent's benched pokémon") and low.contains("damage") \
+			and not low.contains("defending pokémon")):
+		return "bench"
+	if MiniBattle.leaves_status(txt) or MiniBattle.heals_self(txt, CardDB.card_name(att.active.top())):
+		return ""                  # estados y curarse: la mini pelea de siempre
+	if low.contains("damage") or low.contains("knocked out") or low.contains("discard") and low.contains("defending"):
+		return ""                  # le hace algo al rival: se ve el golpe
+	return "effect"
+
+
+func _start_effect_attack(action: Dictionary, coins: Array) -> bool:
+	var pi := game.actor()
+	var mon: PokemonInPlay = game.players[pi].active
+	var sp := MiniBattle.folder(mon.top())
+	if sp == "" or not MiniBattle.available(mon.top()):
+		return false
+	var atk: Dictionary = mon.attacks()[action["a"]]
+	var n: int = 0 if coins.is_empty() else coins[0].size()
+	var go := func():
+		_set_power_anim(pi, mon, sp, power_class(str(atk.get("text", ""))), str(atk.get("name", "")), _card_rect(pi),
+				false, func(): _apply_now(action, n), "ATTACK", Color("#3868c8"))
+	if not coins.is_empty():
+		_show_coins(coins, go, _attack_label(action))
+	else:
+		go.call()
+	return true
+
+
 func _start_attack_anim(action: Dictionary, coins_shown: int = 0) -> void:
 	if action.has("ctx"):
 		# Dobles: el que ataca y el que defiende pasan a ser "el" Activo de cada uno mientras
@@ -4753,9 +4815,13 @@ func _start_attack_anim_raw(action: Dictionary, coins_shown: int = 0) -> void:
 	var target: PokemonInPlay = def.active
 	var to: Vector2 = _art_rect(def.index).get_center()
 	var tg: int = action.get("tg", -2)
+	var bench_only := _attack_style(action) == "bench" and not def.bench.is_empty()
 	if tg >= 0 and tg < def.bench.size():
 		target = def.bench[tg]
 		to = _bench_rect(def.index, tg).get_center()
+	elif bench_only:
+		# Todavía no se eligió a quién: apunta al medio de la Banca
+		to = (_bench_rect(def.index, 0).get_center() + _bench_rect(def.index, def.bench.size() - 1).get_center()) / 2.0
 	anim = {
 		"t": 0.0, "action": action, "applied": false, "dmg": 0,
 		"type": _attack_type(att.active, atk),
@@ -4791,6 +4857,11 @@ func _start_attack_anim_raw(action: Dictionary, coins_shown: int = 0) -> void:
 		status_only = true
 	if battle_mode == 1 and (hits_active or status_only) and MiniBattle.can_use(att.active.top(), def.active.top()):
 		MiniBattle.setup(anim, att, def, atk, human)
+	elif battle_mode == 1 and bench_only and def.active != null and MiniBattle.can_use(att.active.top(), def.active.top()):
+		# Solo le pega a la Banca: el atacante se gira hacia ella y dispara (el daño se ve
+		# después, con el estallido sobre cada carta)
+		MiniBattle.setup(anim, att, def, atk, human)
+		MiniBattle.setup_bench(anim, att.index == human, to)
 	elif sig != "" and str(atk.get("damage_text", "")) != "":
 		anim["sig"] = sig
 		anim["power"] = SpecialFX.power(att.active.top())
@@ -4993,6 +5064,7 @@ func _update_anim(delta: float) -> void:
 		_check_evolutions()
 		_check_recovered(before["piles"])
 		_check_moves(before)
+		_check_bench_hits(before)
 		# Monedas del ataque que no se adelantaron (sin animaciones previas): antes del golpe.
 		# Las del cambio de turno (Dormido, Quemado) se ven después del ataque.
 		var own := false
@@ -6900,7 +6972,7 @@ func _draw_stagger(n: int) -> float:
 
 
 func _deck_showing() -> bool:
-	return not deck_anim.is_empty() and anim.is_empty() and check_anim.is_empty() and energy_anim.is_empty() \
+	return not deck_anim.is_empty() and anim.is_empty() and bench_fx.is_empty() and check_anim.is_empty() and energy_anim.is_empty() \
 			and coin_anim.is_empty() and evo_anim.is_empty() and prize_anim.is_empty() and move_anim.is_empty()
 
 
@@ -8080,9 +8152,6 @@ func _start_power_anim(action: Dictionary, then: Callable) -> bool:
 		if ab.get("name", "") == action["n"]:
 			text = ab.get("text", "")
 	var cls := power_class(text)
-	var an: String = POWER_ANIMS[cls]
-	if not MiniBattle.has_anim(sp, an):
-		an = "Idle"
 	var key := "%d|%d|%s" % [pi, game.turn_number, action["n"]]
 	var short: bool = _last_power.get("key", "") == key
 	_last_power = {"key": key}
@@ -8093,11 +8162,25 @@ func _start_power_anim(action: Dictionary, then: Callable) -> bool:
 		src = _dbl_card_rect(pi, 1)
 	else:
 		src = _bench_rect(pi, slot)
-	var types := CardDB.types(id)
-	power_anim = {"p": pi, "id": id, "sp": sp, "anim": an, "cls": cls, "name": action["n"], "mon": mon.display_name(),
-			"src": src, "t": 0.0, "dur": POWER_SHORT if short else POWER_TIME, "short": short, "then": then,
-			"col": TYPE_COLORS.get(types[0] if not types.is_empty() else "Colorless", Color.WHITE)}
+	_set_power_anim(pi, mon, sp, cls, action["n"], src, short, then)
 	return true
+
+
+## Arma la animación de "sale de la carta y da dos saltos" (Poké-Powers y ataques que no
+## hacen daño). tag: el cartel de abajo ("POKé-POWER" rojo o "ATTACK" azul).
+func _set_power_anim(pi: int, mon: PokemonInPlay, sp: String, cls: String, name: String, src: Rect2,
+		short: bool, then: Callable, tag: String = "POKé-POWER", tag_col: Color = Color("#d83828")) -> void:
+	var id := mon.top()
+	var an := "Hop" if MiniBattle.has_anim(sp, "Hop") else "Idle"
+	var t_in := POWER_IN * (0.6 if short else 1.0)
+	var dur := POWER_SHORT if short else POWER_TIME
+	var hop := MiniBattle._anim(sp, an)
+	if an == "Hop" and not hop.is_empty():
+		dur = t_in * 2.0 + float(hop["total"]) * MiniBattle.TICK * 2.0 + 0.1     # justo dos saltos
+	var types := CardDB.types(id)
+	power_anim = {"p": pi, "id": id, "sp": sp, "anim": an, "cls": cls, "name": name, "mon": mon.display_name(),
+			"src": src, "t": 0.0, "dur": dur, "short": short, "then": then, "tag": tag, "tagcol": tag_col,
+			"col": TYPE_COLORS.get(types[0] if not types.is_empty() else "Colorless", Color.WHITE)}
 
 
 func _update_power(delta: float) -> void:
@@ -8137,6 +8220,10 @@ func _draw_power_anim() -> void:
 	# Qué anima: mientras sale y vuelve, Idle; en el medio, la acción del Poder
 	var act_t := t - t_in
 	var name := "Idle" if kin < 1.0 or kout > 0.0 else str(power_anim["anim"])
+	if name == "Hop":
+		var hop := MiniBattle._anim(sp, "Hop")
+		if not hop.is_empty() and act_t / MiniBattle.TICK >= float(hop["total"]) * 2.0:
+			name = "Idle"                  # después de los dos saltos, quieto
 	var an := MiniBattle._anim(sp, name)
 	var loop := name != "Shoot"
 	var frame := 0
@@ -8155,7 +8242,7 @@ func _draw_power_anim() -> void:
 		_draw_power_fx(power_anim["cls"], act_t, center, col)
 	# Cartel abajo de la mesa: "POKé-POWER" en rojo y al lado el nombre del Poder
 	var la := clampf(env * 2.5, 0.0, 1.0)
-	var tag := "POKé-POWER"
+	var tag: String = power_anim.get("tag", "POKé-POWER")
 	var nm: String = power_anim["name"]
 	var tw := _text_w(tag) + 10
 	var nw := _text_w(nm) + 14
@@ -8163,7 +8250,7 @@ func _draw_power_anim() -> void:
 	var x0 := roundf((W - tw - nw) / 2.0)
 	var y0 := BOX_Y - 13.0 + rise
 	draw_rect(Rect2(x0 - 1, y0 - 1, tw + nw + 2, 13), Color(C_INK, la))
-	draw_rect(Rect2(x0, y0, tw, 11), Color("#d83828", la))
+	draw_rect(Rect2(x0, y0, tw, 11), Color(power_anim.get("tagcol", Color("#d83828")), la))
 	_text(Vector2(x0 + 5, y0 + 1), tag, Color(1, 1, 1, la))
 	draw_rect(Rect2(x0 + tw, y0, nw, 11), Color(0.1, 0.1, 0.16, 0.9 * la))
 	_text(Vector2(x0 + tw + 7, y0 + 1), nm, Color("#f8e070", la))
@@ -9043,3 +9130,107 @@ func _draw_ice(r: Rect2, id: String) -> void:
 	var f := (int(Time.get_ticks_msec() / 1000.0 * ICE_FPS) + h % ICE_FRAMES) % ICE_FRAMES
 	var src := Rect2((f % 12) * s, (f / 12) * s, s, s)
 	draw_texture_rect_region(tex, r, src, Color.WHITE, (h / 7) % 2 == 0)
+
+
+# ===========================================================================
+# Daño a la Banca
+# ===========================================================================
+# Cuando un ataque (o un Poder) le hace daño a Pokémon de la Banca, después del golpe al
+# Activo cada carta dañada recibe un estallido (piedras si el ataque es de tipo Lucha),
+# sale el "-10" y le bajan los PS. No se repite el ataque: solo se ve el daño.
+
+const BENCH_FX_TIME := 0.85
+const BENCH_FX_STAGGER := 0.12
+
+
+## Daño de cada Pokémon de Banca (de los dos jugadores), para ver qué cambió.
+func _bench_damage() -> Array:
+	var out := []
+	for pl in game.players:
+		var d := {}
+		for m in pl.bench:
+			d[m] = m.damage
+		out.append(d)
+	return out
+
+
+func _check_bench_hits(before: Dictionary) -> void:
+	if not animations_on or not before.has("bench") or mode != "duel":
+		return
+	var typ := "Colorless"
+	if not anim.is_empty():
+		typ = str(anim.get("type", "Colorless"))
+	var n := bench_fx.size()
+	for pi in game.players.size():
+		var old: Dictionary = before["bench"][pi]
+		for m in game.players[pi].bench:
+			if not old.has(m) or m.damage <= int(old[m]):
+				continue
+			var dmg: int = m.damage - int(old[m])
+			hp_hold[m] = clampi(m.max_hp() - int(old[m]), 0, m.max_hp())     # los PS bajan con el estallido
+			bench_fx.append({"p": pi, "mon": m, "dmg": dmg, "t": -BENCH_FX_STAGGER * n / BENCH_FX_TIME,
+					"col": TYPE_COLORS.get(typ, Color.WHITE), "rock": typ == "Fighting", "hit": false, "snd": "hit_" + typ})
+			n += 1
+
+
+func _update_bench_fx(delta: float) -> void:
+	for e in bench_fx:
+		e["t"] = float(e["t"]) + delta / BENCH_FX_TIME
+		if not e["hit"] and float(e["t"]) >= 0.12:
+			e["hit"] = true
+			hp_hold.erase(e["mon"])
+			snd.play(e["snd"])
+	bench_fx = bench_fx.filter(func(e): return float(e["t"]) < 1.0 and game.players[e["p"]].bench.has(e["mon"]))
+	for m in hp_hold.keys():
+		if not bench_fx.any(func(e): return e["mon"] == m) and not check_anim.any(func(e): return e["mon"] == m) \
+				and game.players.any(func(pl): return pl.bench.has(m)):
+			hp_hold.erase(m)
+	if bench_fx.is_empty():
+		ai_timer = AI_DELAY
+		_rebuild_menu()
+
+
+func _draw_bench_fx() -> void:
+	if bench_fx.is_empty() or not anim.is_empty():
+		return
+	for e in bench_fx:
+		var t: float = e["t"]
+		if t < 0.0:
+			continue
+		var pl: PlayerState = game.players[e["p"]]
+		var i := pl.bench.find(e["mon"])
+		if i < 0:
+			continue
+		var r := _bench_rect(e["p"], i)
+		var c := r.get_center()
+		var col: Color = e["col"]
+		# La carta titila con el golpe
+		if t > 0.12 and t < 0.4 and int(t * 30.0) % 2 == 0:
+			draw_rect(r, Color(1, 1, 1, 0.55))
+		if e["rock"]:
+			# Piedras que caen y se parten
+			var rng := RandomNumberGenerator.new()
+			rng.seed = hash(e["mon"]) & 0xffff
+			for k in 6:
+				var dx := rng.randf_range(-8.0, 8.0)
+				var fall := clampf(t / 0.12, 0.0, 1.0)
+				var after := maxf(0.0, t - 0.12)
+				var p := c + Vector2(dx + dx * after * 2.0, -20.0 + 20.0 * fall + after * after * 60.0 - (8.0 * after if k % 2 == 0 else 0.0))
+				var a := clampf(1.0 - after * 2.2, 0.0, 1.0)
+				var sz := 4.0 - minf(2.0, after * 6.0)
+				draw_rect(Rect2(p.round() - Vector2(sz, sz) / 2.0, Vector2(sz, sz)), Color("#383028", a))
+				draw_rect(Rect2(p.round() - Vector2(sz, sz) / 2.0 + Vector2(1, 1), Vector2(sz - 2, sz - 2)), Color("#a09080", a))
+		if t > 0.1 and t < 0.45:
+			var k2 := (t - 0.1) / 0.35
+			_draw_burst(c, 5.0 + k2 * 10.0, Color(col.lightened(0.45), 1.0 - k2), 8)
+		# "-10" que sube
+		if t > 0.12:
+			var txt := "-%d" % int(e["dmg"])
+			var u := t - 0.12
+			var w := _text_w(txt)
+			var p2 := Vector2(c.x - w / 2.0, r.position.y - 2.0 - minf(u, 0.4) * 14.0)
+			if e["p"] != human:
+				p2.y = r.end.y - 6.0 - minf(u, 0.4) * 10.0
+			var al := clampf((1.0 - t) * 4.0, 0.0, 1.0)
+			draw_rect(Rect2(p2.round() + Vector2(-2, 1), Vector2(w + 4, 10)), Color(0.35, 0.05, 0.05, 0.75 * al))
+			_text(p2.round(), txt, Color(1.0, 0.9, 0.85, al))
