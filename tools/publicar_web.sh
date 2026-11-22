@@ -34,6 +34,21 @@ json.dump(man, open('/home/claude/web_src/data/pmd_web.json', 'w'), ensure_ascii
 print(len(man), 'especies de PMD')
 PY
 fi
+# Los recortes de arte de las cartas (sprites/) vienen en ~195 px, pero en la mesa se ven a 30-64 px:
+# en la web van achicados a 128 px (los originales de la carpeta no se tocan). El paquete baja mucho.
+python3 - <<'PY'
+import glob
+from PIL import Image
+n = 0
+for f in glob.glob('/home/claude/web_src/sprites/*.png'):
+    im = Image.open(f)
+    if max(im.size) > 128:
+        im = im.convert('RGBA')
+        sc = 128 / max(im.size)
+        im.resize((max(1, round(im.width * sc)), max(1, round(im.height * sc))), Image.LANCZOS).save(f, optimize=True)
+        n += 1
+print(n, 'recortes achicados a 128 px')
+PY
 G=/home/claude/tools/Godot_v4.3-stable_linux.x86_64
 timeout 1500 $G --headless --import >/dev/null 2>&1 || true
 rm -rf /home/claude/web_out && mkdir -p /home/claude/web_out
