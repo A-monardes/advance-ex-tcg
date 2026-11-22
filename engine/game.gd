@@ -259,7 +259,7 @@ static func validate_deck(deck: Array[String], r: RuleSet = null) -> Array[Strin
 		if CardDB.is_star(id):
 			stars += 1
 		if not CardDB.is_basic_energy(id):
-			var n := CardDB.evo_name(CardDB.card_name(id))   # δ no es parte del nombre
+			var n := CardDB.deck_name(CardDB.card_name(id))   # δ y LV.X no son parte del nombre
 			counts[n] = counts.get(n, 0) + 1
 	for n in counts:
 		if counts[n] > r.max_copies:
@@ -395,6 +395,15 @@ func _main_actions() -> Array:
 							and not (s == -1 and Abilities.evolve_active_blocked(self, me)) \
 							and not (not PlayerState.is_active_slot(s) and Abilities.evolve_bench_blocked(self)):
 						out.append({"t": "evolve", "h": h, "tg": s})
+		elif CardDB.is_level_up(id):
+			# Subir de nivel: solo sobre el Activo del mismo nombre, como una evolución (no en el
+			# primer turno del jugador ni sobre un Pokémon que entró o evolucionó este turno).
+			if me.turns_taken > 1:
+				for s in me.slots():
+					var p := me.slot(s)
+					if PlayerState.is_active_slot(s) and CardDB.evolves_onto(id, p.display_name()) \
+							and p.turn_played < turn_number:
+						out.append({"t": "evolve", "h": h, "tg": s})
 		elif CardDB.is_energy(id):
 			if not me.energy_attached:
 				for s in me.slots():
@@ -493,6 +502,14 @@ func _attack_actions(me: PlayerState, opp: PlayerState) -> Array:
 					if ok_k.is_empty():
 						continue
 					targets = ok_k
+				"any_undamaged":
+					var ok_n: Array = opp.slots().filter(func(s2): return opp.slot(s2).damage == 0)
+					if not ok_n.is_empty():
+						targets = ok_n
+				"bench_energy":
+					var ok_e: Array = range(opp.bench.size()).filter(func(b): return not opp.bench[b].energy.is_empty())
+					if not ok_e.is_empty():
+						targets = ok_e
 				"any_damaged":
 					var ok_d: Array = opp.slots().filter(func(s2): return opp.slot(s2).damage > 0)
 					if not ok_d.is_empty():
@@ -739,8 +756,11 @@ func _apply(a: Dictionary) -> void:
 			var me := current_player()
 			var id: String = me.hand[a["h"]]
 			me.hand.remove_at(a["h"])
-			evolve(me, me.slot(a["tg"]), id)
-			Abilities.on_evolve_from_hand(self, me, me.slot(a["tg"]), a["tg"])
+			if CardDB.is_level_up(id):
+				level_up(me, me.slot(a["tg"]), id)
+			else:
+				evolve(me, me.slot(a["tg"]), id)
+				Abilities.on_evolve_from_hand(self, me, me.slot(a["tg"]), a["tg"])
 		"energy":
 			var me := current_player()
 			var id: String = me.hand[a["h"]]
@@ -897,6 +917,12 @@ func _end_turn() -> void:
 			me.discard.append(p.tool)
 			p.tool = ""
 	for pl in players:
+		# Supreme Command (Empoleon LV.X): las cartas apartadas vuelven al final del turno siguiente del rival
+		var sa = pl.flags.get("set_aside", null)
+		if sa != null and int(sa[1]) <= turn_number:
+			pl.hand.append_array(sa[0])
+			pl.flags.erase("set_aside")
+			log_msg("  %d card(s) return to Player %d's hand." % [sa[0].size(), pl.index + 1])
 		for p in pl.all_in_play():
 			var ds = p.flags.get("delayed_status", null)
 			if ds != null and ds[1] == turn_number:
@@ -994,6 +1020,8 @@ func _check_knockouts() -> void:
 					p.bench[s] = null
 				continue
 			log_msg("%s is Knocked Out!" % mon.display_name())
+			if mon.flags.get("hit_turn", -1) == turn_number and current != p.index:
+				p.flags["ko_by_attack_turn"] = turn_number
 			ko_log.append({"p": p.index, "slot": s, "id": mon.top(), "name": mon.display_name()})
 			var cards := mon.all_cards()
 			if CardDB.card_name(mon.tool) == "Time Shard" and current != p.index:
@@ -1299,6 +1327,17 @@ func evolve(me: PlayerState, p: PokemonInPlay, card_id: String) -> void:
 	log_msg("%s evolved into %s!" % [before, CardDB.card_name(card_id)])
 
 
+## Subir de nivel (Pokémon LV.X): no es evolucionar, pero el Pokémon se recupera de las
+## Condiciones Especiales y conserva los contadores de daño. No dispara los poderes "al
+## evolucionar" ni lo frenan los efectos que impiden evolucionar.
+func level_up(me: PlayerState, p: PokemonInPlay, card_id: String) -> void:
+	var before := p.display_name()
+	p.cards.append(card_id)
+	p.clear_conditions()
+	evolve_log.append({"p": me.index, "mon": p, "from": before, "to": CardDB.card_name(card_id)})
+	log_msg("%s leveled up to %s!" % [before, CardDB.card_name(card_id)])
+
+
 ## Saca un Pokémon del juego sin KO (Fósil descartado). Si era el Activo, hay que elegir otro.
 func remove_from_play(pl: PlayerState, p: PokemonInPlay, to_hand: bool) -> void:
 	var cards := p.all_cards()
@@ -1414,6 +1453,15 @@ func _retreat_switch(me: PlayerState, bench_idx: int) -> void:
 		log_msg("  Suction Cups: %s discards all its Energy." % a.display_name())
 
 
+## Debilidad: x2 en la era EX; las cartas de Diamond & Pearl traen "+10/+20/+30" (weakness_plus).
+func _apply_weakness(attacker: PokemonInPlay, target: PokemonInPlay, dmg: int) -> int:
+	var plus: Dictionary = target.data().get("weakness_plus", {})
+	for t in attacker.types():
+		if plus.has(t) and t in Abilities.weakness_types(self, target):
+			return dmg + int(plus[t])
+	return dmg * rules.weakness_multiplier
+
+
 ## Daño de un ataque. Devuelve el daño final hecho.
 func deal_attack_damage(attacker: PokemonInPlay, target: PokemonInPlay, base: int, is_active: bool, ignore: Dictionary) -> int:
 	if target == null or base <= 0:
@@ -1425,7 +1473,7 @@ func deal_attack_damage(attacker: PokemonInPlay, target: PokemonInPlay, base: in
 	if is_active:
 		if not ignore.get("w", false) and not Abilities.ignores_weakness(self, target) \
 				and attacker.types().any(func(t): return t in Abilities.weakness_types(self, target)):
-			dmg *= rules.weakness_multiplier
+			dmg = _apply_weakness(attacker, target, dmg)
 		if not ignore.get("r", false) and not Abilities.ignores_resistance(self, attacker, target) \
 				and attacker.types().any(func(t): return t in target.data().get("resistances", [])):
 			dmg -= Abilities.resistance_value(self, rules.resistance_value)
@@ -1439,6 +1487,12 @@ func deal_attack_damage(attacker: PokemonInPlay, target: PokemonInPlay, base: in
 		dmg = Abilities.final_damage(self, attacker, target, dmg)
 	var was_alive := target.hp_left() > 0
 	target.damage += dmg
+	if dmg > 0 and owner_of(target) != owner_of(attacker):
+		target.flags["hit_turn"] = turn_number      # Revenge (Machamp): KO por daño de un ataque
+		var en = target.flags.get("endure", null)     # Bide (Seedot)
+		if en != null and en[1] >= turn_number and was_alive and target.hp_left() <= 0:
+			target.damage = target.max_hp() - int(en[0])
+			log_msg("  %s is not Knocked Out!" % target.display_name())
 	if was_alive and target.hp_left() <= 0 and owner_of(target) != owner_of(attacker):
 		Abilities.on_would_ko(self, attacker, target)
 	log_msg("  %s takes %d damage (%d/%d HP)." % [target.display_name(), dmg, max(0, target.hp_left()), target.max_hp()])

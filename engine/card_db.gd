@@ -128,8 +128,17 @@ static func has_owner(id: String) -> bool:
 	return card_name(id).contains("'s ")
 
 
+## Pokémon LV.X (Diamond & Pearl): se pone sobre el Pokémon Activo del mismo nombre
+## ("subir de nivel", cuenta como evolucionar). No es una carta de Evolución.
+static func is_level_up(id: String) -> bool:
+	return is_pokemon(id) and "Level-Up" in subtypes(id)
+
+
 static func stage(id: String) -> int:
 	var s := subtypes(id)
+	if "Level-Up" in s:       # la Fase de su nivel anterior (Empoleon LV.X es Fase 2)
+		var prev := find(evolves_from(id))
+		return stage(prev) if prev != "" and prev != id else 0
 	if "Stage 2" in s:
 		return 2
 	if "Stage 1" in s:
@@ -150,6 +159,12 @@ static func file_id(id: String) -> String:
 ## Charmander (con δ o sin), y Fearow sobre Spearow δ.
 static func evo_name(n: String) -> String:
 	return n.replace(" δ", "").replace("δ", "").strip_edges()
+
+
+## Nombre para el límite de 4 copias: Charmander δ cuenta como Charmander y un Pokémon LV.X
+## tiene el mismo nombre que el Pokémon del que sube de nivel (Empoleon LV.X = Empoleon).
+static func deck_name(n: String) -> String:
+	return evo_name(n).trim_suffix(" LV.X")
 
 
 ## ¿La carta evo evoluciona de un Pokémon que se llama base_name?

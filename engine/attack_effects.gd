@@ -21,7 +21,7 @@ const ST := "(Asleep|Burned|Confused|Paralyzed|Poisoned)"
 const PRE := ["return_all_basic", "burst_choice", "any_energy", "coin", "flips", "until_tails", "nothing", "bonus", "set_base", "formula", "ignore",
 		"discard_self", "heal_def", "strip_def_trainers", "base_or_extra", "gust", "mill_count", "tidal", "mill_both_bonus",
 		"discard_bonus", "bonus_table", "discard_one_bonus", "lava_choice", "discard_to_counters", "hand_pick", "mind_play", "all_out",
-		"note_hp"]
+		"note_hp", "flare_up"]
 
 static var _multi: Array = []
 static var _conds: Array = []
@@ -41,9 +41,10 @@ static func parse(card_id: String, attack: Dictionary) -> Dictionary:
 		_build()
 	var t := str(attack.get("text", ""))
 	var cn := CardDB.card_name(card_id)
-	t = t.replace(cn, "NAME").replace(cn.replace(" ★", " Star"), "NAME").replace(cn.replace(" ★", " Star").replace(" δ", ""), "NAME") \
+	t = t.replace(cn, "NAME").replace(cn.replace(" LV.X", ""), "NAME").replace(cn.replace(" ★", " Star"), "NAME").replace(cn.replace(" ★", " Star").replace(" δ", ""), "NAME") \
 			.replace(cn.replace(" δ", ""), "NAME").replace("this Pokémon", "NAME") \
 			.replace("the Pokémon using this attack", "NAME")
+	t = _re("(\\w) \\((?:Don't apply Weakness and Resistance for Benched Pokémon)\\.\\) (?=[A-Z])").sub(t, "$1. ", true)     # DP: Hydro Impact
 	t = _re("\\([^)]*\\)").sub(t, "", true)
 	t = t.replace(" .", ".").replace("Pokémon .", "Pokémon.").replace(" ,", ",")
 	t = _re("\\s+").sub(t, " ", true).strip_edges()
@@ -648,6 +649,7 @@ static func _build() -> void:
 	_build_ex()
 	_build_holon()
 	_build_dx()
+	_build_dp()
 
 
 ## Redacciones de la era e-card (Expedition, Aquapolis, Skyridge): casi todas son variantes de
@@ -1593,6 +1595,108 @@ static func _build_holon() -> void:
 	_k("Does (\\d+) damage to 1 of your Benched Pokémon\\.", func(m): return {"k": "hit_own", "n": int(m.get_string(1)), "bench": true})
 
 # ===========================================================================
+# Diamond & Pearl (dp1) y promos DP: textos nuevos
+# ===========================================================================
+
+static func _build_dp() -> void:
+	_c("If NAME is evolved from ([A-Z][\\w .'-]+?), ", func(m): return {"c": "evolved_from", "name": m.get_string(1)})
+	_c("If ([A-Z][\\w .'-]+?) is anywhere under NAME, ", func(m): return {"c": "evolved_from", "name": m.get_string(1)})
+	_c("If NAME has (\\d+) or more Energy attached to it, ", func(m): return {"c": "self_energy_min", "at": int(m.get_string(1))})
+	_c("If any of your Pokémon were Knocked Out by damage from an opponent's attack during his or her last turn, ",
+		func(_m): return {"c": "ko_last_turn"})
+	# Varias oraciones
+	_mf("You may return all Energy cards attached to NAME to your hand\\. If you do, remove the highest Stage Evolution card from the Defending Pokémon and shuffle that card into your opponent's deck\\.",
+		func(_m): return [{"k": "return_own_energy", "n": 99, "optional": true}, {"k": "devolve_def_deck", "c": "did"}])     # Dialga
+	_mf("Put (\\d+) damage counters on the Defending Pokémon\\. Then, count the number of Prize cards your opponent has taken and put that many damage counters on the Defending Pokémon\\.",
+		func(m): return [{"k": "counters", "to": "def", "n": int(m.get_string(1))}, {"k": "counters", "to": "def", "per": "opp_taken", "n": 1}])     # Dusknoir
+	_mf("Search your deck for a Stadium card, show it to your opponent, and put it into your hand\\. Shuffle your deck afterward\\. If there is any Stadium card in play, discard it\\.",
+		func(_m): return [{"k": "discard_stadium"}, {"k": "search_hand", "filter": "stadium", "n": 1}])     # Palkia
+	_mf("You may flip a coin\\. If heads, discard all Energy attached to NAME and put the Defending Pokémon and all cards attached to it on top of your opponent's deck\\. Your opponent shuffles his or her deck afterward\\.",
+		func(_m): return [{"k": "coin", "optional": true}, {"k": "discard_self", "count": 99, "etype": "", "c": "heads", "optional": true},
+				{"k": "def_to_deck", "c": "heads", "optional": true}])     # Palkia: Transback
+	_mf("If ([A-Z][\\w .'-]+?) is anywhere under NAME, choose 1 of your opponent's Benched Pokémon\\. This attack does (\\d+) damage to that Pokémon\\.",
+		func(m): return {"k": "snipe", "n": int(m.get_string(2)), "needs": "bench", "c": "evolved_from", "name": m.get_string(1)})     # Roserade
+	_mf("Choose 1 of your opponent's Pokémon that doesn't have any damage counters on it\\. This attack does (\\d+) damage to that Pokémon\\.",
+		func(m): return {"k": "snipe", "n": int(m.get_string(1)), "needs": "any_undamaged"})     # Skuntank
+	_mf("Choose 1 of your opponent's Pokémon that has any damage counters on it\\. This attack does (\\d+) damage to that Pokémon\\.",
+		func(m): return {"k": "snipe", "n": int(m.get_string(1)), "needs": "any_damaged"})     # Prinplup
+	_mf("Search your discard pile for up to (\\d+) in any combination of Pokémon and Supporter cards\\. Show them to your opponent and shuffle them into your deck\\.",
+		func(m): return {"k": "discard_to_deck_n", "filter": "pokemon_or_supporter", "n": int(m.get_string(1))})     # Drifblim
+	_mf("Flip a coin until you get tails\\. Remove a number of damage counters equal to the number of heads from 1 of your Pokémon\\.",
+		func(_m): return [{"k": "until_tails", "n": 0}, {"k": "heal_choose", "n": 1, "per_heads": true}])     # Lopunny
+	_mf("Count the number of damage counters on NAME\\. Put that many damage counters on 1 of your opponent's Pokémon\\.",
+		func(_m): return {"k": "counters", "to": "target", "per": "self_counters", "n": 1, "needs": "any"})     # Medicham
+	_mf("Choose a card from your hand and put it as a Prize card face up\\. Then, choose 1 of your face-down Prize cards without looking and put it into your hand\\. This attack does nothing if all of your Prize cards are face up\\.",
+		func(_m): return {"k": "see_beyond"})     # Noctowl
+	_mf("Flip a coin\\. If heads, put (\\d+) damage counters on each of your opponent's Pokémon\\. If tails, put \\d+ damage counters on 1 of your Pokémon\\.",
+		func(m): return {"k": "roam", "n": int(m.get_string(1))})     # Dusclops
+	_mf("Before doing damage, you may choose 1 of your opponent's Benched Pokémon that has any Energy attached to it and switch that Pokémon with 1 of the Defending Pokémon\\.",
+		func(_m): return {"k": "gust", "needs": "bench_energy", "optional": true})     # Magneton
+	_mf("Switch 1 of your opponent's Benched Pokémon with 1 of the Defending Pokémon\\. The new Defending Pokémon is now " + ST + "\\.",
+		func(m): return [{"k": "gust", "needs": "bench"}, {"k": "status", "conds": [_st(m, 1)], "who": "def"}])     # Combee
+	_mf("Flip a coin\\. If heads, choose 1 of the Defending Pokémon's attacks\\. That Pokémon can't use that attack during your opponent's next turn\\.",
+		func(_m): return [{"k": "coin"}, {"k": "disable_attack", "c": "heads"}])     # Duskull
+	_mf("Shuffle your hand into your deck\\. Then, draw a number of cards equal to the number of cards in your opponent's hand\\.",
+		func(_m): return {"k": "shuffle_draw_opp"})     # Mime Jr.
+	_mf("Search your discard pile for (\\d+) (\\w+) Energy cards, show them to your opponent, and shuffle them into your deck\\.",
+		func(m): return {"k": "flare_up", "n": int(m.get_string(1)), "etype": m.get_string(2)})     # Infernape LV.X
+	_mf("Choose 1 of your opponent's Pokémon\\. This attack does (\\d+) damage to that Pokémon\\. NAME can't attack during your next turn\\.",
+		func(m): return [{"k": "snipe", "n": int(m.get_string(1)), "needs": "any"}, {"k": "flag_self", "flag": "cant_attack", "turns": 2}])     # Empoleon LV.X
+	# Cláusulas
+	_k("Move all (\\w+) Energy attached to NAME to 1 of your Benched Pokémon\\.",
+		func(m): return {"k": "move_etype_all", "etype": m.get_string(1), "bench": true})     # Luxray
+	_k("Prevent all damage done to NAME by attacks until the end of your next turn\\.",
+		func(_m): return {"k": "flag_self", "flag": "prevent_damage", "turns": 2})     # Staraptor
+	_k("Remove (\\d+) damage counters? from each of your (\\w+) Pokémon\\.",
+		func(m): return {"k": "heal_mine", "n": int(m.get_string(1)), "type": m.get_string(2)})     # Torterra
+	_k("Remove from NAME the number of damage counters equal to the damage you did to the Defending Pokémon\\.",
+		func(_m): return {"k": "drain", "phase": "post"})     # Beautifly
+	_k("The Defending Pokémon is now " + ST + " and discard an Energy card attached to the Defending Pokémon\\.",
+		func(m): return [{"k": "status", "conds": [_st(m, 1)], "who": "def"}, {"k": "discard_def_energy", "count": 1}])     # Carnivine
+	_k("(?:Then, s|S)witch NAME with 1 of your Benched Pokémon\\.", func(_m): return {"k": "self_switch"})     # Gengar
+	_k("Discard (\\d+) cards from your hand\\.",
+		func(m): return [{"k": "nothing", "c": "hand_lt", "cn": int(m.get_string(1))}, {"k": "discard_hand_n", "n": int(m.get_string(1))}])     # Munchlax
+	_k("Discard an? (\\w+) Energy attached to NAME and remove all damage counters from 1 of your Benched (\\w+) Pokémon\\.",
+		func(m): return [{"k": "discard_self", "count": 1, "etype": m.get_string(1)}, {"k": "heal_choose", "n": 99, "bench": true, "type": m.get_string(2)}])     # Vespiquen
+	_k("Does (\\d+) damage times the number of (\\w+) Pokémon in play\\.",
+		func(m): return {"k": "formula", "f": "type_in_play", "type": m.get_string(2), "n": int(m.get_string(1)), "mode": "times"})     # Vespiquen
+	_k("Does (\\d+) damage times the total amount of (\\w+) Energy attached to all of your Pokémon\\.",
+		func(m): return {"k": "formula", "f": "my_etype", "etype": m.get_string(2), "n": int(m.get_string(1)), "mode": "times"})     # Weavile
+	_k("Move all damage counters from NAME to the Defending Pokémon\\.", func(_m): return {"k": "counters_to_def"})     # Wobbuffet
+	_k("During your opponent's next turn, if NAME would be damaged by an attack, prevent that attack's damage done to NAME if that damage is (\\d+) or less\\.",
+		func(m): return {"k": "prevent_le", "n": int(m.get_string(1))})     # Cascoon, Silcoon
+	_k("During your opponent's next turn, If NAME would be damaged by an attack, prevent that attack's damage done to NAME if that damage is (\\d+) or less\\.",
+		func(m): return {"k": "prevent_le", "n": int(m.get_string(1))})
+	_k("This attack does (\\d+) damage plus (\\d+) more damage and remove (\\d+) damage counters from NAME\\.",
+		func(m): return [{"k": "bonus", "n": int(m.get_string(2))}, {"k": "heal_self", "n": int(m.get_string(3))}])     # Cherrim
+	_k("Put 1 of your Benched Pokémon and all cards attached to (?:it )?on top of your deck\\. Shuffle your deck afterward\\.",
+		func(_m): return {"k": "bench_to_deck_mine"})     # Drifloon
+	_k("Put 1 of your Benched Pokémon and all cards attached to (?:it )?on top of your deck\\.",
+		func(_m): return {"k": "bench_to_deck_mine"})
+	_k("Shuffle your deck afterward\\.", func(_m): return null)
+	_k("The Defending Pokémon is now " + ST + " and can't retreat during your opponent's next turn\\.",
+		func(m): return [{"k": "status", "conds": [_st(m, 1)], "who": "def"}, {"k": "flag_def", "flag": "cant_retreat"}])     # Drifloon
+	_k("Does (\\d+) damage to each of your opponent's Benched Pokémon that doesn't have a Retreat Cost\\.",
+		func(m): return {"k": "spread", "n": int(m.get_string(1)), "scope": "opp_bench_no_retreat"})     # Dusclops
+	_k("Search your deck for an? (\\w+) Basic Pokémon, show it to your opponent, and put it into your hand\\.",
+		func(m): return {"k": "search_hand", "filter": "basic_type:" + m.get_string(1), "n": 1})     # Mantyke
+	_k("Discard an Energy card attached to 1 of your opponent's Pokémon\\.", func(_m): return {"k": "discard_opp_any_energy"})     # Nuzleaf
+	_k("Discard an? (\\w+) Energy attached to NAME and this attack does (\\d+) damage to each of your opponent's Benched Pokémon\\.",
+		func(m): return [{"k": "discard_self", "count": 1, "etype": m.get_string(1)}, {"k": "spread", "n": int(m.get_string(2)), "scope": "opp_bench"}])     # Rapidash
+	_k("Search your discard pile for a Trainer card, show it to your opponent, and put it into your hand\\.",
+		func(_m): return {"k": "recover", "filter": "trainer", "n": 1})     # Bidoof
+	_k("Your opponent can't play any Trainer cards from his or her hand during your opponent's next turn, and any damage done to NAME by attacks is reduced by (\\d+)\\.",
+		func(m): return [{"k": "opp_flag", "flag": "no_trainers"}, {"k": "reduce_self", "n": int(m.get_string(1))}])     # Bonsly
+	_k("If this attack does any damage to the Defending Pokémon, remove 1 damage counter from NAME\\.",
+		func(_m): return {"k": "heal_self", "n": 1, "if_dealt": true})     # Cherubi
+	_k("This attack does (\\d+) damage to 1 of your opponent's Benched Pokémon\\.",
+		func(m): return {"k": "bench_pick_dmg", "n": int(m.get_string(1))})     # Electabuzz
+	_k("Move (\\d+) damage counters? from NAME to 1 of your opponent's Pokémon\\.",
+		func(m): return {"k": "move_counters_opp", "n": int(m.get_string(1)), "needs": "any"})     # Gastly
+	_k("During your opponent's next turn, if NAME would be Knocked Out by damage from an attack, NAME is not Knocked Out and its remaining HP becomes (\\d+) instead\\.",
+		func(m): return {"k": "endure", "n": int(m.get_string(1))})     # Seedot
+
+# ===========================================================================
 # Resolución
 # ===========================================================================
 
@@ -1778,6 +1882,14 @@ static func _cond_ok(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, 
 		"opp_no_stage2": return not opp.all_in_play().any(func(x): return CardDB.stage(x.top()) == 2)
 		"last_stand": return opp.prizes.size() == 1 and me.all_in_play().size() == 1
 		"supporter_in_play": return me.turn_flags.get("supporter_id", "") != ""
+		"evolved_from":     # DP: "If NAME is evolved from X" / "If X is anywhere under NAME"
+			for i in attacker.cards.size() - 1:
+				if CardDB.card_name(attacker.cards[i]) == str(op["name"]):
+					return true
+			return false
+		"self_energy_min": return Energy.total(attacker) >= int(op["at"])
+		"ko_last_turn": return me.flags.get("ko_by_attack_turn", -99) == g.turn_number - 1
+		"hand_lt": return me.hand.size() < int(op["cn"])
 		"holon_stadium": return g.stadium_name().contains("Holon")
 		"self_cond": return attacker.has_condition(op["cond"])
 		"self_etype":
@@ -1901,6 +2013,16 @@ static func _pre(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp:
 				ctx["dmg"] = op["n"] * heads
 		"nothing":
 			return false
+		"flare_up":     # Infernape LV.X: sin 8 Energías de ese tipo en el descarte, el ataque no hace nada
+			var nm: String = str(op["etype"]) + " Energy"
+			var es: Array = me.discard.filter(func(c): return CardDB.card_name(c) == nm)
+			if es.size() < int(op["n"]):
+				return false
+			for i in int(op["n"]):
+				me.discard.erase(es[i])
+				me.deck.append(es[i])
+			g.shuffle(me.deck)
+			g.log_msg("  Shuffles %d %s into the deck." % [int(op["n"]), nm])
 		"note_hp":
 			ctx["def_hp0"] = d.hp_left() if d != null else 0
 		"mind_play":
@@ -2057,6 +2179,7 @@ static func _formula_value(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerS
 	match op["f"]:
 		"opp_hand_energy": return opp.hand.filter(func(c): return CardDB.is_energy(c)).size()
 		"my_damaged": return me.all_in_play().filter(func(p): return p.damage > 0).size()
+		"type_in_play": return (me.all_in_play() + opp.all_in_play()).filter(func(p): return p.is_type(op["type"])).size()
 		"bench_diff_opp": return maxi(0, opp.bench.size() - me.bench.size())
 		"bench_diff_mine": return maxi(0, me.bench.size() - opp.bench.size())
 		"my_pokemon": return me.all_in_play().size()
@@ -2290,8 +2413,9 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 				evolved.sort_custom(func(x, y): return x.cards.size() > y.cards.size())
 				var t: PokemonInPlay = evolved[0]
 				if g.flip():
-					var c: String = t.cards.pop_back()
-					opp.deck.append(c)
+					var cs: Array[String] = t.pop_stage()
+					var c: String = cs[-1]
+					opp.deck.append_array(cs)
 					g.shuffle(opp.deck)
 					t.clear_conditions()
 					g.log_msg("  %s devolves." % CardDB.card_name(c))
@@ -2425,6 +2549,8 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 					continue
 				if op.get("grass_only", false) and Energy.count_type(p, "Grass") == 0:
 					continue
+				if op.has("type") and not p.is_type(op["type"]):
+					continue
 				if op.get("same_type", false) and p != a and not p.types().any(func(t): return t in a.types()):
 					continue
 				var hm: int = op["n"] * (ctx["heads"] if op.get("per_heads", false) else 1)
@@ -2486,6 +2612,8 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 				"my_damaged": n = me.all_in_play().filter(func(p): return p.damage > 0).size()
 				"my_hand": n = me.hand.size()
 				"self_energy_x": n = int(op["n"]) * Energy.total(a)
+				"opp_taken": n = maxi(0, g.rules.prizes - opp.prizes.size())
+				"self_counters": n = a.damage / 10
 			if op.has("cap"):
 				n = mini(n, op["cap"])
 			for t in _counter_targets(op["to"], opp, ctx["target"]):
@@ -2515,8 +2643,9 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 		"devolve_opp":
 			for p in opp.all_in_play():
 				if p.is_evolved():
-					var c: String = p.cards.pop_back()
-					opp.hand.append(c)
+					var cs: Array[String] = p.pop_stage()
+					var c: String = cs[-1]
+					opp.hand.append_array(cs)
 					p.clear_conditions()
 					g.log_msg("  %s devolves." % CardDB.card_name(c))
 		"strip_def_trainers":
@@ -2538,8 +2667,10 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 				g.ask(me.index, "Choose an Evolved Pokémon to devolve", opts, func(o):
 					var x: PokemonInPlay = o["mon"]
 					if x.is_evolved():
-						var c: String = x.cards.pop_back()
-						opp.deck.insert(0, c)
+						var cs: Array[String] = x.pop_stage()
+						var c: String = cs[-1]
+						for cc in cs:
+							opp.deck.insert(0, cc)
 						x.clear_conditions()
 						g.log_msg("  %s goes to the bottom of the deck." % CardDB.card_name(c)))
 		"draw":
@@ -2849,7 +2980,7 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 		"push_aside":
 			if not opp.hand.is_empty():
 				g.log_msg("  Looks at the opponent's hand: " + ", ".join(opp.hand.map(func(c): return CardDB.card_name(c))))
-				var cands := Trainers._distinct(opp.hand, func(c): return CardDB.is_basic_pokemon(c) or CardDB.is_evolution(c))
+				var cands := Trainers._distinct(opp.hand, func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c))     # EX: "Basic Pokémon or Evolution card" incluye los LV.X
 				if not cands.is_empty():
 					g.ask(me.index, "Push Aside: card to the bottom of the opponent's deck", Trainers._card_options(cands, false), func(o):
 						if opp.hand.has(o["id"]):
@@ -2964,10 +3095,10 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 					func(): pass)
 		"move_etype_all":
 			var es7: Array = a.energy.filter(func(e): return Energy.card_provides(e, op["etype"]) and CardDB.is_basic_energy(e))
-			if not es7.is_empty() and me.all_in_play().size() > 1:
+			if not es7.is_empty() and me.all_in_play().size() > 1 and not (op.get("bench", false) and me.bench.is_empty()):
 				var opts8: Array = []
 				for sl in me.slots():
-					if me.slot(sl) != a:
+					if me.slot(sl) != a and not (op.get("bench", false) and PlayerState.is_active_slot(sl)):
 						opts8.append({"label": me.slot(sl).display_name(), "s": sl, "ai": 1.0})
 				g.ask(me.index, "Move all %s Energy to..." % op["etype"], opts8, func(o):
 					var t := me.slot(o["s"])
@@ -3011,8 +3142,9 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 					var x: PokemonInPlay = o["mon"]
 					var pl: PlayerState = g.players[o["pl"]]
 					if x.is_evolved() and pl.all_in_play().has(x):
-						var c: String = x.cards.pop_back()
-						pl.hand.append(c)
+						var cs: Array[String] = x.pop_stage()
+						var c: String = cs[-1]
+						pl.hand.append_array(cs)
 						x.clear_conditions()
 						g.log_msg("  %s returns to the hand." % CardDB.card_name(c)))
 		"unown_e":
@@ -3031,6 +3163,116 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 			var cond_t: String = op["table"][hs]
 			if cond_t != "" and d != null and not blocked:
 				g.try_condition(d, cond_t)
+		"def_to_deck":     # Transback (Palkia): el Defensor y sus cartas al mazo del rival
+			if d != null and not blocked:
+				g.log_msg("  %s is shuffled into the opponent's deck." % d.display_name())
+				var cards9 := d.all_cards()
+				g.remove_from_play(opp, d, false)
+				for c in cards9:
+					opp.discard.erase(c)
+				opp.deck.append_array(cards9)
+				g.shuffle(opp.deck)
+		"discard_to_deck_n":     # Wind Wave (Drifblim)
+			var pred := _search_pred(op["filter"], a, [])
+			Trainers.chain(g, me.index, "Shuffle into your deck", int(op["n"]),
+					func(_p): return Trainers._distinct(me.discard, pred), true,
+					func(id):
+						if me.discard.has(id):
+							me.discard.erase(id)
+							me.deck.append(id),
+					func(): g.shuffle(me.deck))
+		"heal_choose":     # el jugador elige a cuál de sus Pokémon curar
+			var hn2: int = int(op["n"]) * (int(ctx["heads"]) if op.get("per_heads", false) else 1)
+			var opts12: Array = []
+			if hn2 > 0:
+				for sl in me.slots():
+					var hp := me.slot(sl)
+					if op.get("bench", false) and PlayerState.is_active_slot(sl):
+						continue
+					if op.has("type") and not hp.is_type(op["type"]):
+						continue
+					if hp.damage > 0:
+						opts12.append({"label": hp.display_name(), "s": sl, "ai": float(hp.damage)})
+			if not opts12.is_empty():
+				g.ask(me.index, "Remove damage counters from...", opts12, func(o):
+					var t := me.slot(o["s"])
+					if t != null:
+						t.damage = maxi(0, t.damage - 10 * hn2)
+						g.log_msg("  Removes damage counters from %s." % t.display_name()))
+		"see_beyond":     # Noctowl: una carta de la mano como Premio boca arriba y uno boca abajo a la mano
+			var faceup: Array = me.flags.get("faceup_prizes", [])
+			var down: Array = []
+			for i in me.prizes.size():
+				if not faceup.has(me.prizes[i]):
+					down.append(i)
+			if down.is_empty() or me.hand.is_empty():
+				g.log_msg("  The attack does nothing.")
+			else:
+				g.ask(me.index, "Card to put as a face-up Prize", Trainers._card_options(Trainers._distinct(me.hand, func(_c): return true), false), func(o):
+					if not me.hand.has(o["id"]):
+						return
+					var fu: Array = me.flags.get("faceup_prizes", [])
+					var dn: Array = []
+					for i in me.prizes.size():
+						if not fu.has(me.prizes[i]):
+							dn.append(i)
+					if dn.is_empty():
+						return
+					var k: int = dn[g.rng.randi_range(0, dn.size() - 1)]
+					var took: String = me.prizes[k]
+					me.hand.erase(o["id"])
+					me.prizes[k] = o["id"]
+					fu.append(o["id"])
+					me.flags["faceup_prizes"] = fu
+					me.hand.append(took)
+					g.log_msg("  Puts %s as a face-up Prize card and takes a Prize card." % CardDB.card_name(o["id"])))
+		"roam":     # Dusclops: cara, contadores en cada Pokémon rival; cruz, en 1 propio
+			var nr: int = op["n"]
+			if g.flip():
+				for t in opp.all_in_play():
+					if not Abilities.blocks_effects(g, a, t):
+						t.damage += 10 * nr
+				g.log_msg("  %d damage counters on each of the opponent's Pokémon." % nr)
+			else:
+				var opts13: Array = []
+				for sl in me.slots():
+					opts13.append({"label": me.slot(sl).display_name(), "s": sl, "ai": float(me.slot(sl).hp_left())})
+				g.ask(me.index, "Put %d damage counters on 1 of your Pokémon" % nr, opts13, func(o):
+					var t := me.slot(o["s"])
+					if t != null:
+						t.damage += 10 * nr)
+		"shuffle_draw_opp":     # Mime Jr.
+			var nd := opp.hand.size()
+			Trainers._hand_to_deck(g, me)
+			me.draw(nd)
+		"counters_to_def":     # Countercharge (Wobbuffet): mover contadores no es hacer daño
+			if d != null and not blocked and a.damage > 0:
+				g.log_msg("  Moves %d damage counter(s) to %s." % [a.damage / 10, d.display_name()])
+				d.damage += a.damage
+				a.damage = 0
+		"prevent_le":     # Harden (DP): sin daño si es N o menos
+			a.flags["prevent_le"] = [int(op["n"]), g.turn_number + 1]
+		"bench_to_deck_mine":     # Blowing Wind (Drifloon)
+			if not me.bench.is_empty():
+				var opts14: Array = []
+				for b in me.bench.size():
+					opts14.append({"label": me.bench[b].display_name(), "b": b, "ai": 1.0})
+				g.ask(me.index, "Shuffle into your deck", opts14, func(o):
+					if o["b"] < me.bench.size():
+						var x: PokemonInPlay = me.bench[o["b"]]
+						me.bench.remove_at(o["b"])
+						me.deck.append_array(x.all_cards())
+						g.shuffle(me.deck)
+						g.log_msg("  %s is shuffled into the deck." % x.display_name()))
+		"move_counters_opp":     # Pain Payback (Gastly)
+			var t15: PokemonInPlay = opp.slot(ctx["target"])
+			var mv := mini(int(op["n"]), a.damage / 10)
+			if t15 != null and mv > 0 and not Abilities.blocks_effects(g, a, t15):
+				a.damage -= 10 * mv
+				t15.damage += 10 * mv
+				g.log_msg("  Moves %d damage counter(s) to %s." % [mv, t15.display_name()])
+		"endure":     # Bide (Seedot)
+			a.flags["endure"] = [int(op["n"]), g.turn_number + 1]
 		"venture_counters":
 			var pl2 := opp if g.flip() else me
 			var opts11: Array = []
@@ -3178,8 +3420,9 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 					t.damage += 10 * np4)
 		"devolve_def_deck":
 			if d != null and not blocked and d.is_evolved() and opp.all_in_play().has(d):
-				var c: String = d.cards.pop_back()
-				opp.deck.append(c)
+				var cs: Array[String] = d.pop_stage()
+				var c: String = cs[-1]
+				opp.deck.append_array(cs)
 				g.shuffle(opp.deck)
 				d.clear_conditions()
 				g.log_msg("  %s is shuffled into the opponent's deck." % CardDB.card_name(c))
@@ -3272,6 +3515,7 @@ static func _spread_targets(scope: String, me: PlayerState, opp: PlayerState) ->
 		"opp_all": out.append_array(opp.all_in_play())
 		"opp_bench": out.append_array(opp.bench)
 		"opp_bench_damaged": out.append_array(opp.bench.filter(func(p): return p.damage > 0))
+		"opp_bench_no_retreat": out.append_array(opp.bench.filter(func(p): return p.base_retreat_cost() == 0))
 		"all_bench":
 			out.append_array(me.bench)
 			out.append_array(opp.bench)
@@ -3426,11 +3670,15 @@ static func _search_pred(filter: String, a: PokemonInPlay, picked: Array) -> Cal
 		"tool_rsm": return func(c): return CardDB.is_pokemon_tool(c) or "Rocket's Secret Machine" in CardDB.subtypes(c)
 		"energy": return func(c): return CardDB.is_energy(c)
 		"pokemon_or_basic_energy": return func(c): return CardDB.is_pokemon(c) or CardDB.is_basic_energy(c)
+		"pokemon_or_supporter": return func(c): return CardDB.is_pokemon(c) or CardDB.is_supporter(c)
 	if filter.begins_with("type:"):
 		var spec := filter.substr(5)
 		var no_ex := spec.ends_with("!ex")
 		var tys := spec.trim_suffix("!ex").split("|")
 		return func(c): return CardDB.is_pokemon(c) and not (no_ex and CardDB.is_ex(c)) and Array(tys).any(func(t): return t in CardDB.types(c))
+	if filter.begins_with("basic_type:"):
+		var bt := filter.substr(11)
+		return func(c): return CardDB.is_basic_pokemon(c) and bt in CardDB.types(c)
 	if filter.begins_with("name:"):
 		var cn := filter.substr(5)
 		return func(c): return CardDB.card_name(c) == cn
@@ -3701,8 +3949,9 @@ static func _devolve_chain(g: Game, me: PlayerState, opp: PlayerState, left: int
 			g.shuffle(opp.deck)
 			return
 		if x.is_evolved() and opp.all_in_play().has(x):
-			var c: String = x.cards.pop_back()
-			opp.deck.append(c)
+			var cs: Array[String] = x.pop_stage()
+			var c: String = cs[-1]
+			opp.deck.append_array(cs)
 			x.clear_conditions()
 			g.log_msg("  %s is shuffled into the deck." % CardDB.card_name(c))
 		AttackEffects._devolve_chain(g, me, opp, left - 1, done + [x]))

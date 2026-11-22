@@ -99,8 +99,20 @@ func name_has(s: String) -> bool:
 	return display_name().contains(s)
 
 
+## Un Pokémon LV.X sobre un Básico sigue sin evolucionar: el nivel no es una Fase.
 func is_evolved() -> bool:
-	return cards.size() > 1
+	return cards.filter(func(c): return CardDB.is_pokemon(c) and not CardDB.is_level_up(c)).size() > 1
+
+
+## Quita la carta de Evolución de Fase más alta (desevolucionar). Si arriba hay un LV.X,
+## sale junto con ella: comparten nombre. Devuelve las cartas quitadas.
+func pop_stage() -> Array[String]:
+	var out: Array[String] = []
+	if cards.size() > 1 and CardDB.is_level_up(cards[-1]):
+		out.append(cards.pop_back())
+	if cards.size() > 1:
+		out.append(cards.pop_back())
+	return out
 
 
 func is_basic() -> bool:
@@ -112,6 +124,13 @@ func attacks() -> Array:
 	var out: Array = data().get("attacks", []).duplicate()
 	if tm != "":
 		out.append_array(CardDB.get_card(tm).get("attacks", []))
+	var prev := lower_level()
+	if prev != "":
+		# Pokémon LV.X: puede usar los ataques de su nivel anterior
+		for atk in CardDB.get_card(prev).get("attacks", []):
+			var copy: Dictionary = atk.duplicate()
+			copy["src"] = prev
+			out.append(copy)
 	out.append_array(flags.get("extra_attacks", []))    # Psymimic (Alakazam): ataques copiados
 	if CardDB.card_name(tool) == "Memory Berry":
 		# Memory Berry: los ataques de las cartas de abajo (Básico y Fase 1)
@@ -126,7 +145,18 @@ func attacks() -> Array:
 
 
 func abilities() -> Array:
-	return data().get("abilities", [])
+	var prev := lower_level()
+	if prev == "":
+		return data().get("abilities", [])
+	# Pokémon LV.X: también los Poké-Powers y Poké-Bodies de su nivel anterior
+	return data().get("abilities", []) + CardDB.get_card(prev).get("abilities", [])
+
+
+## Si arriba hay un Pokémon LV.X, la carta de su nivel anterior (la de abajo); si no, "".
+func lower_level() -> String:
+	if cards.size() > 1 and CardDB.is_level_up(cards[-1]) and CardDB.is_pokemon(cards[-2]):
+		return cards[-2]
+	return ""
 
 
 func has_ability(ability_name: String) -> bool:

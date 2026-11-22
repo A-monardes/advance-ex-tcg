@@ -44,6 +44,9 @@ const POWERS := [
 	"Dozing", "Dig Up", "Tropical Heal", "Power of Evolution", "Extra Boost", "Imprison", "Fellow Boost",
 	"Type Shift", "Poison Structure", "Cursed Eyes", "Magnetic Redraw", "Chilling Breath", "Crimson Ray",
 	"Yellow Ray", "Blue Ray", "Purple Ray", "Dark Ray",
+	# Diamond & Pearl
+	"Dark Palm", "Intense Voltage", "Gleam Eyes", "Earth Fissure", "Darkness Fan", "ANALYZE", "BOUNCE", "CALL",
+	"DRAW", "Supreme Command", "Burning Head", "Forest Murmurs",
 ]
 const BODIES := [
 	"Withering Dust", "Protective Dust", "Intimidating Fang", "Lazy", "Rough Skin", "Natural Remedy",
@@ -86,19 +89,21 @@ const BODIES := [
 	"Dark Eyes", "Holon Veil", "Battle Aura", "Armor", "Bedhead", "Psychic Wing", "Extra Feather", "Extra Wing",
 	"Extra Smoke", "Link Wing", "Rage Aura", "Synergy Effect", "Psychic Protector", "Metal Gravity",
 	"Reactive Barrier", "Frenzy",
+	# Diamond & Pearl
+	"Magnetize",
 ]
 const REPEATABLE := ["Energy Trans", "Call for Power", "Metal Juncture", "Energy Connect", "Energy Return",
-		"Water Cyclone", "Strange Behavior", "Energy Rain", "Dark Trance", "3-D Reset", "Reactive Shift"]
+		"Water Cyclone", "Strange Behavior", "Energy Rain", "Dark Trance", "3-D Reset", "Reactive Shift", "Intense Voltage"]
 const ON_EVOLVE := ["Loose Shell", "Healing Shower"]
 ## "Cuando jugás X de tu mano para evolucionar..." (se resuelven en on_evolve_from_hand).
 const EVOLVE_TRIGGER := ["Energy Recharge", "Venom Spray", "Manipulate", "Flame Vapor", "Streaming Mantle",
 		"Attract Energy", "Froth", "Blissful Support", "Devo Flash", "Bursting Up", "Darker Ring", "Prowl",
 		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge",
-		"Peal of Thunder", "Evolutionary Call", "Dig Up", "Chilling Breath"]
+		"Peal of Thunder", "Evolutionary Call", "Dig Up", "Chilling Breath", "Gleam Eyes", "Earth Fissure"]
 ## Se activan con el Pokémon en la Banca o el Activo (los demás de EVOLVE_TRIGGER, solo en el Activo).
 const EVOLVE_ANYWHERE := ["Attract Energy", "Blissful Support", "Devo Flash", "Bursting Up", "Prowl",
 		"Evolutionary Flame", "Evolutionary Thunder", "Evolutionary Swirl", "Evolutionary Fan", "Emerge Charge", "Darker Ring",
-		"Peal of Thunder", "Evolutionary Call", "Dig Up", "Chilling Breath"]
+		"Peal of Thunder", "Evolutionary Call", "Dig Up", "Chilling Breath", "Gleam Eyes", "Earth Fissure"]
 ## Al bajarlos de la mano a la Banca.
 const BENCH_TRIGGER := ["Delta Switch", "Support Navigation", "Time Reversal", "Crush Chance", "Tropical Heal",
 		"Cursed Eyes", "Crimson Ray", "Yellow Ray", "Blue Ray", "Purple Ray", "Dark Ray"]
@@ -327,7 +332,8 @@ static func _options(g: Game, me: PlayerState, s: int, p: PokemonInPlay, n: Stri
 			if s == -1:
 				out.append({})
 		"Baby Evolution":
-			if me.hand.any(func(c): return CardDB.card_name(c) == "Pikachu"):
+			var bn := baby_target(p)
+			if me.hand.any(func(c): return CardDB.card_name(c) == bn):
 				out.append({})
 		"Healing Wind":
 			if me.active.damage > 0:
@@ -649,6 +655,43 @@ static func _options(g: Game, me: PlayerState, s: int, p: PokemonInPlay, n: Stri
 		"Metal Navigation":
 			if me.deck.any(func(c): return CardDB.card_name(c) == "Metal Energy"):
 				out.append({})
+		"Dark Palm":
+			if opp.bench.size() >= 4:
+				for b in opp.bench.size():
+					out.append({"b": b})
+		"Intense Voltage":
+			if _dp_under(p, "Elekid"):
+				for sl in me.slots():
+					var x := me.slot(sl)
+					if x != p and x.energy.any(func(e): return CardDB.card_name(e) == "Lightning Energy"):
+						out.append({"from": sl})
+		"Darkness Fan":
+			if me.is_active(p) and opp.bench.any(func(x): return x.is_evolved()):
+				out.append({})
+		"ANALYZE":
+			if s >= 0 and not me.deck.is_empty():
+				out.append({})
+		"BOUNCE":
+			if s >= 0:
+				out.append({})
+		"CALL":
+			if s >= 0 and me.bench.size() < g.rules.bench_size and not me.deck.is_empty():
+				out.append({})
+		"DRAW":
+			if s >= 0:
+				out.append({})
+		"Supreme Command":
+			if not opp.hand.is_empty() and not opp.flags.has("set_aside"):
+				out.append({"n": 1})
+				if opp.hand.size() >= 2:
+					out.append({"n": 2})
+		"Burning Head":
+			if not me.deck.is_empty():
+				out.append({})
+		"Forest Murmurs":
+			if me.prizes.size() > opp.prizes.size():
+				for b in opp.bench.size():
+					out.append({"b": b})
 		"Prize Shift":
 			var faceup: Array = me.flags.get("faceup_prizes", [])
 			if me.prizes.size() > faceup.size():
@@ -832,7 +875,8 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 			if g.flip():
 				g.try_condition(opp.active, "confused")
 		"Baby Evolution":
-			var pika := _take(me.hand, func(c): return CardDB.card_name(c) == "Pikachu")
+			var bn := baby_target(p)
+			var pika := _take(me.hand, func(c): return CardDB.card_name(c) == bn)
 			g.evolve(me, p, pika)
 			p.damage = 0
 		"Healing Wind":
@@ -1318,6 +1362,94 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 			var e := _take(me.deck, func(c): return CardDB.card_name(c) == "Metal Energy")
 			p.energy.append(e)
 			g.shuffle(me.deck)
+		"Dark Palm":
+			if prm["b"] < opp.bench.size():
+				var x: PokemonInPlay = opp.bench[prm["b"]]
+				opp.bench.remove_at(prm["b"])
+				opp.deck.append_array(x.all_cards())
+				g.shuffle(opp.deck)
+				g.log_msg("  %s is shuffled into the opponent's deck." % x.display_name())
+		"Intense Voltage":
+			var src := me.slot(prm["from"])
+			if src != null:
+				_move_energy(src, p, func(e): return CardDB.card_name(e) == "Lightning Energy", 1)
+		"Darkness Fan":
+			if g.flip():
+				var opts: Array = []
+				for b in opp.bench.size():
+					if opp.bench[b].is_evolved():
+						opts.append({"label": opp.bench[b].display_name(), "b": b, "opp": true, "ai": float(CardDB.stage(opp.bench[b].top()))})
+				g.ask(me.index, "Darkness Fan: devolve...", opts, func(o):
+					if o["b"] < opp.bench.size() and opp.bench[o["b"]].is_evolved():
+						var x: PokemonInPlay = opp.bench[o["b"]]
+						var cs: Array[String] = x.pop_stage()
+						var c: String = cs[-1]
+						opp.hand.append_array(cs)
+						x.clear_conditions()
+						g.log_msg("  %s goes back to the opponent's hand." % CardDB.card_name(c)))
+		"ANALYZE":
+			var top: Array = []
+			for i in mini(2, me.deck.size()):
+				top.append(me.deck.pop_back())
+			_rearrange(g, me, top, [])
+		"BOUNCE":
+			if g.flip():
+				var opts: Array = []
+				for sl in me.slots():
+					if me.slot(sl).display_name().begins_with("Unown"):
+						opts.append({"label": me.slot(sl).display_name(), "s": sl, "ai": 0.5})
+				g.ask(me.index, "BOUNCE: Unown to shuffle into your deck", opts, func(o):
+					var x := me.slot(o["s"])
+					if x == null:
+						return
+					var mons: Array = x.cards.filter(func(c): return CardDB.is_pokemon(c))
+					var rest: Array = x.all_cards().filter(func(c): return not mons.has(c))
+					g.remove_from_play(me, x, false)
+					for c in mons:
+						me.discard.erase(c)
+					me.deck.append_array(mons)
+					g.shuffle(me.deck)
+					g.log_msg("  %s is shuffled into the deck (%d card(s) discarded)." % [x.display_name(), rest.size()]))
+		"CALL":
+			if g.flip():
+				var cands := _distinct(me.deck, func(c): return CardDB.is_basic_pokemon(c) and CardDB.card_name(c).begins_with("Unown"))
+				if cands.is_empty():
+					g.shuffle(me.deck)
+				else:
+					g.ask(me.index, "CALL: Unown to your Bench", Trainers._card_options(cands, false), func(o):
+						if me.deck.has(o["id"]) and me.bench.size() < g.rules.bench_size:
+							me.deck.erase(o["id"])
+							me.bench.append(PokemonInPlay.new(o["id"], g.turn_number))
+							g.log_msg("  Puts %s on the Bench." % CardDB.card_name(o["id"]))
+						g.shuffle(me.deck))
+		"DRAW":
+			if g.flip():
+				for pl in [me, opp]:
+					var who: PlayerState = pl
+					g.ask(who.index, "DRAW: draw a card?", [{"label": "Draw a card", "d": true, "ai": 1.0}, {"label": "Don't draw", "d": false, "ai": 0.0}], func(o):
+						if o["d"]:
+							who.draw(1))
+		"Supreme Command":
+			var taken: Array = []
+			for i in mini(int(prm["n"]), opp.hand.size()):
+				var k := g.rng.randi_range(0, opp.hand.size() - 1)
+				taken.append(opp.hand[k])
+				opp.hand.remove_at(k)
+			opp.flags["set_aside"] = [taken, g.turn_number + 1]
+			g.log_msg("  Puts %d card(s) from the opponent's hand face down." % taken.size())
+		"Burning Head":
+			var top: Array = []
+			for i in mini(3, me.deck.size()):
+				top.append(me.deck.pop_back())
+			g.ask(me.index, "Burning Head: card to your hand", Trainers._card_options(Trainers._distinct(top, func(_c): return true), false), func(o):
+				var rest := top.duplicate()
+				rest.erase(o["id"])
+				me.hand.append(o["id"])
+				me.discard.append_array(rest)
+				g.log_msg("  Takes 1 card and discards %d." % rest.size()))
+		"Forest Murmurs":
+			if prm["b"] < opp.bench.size():
+				g.switch_active(opp, prm["b"])
 		"Prize Shift":
 			var faceup: Array = me.flags.get("faceup_prizes", [])
 			var down: Array = []
@@ -1684,8 +1816,10 @@ static func pre_wr_bonus(g: Game, attacker: PokemonInPlay, target: PokemonInPlay
 	var att_owner := g.owner_of(attacker)
 	var tgt_owner := g.owner_of(target)
 	if is_active:
+		if attacker.flags.get("plus_power", [0, -1])[1] == g.turn_number:     # PlusPower (DP): +10 al Activo
+			bonus += 10 * int(attacker.flags["plus_power"][0])
 		if attacker.is_type("Darkness") or attacker.name_has("Dark"):
-			bonus += 10 * Energy.count_named(attacker, "Darkness Energy")
+			bonus += 10 * Energy.count_special_named(attacker, "Darkness Energy")
 		if body(g, attacker, "Power Pinchers") and fired(g, attacker, "Power Pinchers"):
 			bonus += 10
 		if body(g, attacker, "Overzealous") and tgt_owner.all_in_play().any(func(x): return x.is_ex()) \
@@ -1814,7 +1948,7 @@ static func post_wr(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, is_
 	if ignore_fx:
 		return dmg
 	if target.is_type("Metal"):
-		dmg -= 10 * Energy.count_named(target, "Metal Energy")
+		dmg -= 10 * Energy.count_special_named(target, "Metal Energy")
 	if body(g, target, "Exoskeleton") and fired(g, target, "Exoskeleton"):
 		dmg -= 20
 	if body(g, target, "Hard Cocoon") and dmg > 0 and g.flip() and fired(g, target, "Hard Cocoon"):
@@ -1948,6 +2082,9 @@ static func after_damaged(g: Game, attacker: PokemonInPlay, target: PokemonInPla
 
 ## Ajustes al daño final (Magic Odds / Magic Evens de Mr. Mime ex).
 static func final_damage(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, dmg: int) -> int:
+	var ple = target.flags.get("prevent_le", null)     # Harden (DP): sin daño si es N o menos
+	if ple != null and int(ple[1]) >= g.turn_number and dmg <= int(ple[0]) and g.owner_of(attacker) != g.owner_of(target):
+		return 0
 	if dmg > 0 and dmg % 10 == 0:
 		var odd := (dmg / 10) % 2 == 1
 		if odd and body(g, target, "Magic Odds") and fired(g, target, "Magic Odds"):
@@ -2027,6 +2164,8 @@ static func can_have_condition(g: Game, p: PokemonInPlay, cond: String) -> bool:
 # ===========================================================================
 
 static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
+	if me.is_active(p) and Energy.count_type(p, "Metal") > 0 and body_in_play(g, me, "Magnetize"):     # Magnezone
+		return 0
 	if body(g, p, "Uplifting Glow") and me.all_in_play().any(func(x): return x.display_name() == "Illumise"):
 		return 0
 	if body(g, p, "Levitate") and p.basic_energy_count() > 0:
@@ -2338,6 +2477,20 @@ static func on_evolve_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, slot
 static func _evolve_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String) -> void:
 	var opp := g.other(me)
 	match n:
+		"Gleam Eyes":     # Luxray: mira la mano rival; un Básico de ahí a su Banca y lo cambia por el Defensor
+			g.log_msg("  Looks at the opponent's hand: " + ", ".join(opp.hand.map(func(c): return CardDB.card_name(c))))
+			var cands := _distinct(opp.hand, func(c): return CardDB.is_basic_pokemon(c))
+			if cands.is_empty() or opp.bench.size() >= g.rules.bench_size or opp.active == null:
+				return
+			g.ask(me.index, "Gleam Eyes: Basic Pokémon to bring out", Trainers._card_options(cands, false), func(o):
+				if opp.hand.has(o["id"]) and opp.bench.size() < g.rules.bench_size:
+					opp.hand.erase(o["id"])
+					opp.bench.append(PokemonInPlay.new(o["id"], g.turn_number))
+					g.switch_active(opp, opp.bench.size() - 1))
+		"Earth Fissure":     # Rhyperior
+			for i in mini(3, opp.deck.size()):
+				opp.discard.append(opp.deck.pop_back())
+			g.log_msg("  Discards the top 3 cards of the opponent's deck.")
 		"Peal of Thunder":
 			var top: Array[String] = []
 			for i in mini(5, me.deck.size()):
@@ -2425,7 +2578,7 @@ static func _evolve_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String)
 				g.ask(me.index, "Devo Flash: Pokémon to devolve", opts, func(o):
 					if o["b"] < opp.bench.size() and opp.bench[o["b"]].is_evolved():
 						var x: PokemonInPlay = opp.bench[o["b"]]
-						opp.hand.append(x.cards.pop_back())
+						opp.hand.append_array(x.pop_stage())
 						x.clear_conditions())
 		"Bursting Up":
 			var n_f := opp.bench.size()
@@ -3097,3 +3250,21 @@ static func _bench_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String) 
 						me.deck.append(o2["id"]))
 		"Delta Switch":
 			_shuffle_energy(g, me, p)
+
+
+## Baby Evolution: a qué Pokémon evoluciona según el texto ("put Snorlax from your hand onto Munchlax").
+static func baby_target(p: PokemonInPlay) -> String:
+	for ab in p.abilities():
+		if ab["name"] == "Baby Evolution":
+			var m := RegEx.create_from_string("put (.+?) from your hand onto").search(str(ab.get("text", "")))
+			if m != null:
+				return m.get_string(1)
+	return "Pikachu"
+
+
+## "si X está en cualquier lugar debajo de este Pokémon" (Electivire, Roserade...).
+static func _dp_under(p: PokemonInPlay, nm: String) -> bool:
+	for i in p.cards.size() - 1:
+		if CardDB.card_name(p.cards[i]) == nm:
+			return true
+	return false

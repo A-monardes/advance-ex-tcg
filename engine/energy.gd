@@ -176,6 +176,12 @@ static func count_named(p: PokemonInPlay, energy_name: String) -> int:
 	return p.energy.filter(func(e): return CardDB.card_name(e) == energy_name).size()
 
 
+## Solo las versiones especiales: desde Diamond & Pearl, Darkness y Metal Energy también
+## existen como Energías básicas, que se llaman igual pero no tienen efecto extra.
+static func count_special_named(p: PokemonInPlay, energy_name: String) -> int:
+	return p.energy.filter(func(e): return CardDB.card_name(e) == energy_name and not CardDB.is_basic_energy(e)).size()
+
+
 ## ¿La carta provee el tipo t? ("" = cualquiera)
 static func card_provides(card_id: String, t: String) -> bool:
 	if t == "":

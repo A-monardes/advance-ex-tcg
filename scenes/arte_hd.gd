@@ -247,7 +247,15 @@ func _url(id: String, source: int) -> String:
 	var parts := source_id(id).split("-")
 	if parts.size() < 2:
 		return ""
-	return SOURCES[source].replace("{SET}", parts[0].to_upper()).replace("{set}", parts[0]).replace("{N}", parts[1])
+	return _fill(SOURCES[source], parts)
+
+
+## Las promos DP van como "DP01" en las dos fuentes (en el juego son dpp-1).
+static func _fill(src: String, parts: Array) -> String:
+	var n: String = parts[1]
+	if parts[0] == "dpp":
+		n = "DP%02d" % int(n)
+	return src.replace("{SET}", str(parts[0]).to_upper()).replace("{set}", parts[0]).replace("{N}", n)
 
 
 func _next() -> void:
@@ -298,7 +306,7 @@ func _request() -> void:
 		_try = 1             # en el navegador, la página oficial no deja leer sus imágenes (CORS)
 	while _try < SOURCES.size():
 		if parts.size() >= 2:
-			var url: String = SOURCES[_try].replace("{SET}", parts[0].to_upper()).replace("{set}", parts[0]).replace("{N}", parts[1])
+			var url: String = _fill(SOURCES[_try], parts)
 			var err := _http.request(url)
 			if err == OK:
 				return

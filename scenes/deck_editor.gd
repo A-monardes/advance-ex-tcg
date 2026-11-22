@@ -236,10 +236,10 @@ func _matches(id: String, query: String) -> bool:
 
 
 func _copies_by_name(id: String) -> int:
-	var n := CardDB.evo_name(CardDB.card_name(id))   # Charmander y Charmander δ cuentan juntos
+	var n := CardDB.deck_name(CardDB.card_name(id))   # Charmander y Charmander δ (y Empoleon LV.X) cuentan juntos
 	var t := 0
 	for k in counts:
-		if CardDB.evo_name(CardDB.card_name(k)) == n:
+		if CardDB.deck_name(CardDB.card_name(k)) == n:
 			t += counts[k]
 	return t
 
@@ -250,7 +250,7 @@ func _add(id: String) -> void:
 		msg = "The deck already has 60 cards."
 		return
 	if not CardDB.is_basic_energy(id) and _copies_by_name(id) >= 4:
-		msg = "No more than 4 copies of %s." % CardDB.evo_name(CardDB.card_name(id))
+		msg = "No more than 4 copies of %s." % CardDB.deck_name(CardDB.card_name(id))
 		return
 	if camp != null and counts.get(id, 0) >= camp.owned(id):
 		msg = "You have %d %s." % [camp.owned(id), CardDB.card_name(id)]
@@ -847,7 +847,7 @@ static func legal_formats(deck: Array) -> String:
 
 const C_FILTER := Color("#3868c8")
 const POKE_TYPES := ["Grass", "Fire", "Water", "Lightning", "Psychic", "Fighting", "Darkness", "Metal", "Colorless"]
-const STAGES := ["Basic", "Stage 1", "Stage 2", "ex", "δ", "★"]
+const STAGES := ["Basic", "Stage 1", "Stage 2", "ex", "LV.X", "δ", "★"]
 const T_KINDS := ["Supporter", "Item", "Stadium", "Tool", "TM"]
 const E_KINDS := ["Basic", "Special", "Holon's"]
 ## Qué hace un Entrenador, deducido de su texto (en minúsculas).
@@ -877,7 +877,8 @@ func _filter_rows(t: int) -> Array:
 	match t:
 		1:
 			return [{"key": "type", "label": "Type", "opts": POKE_TYPES, "mode": "multi", "icons": true},
-				{"key": "stage", "label": "Stage", "opts": STAGES, "mode": "multi"},
+				{"key": "stage", "label": "Stage", "opts": STAGES.slice(0, 3), "mode": "multi"},
+				{"key": "stage", "label": "", "opts": STAGES.slice(3), "mode": "multi"},
 				season, set_row,
 				{"key": "sort", "label": "Sort", "opts": ["Set", "Name", "HP", "Type"], "mode": "one"}]
 		2:
@@ -1007,6 +1008,8 @@ func _stage_tags(id: String) -> Array:
 	var out: Array = [["Basic", "Stage 1", "Stage 2"][CardDB.stage(id)]]
 	if CardDB.is_ex(id):
 		out.append("ex")
+	if CardDB.is_level_up(id):
+		out.append("LV.X")
 	if CardDB.is_delta(id):
 		out.append("δ")
 	if "★" in CardDB.card_name(id):
@@ -1111,7 +1114,7 @@ func _filter_summary() -> String:
 
 ## Nombre "de especie" para unir versiones: sin δ y sin " ex" (Blaziken ex es de la familia de Blaziken).
 static func _fam_name(n: String) -> String:
-	return CardDB.evo_name(n).trim_suffix(" ex")
+	return CardDB.deck_name(n).trim_suffix(" ex")
 
 
 func _open_family(id: String) -> void:

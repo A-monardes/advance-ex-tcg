@@ -34,10 +34,12 @@ const STADIUMS := ["High Pressure System", "Low Pressure System", "Team Aqua Hid
 		"Holon Research Tower", "Holon Ruins", "Cursed Stone", "Full Flame", "Giant Stump", "Power Tree", "Strange Cave",
 		"Holon Lake", "Championship Arena",
 		"Crystal Beach", "Holon Circle", "Holon Legacy", "Drake's Stadium", "Glacia's Stadium", "Phoebe's Stadium",
-		"Sidney's Stadium"]
+		"Sidney's Stadium",
+		# Diamond & Pearl
+		"Speed Stadium"]
 ## Estadios con una acción "una vez por turno" (aparecen como acción del jugador).
 const STADIUM_ACTIONS := ["Apricorn Forest", "Undersea Ruins", "Power Plant", "Ancient Ruins", "Mystery Zone",
-		"Underground Lake", "Holon Ruins", "Power Tree", "Strange Cave"]
+		"Underground Lake", "Holon Ruins", "Power Tree", "Strange Cave", "Speed Stadium"]
 const STADIUM_SLOT := -9     # "lugar" de las acciones de Estadio (no es un Pokémon)
 const OTHERS := [
 	"Energy Removal 2", "Energy Restore", "Energy Switch", "Lady Outing", "Poké Ball", "Pokémon Reversal",
@@ -67,6 +69,8 @@ const OTHERS := [
 	"Holon Adventurer", "Fieldworker", "Holon Transceiver", "Holon Fossil",
 	# Crystal Guardians, Dragon Frontiers, Power Keepers
 	"Castaway", "Windstorm", "Island Hermit", "Old Rod",
+	# Diamond & Pearl
+	"Night Pokémon Center", "PlusPower", "Pokédex HANDY910is", "Professor Rowan", "Rival",
 ]
 
 
@@ -131,6 +135,18 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 			for s in me.slots():
 				if me.slot(s).damage > 0:
 					out.append({"tg": s})
+		"Night Pokémon Center", "PlusPower":
+			for s in me.slots():
+				out.append({"tg": s})
+		"Pokédex HANDY910is", "Rival":
+			if not me.deck.is_empty():
+				out.append({})
+		"Professor Rowan":
+			if me.hand.size() >= 2:     # la carta misma + al menos otra
+				var others: Array = me.hand.duplicate()
+				others.remove_at(hand_idx)
+				for pick in _distinct(others, func(_c): return true):
+					out.append({"pick": pick})
 		"Life Herb":
 			for s in me.slots():
 				var p := me.slot(s)
@@ -372,6 +388,45 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 		"Potion":
 			var p := me.slot(prm["tg"])
 			p.damage = max(0, p.damage - 20)
+		"Night Pokémon Center":
+			var p := me.slot(prm["tg"])
+			var heads := g.flip_many(2)
+			if heads == 2:
+				p.damage = 0
+				g.log_msg("  Removes all damage counters from %s." % p.display_name())
+			elif heads == 0:
+				me.discard.append_array(p.energy)
+				p.energy.clear()
+				g.log_msg("  Discards all Energy attached to %s." % p.display_name())
+		"PlusPower":     # DP: se une al Pokémon y se descarta al final del turno (+10 al Activo rival)
+			var p := me.slot(prm["tg"])
+			var pp: Array = p.flags.get("plus_power", [0, -1])
+			p.flags["plus_power"] = [(int(pp[0]) if int(pp[1]) == g.turn_number else 0) + 1, g.turn_number]
+			g.log_msg("  PlusPower is attached to %s." % p.display_name())
+		"Pokédex HANDY910is":
+			var top: Array = []
+			for i in mini(2, me.deck.size()):
+				top.append(me.deck.pop_back())
+			g.ask(me.index, "Pokédex HANDY910is: card to your hand", _card_options(_distinct(top, func(_c): return true), false), func(o):
+				var rest := top.duplicate()
+				rest.erase(o["id"])
+				me.hand.append(o["id"])
+				for c in rest:
+					me.deck.push_front(c)     # al fondo del mazo
+				g.log_msg("  Takes 1 card and puts %d on the bottom of the deck." % rest.size()))
+		"Professor Rowan":
+			if me.hand.has(prm["pick"]):
+				me.hand.erase(prm["pick"])
+				_hand_to_deck(g, me)
+				me.hand.append(prm["pick"])
+				g.log_msg("  Keeps %s and shuffles the rest of the hand into the deck." % CardDB.card_name(prm["pick"]))
+				me.draw(4)
+		"Rival":
+			var top: Array = []
+			for i in mini(5, me.deck.size()):
+				top.append(me.deck.pop_back())
+			g.log_msg("  Reveals: " + ", ".join(top.map(func(c): return CardDB.card_name(c))))
+			_rival_pick(g, me, opp, top, [], mini(3, top.size()))
 		"Master Ball":
 			var top: Array = me.deck.slice(maxi(0, me.deck.size() - 7))
 			var cands := _distinct(top, func(c): return CardDB.is_pokemon(c) and not CardDB.is_fossil(c))
@@ -775,8 +830,9 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 			_ask_from_deck(g, me, "Rocket's Poké Ball: Pokémon with Dark in its name", func(c): return CardDB.is_pokemon(c) and CardDB.card_name(c).contains("Dark"))
 		"Surprise! Time Machine":
 			var t := me.slot(prm["tg"])
-			var c: String = t.cards.pop_back()
-			me.deck.append(c)
+			var cs: Array[String] = t.pop_stage()
+			var c: String = cs[-1]
+			me.deck.append_array(cs)
 			t.clear_conditions()
 			g.log_msg("  %s goes back into the deck." % CardDB.card_name(c))
 			var nm := t.display_name()
@@ -1057,6 +1113,9 @@ static func stadium_actions(g: Game, me: PlayerState) -> Array:
 			if not full:
 				for c in _distinct(me.hand, func(c): return CardDB.card_name(c) in FOSSIL_MONS):
 					prms.append({"pick": c})
+		"Speed Stadium":
+			if not me.deck.is_empty():
+				prms.append({})
 		"Underground Lake":
 			if not full:
 				for c in _distinct(me.discard, func(c): return CardDB.card_name(c) in ["Omanyte", "Kabuto"]):
@@ -1072,6 +1131,12 @@ static func use_stadium(g: Game, me: PlayerState, n: String, prm: Dictionary) ->
 	me.turn_flags["stadium_used"] = true
 	g.log_msg("Player %d uses %s." % [me.index + 1, n])
 	match n:
+		"Speed Stadium":
+			var heads := 0
+			while g.flip():
+				heads += 1
+			me.draw(heads)
+			g.log_msg("  %d heads: draws %d card(s)." % [heads, heads])
 		"Apricorn Forest":
 			if not g.flip():
 				return
@@ -1100,8 +1165,9 @@ static func use_stadium(g: Game, me: PlayerState, n: String, prm: Dictionary) ->
 			g.ask(me.index, "Undersea Ruins: Pokémon to devolve", opts, func(o):
 				var x: PokemonInPlay = o["mon"]
 				if x.is_evolved():
-					var c: String = x.cards.pop_back()
-					me.discard.append(c)
+					var cs: Array[String] = x.pop_stage()
+					var c: String = cs[-1]
+					me.discard.append_array(cs)
 					x.clear_conditions()
 					g.log_msg("  %s is discarded (devolves)." % CardDB.card_name(c)))
 		"Power Plant":
@@ -1387,3 +1453,24 @@ static func _holon_supporter(g: Game, me: PlayerState, opp: PlayerState, n: Stri
 									me.discard.erase(id)
 									me.deck.append(id),
 								func(): g.shuffle(me.deck)))
+
+
+## Rival (DP): el rival elige 3 de las 5 cartas reveladas; esas van a la mano y las otras
+## vuelven al mazo, que se baraja.
+static func _rival_pick(g: Game, me: PlayerState, opp: PlayerState, top: Array, picked: Array, n: int) -> void:
+	if picked.size() >= n:
+		for c in picked:
+			top.erase(c)
+		me.hand.append_array(picked)
+		me.deck.append_array(top)
+		g.shuffle(me.deck)
+		g.log_msg("  The opponent chooses: " + ", ".join(picked.map(func(c): return CardDB.card_name(c))))
+		return
+	var left := top.duplicate()
+	for c in picked:
+		left.erase(c)
+	var opts: Array = []
+	for c in _distinct(left, func(_c): return true):
+		opts.append({"label": CardDB.card_name(c), "id": c, "ai": -_ai_value(c)})
+	g.ask(opp.index, "Rival: card for your opponent (%d/%d)" % [picked.size() + 1, n], opts, func(o):
+		Trainers._rival_pick(g, me, opp, top, picked + [o["id"]], n))

@@ -1279,6 +1279,20 @@ func _card_lines(id: String, p: PokemonInPlay) -> Array:
 			lines.append({"row": [["bold", ab["kind"] + ": ", col], ["bold", ab["name"], col]]})
 			lines.append_array(_para(str(ab["text"]), col))
 		_attack_lines(lines, c)
+		if CardDB.is_level_up(id):
+			# Pokémon LV.X: la regla de la carta y, en juego, lo que conserva de su nivel anterior
+			lines.append({"gap": INFO_GAP})
+			lines.append_array(_para(str(c.get("text", "")), C_DIM))
+			var prev := p.lower_level() if p != null else ""
+			if prev != "":
+				var pc: Dictionary = CardDB.get_card(prev)
+				lines.append({"sub": "PREVIOUS LEVEL: " + CardDB.card_name(prev).to_upper()})
+				for ab in pc.get("abilities", []):
+					lines.append({"gap": INFO_GAP})
+					var col2: Color = C_POWER if ab["kind"] == "Poké-Power" else C_BODY
+					lines.append({"row": [["bold", ab["kind"] + ": ", col2], ["bold", ab["name"], col2]]})
+					lines.append_array(_para(str(ab["text"]), col2))
+				_attack_lines(lines, pc)
 		# Herramienta y MT unidas, con su imagen y su texto
 		if p != null:
 			for extra in [[p.tool, "ATTACHED TOOL"], [p.tm, "ATTACHED TECHNICAL MACHINE"]]:
@@ -1290,6 +1304,8 @@ func _card_lines(id: String, p: PokemonInPlay) -> Array:
 		var wr: Array = [["text", "Weakness "]]
 		for t in c.get("weaknesses", []):
 			wr.append(["icon", t])
+			if c.get("weakness_plus", {}).has(t):      # DP: +10/+20/+30 en vez de x2
+				wr.append(["text", "+%d" % int(c["weakness_plus"][t])])
 		if c.get("weaknesses", []).is_empty():
 			wr.append(["text", "-"])
 		wr.append(["text", "   Resistance "])
@@ -1350,7 +1366,13 @@ func _draw() -> void:
 	_draw_screen()
 	if mode == "duel" and anim.get("scene", false) and not anim.get("waiting", false):
 		if anim.get("mini", false):
+			# Golpes que sacuden la pantalla (Earthquake, Stomp): la mini pelea tiembla
+			var q := MiniBattle.quake(anim)
+			_base_off = q
+			draw_set_transform(q)
 			MiniBattle.draw(self, anim)
+			_base_off = Vector2.ZERO
+			draw_set_transform(Vector2.ZERO)
 		else:
 			BattleScene.draw(self, anim)
 	if mode == "duel" and net != null:
@@ -4279,6 +4301,10 @@ func _split_full(pl: PlayerState, m: PokemonInPlay, x: float, top: float, bottom
 	for t in c.get("weaknesses", []):
 		_draw_energy_icon(Vector2(fx + 4, fy + 4.5), 8, t)
 		fx += 9
+		if c.get("weakness_plus", {}).has(t):
+			var wtxt := "+%d" % int(c["weakness_plus"][t])
+			_text_bold(Vector2(fx, fy), wtxt, Color.WHITE)
+			fx += 5 * wtxt.length() + 1
 	if c.get("weaknesses", []).is_empty():
 		_text_bold(Vector2(fx, fy), "-", Color.WHITE); fx += 6
 	fx += 5
@@ -5116,7 +5142,7 @@ const WEAK_STOP := 0.14      # golpe a la debilidad: segundos que se congela el 
 ## Temblor de toda la mesa en los golpes fuertes.
 func _table_shake() -> Vector2:
 	if anim.get("scene", false):
-		return Vector2.ZERO
+		return MiniBattle.quake(anim) if anim.get("mini", false) else Vector2.ZERO
 	var weak: bool = not anim.is_empty() and anim.get("weak", false) and int(anim.get("dmg", 0)) > 0
 	if anim.is_empty() or anim.get("waiting", false) or (int(anim.get("dmg", 0)) < BIG_HIT and not weak):
 		return Vector2.ZERO

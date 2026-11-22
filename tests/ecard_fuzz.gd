@@ -92,6 +92,7 @@ func _init() -> void:
 					tot += x.all_cards().size()
 				if g.stadium != "" and g.stadium_owner == pl.index:
 					tot += 1
+				tot += pl.flags.get("set_aside", [[]])[0].size()     # Supreme Command (Empoleon LV.X)
 				if tot != 60 and g.sudden_death == 0:
 					print("CARTAS %d (jugador %d) partida %d tras %s" % [tot, pl.index, gi, str(a)])
 					for ln in g.log_lines.slice(-8):

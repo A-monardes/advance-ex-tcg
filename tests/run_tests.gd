@@ -46,6 +46,8 @@ func _init() -> void:
 	test_prize_pick()
 	test_format_points()
 	test_dx()
+	test_dp()
+	test_efectos_por_nombre()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -1650,7 +1652,11 @@ func test_format_points() -> void:
 	print("Formatos: principio de temporada, momentos y Mundial")
 	for i in RuleSet.SEASONS.size():
 		var d: Dictionary = RuleSet.SEASONS[i]
-		var all: Array = d["start"] + d["steps"].map(func(x): return x[0])
+		var all: Array = d["start"].duplicate()
+		for st in d["steps"]:
+			all.append(st[0])
+			if st.size() > 2:
+				all.append_array(st[2])
 		all.sort()
 		var sets: Array = d["sets"].duplicate()
 		sets.sort()
@@ -1659,3 +1665,122 @@ func test_format_points() -> void:
 	var r := RuleSet.from_point(1, 2)
 	check(r.custom and r.is_legal("ex8-1") and not r.is_legal("ex9-1"), "2004-05 hasta Deoxys: Deoxys sí, Emerald no")
 	check(not RuleSet.from_point(2, 0).is_legal("ex11-1"), "principio 2005-06: Delta Species todavía no")
+
+
+func test_efectos_por_nombre() -> void:
+	# Categorías de la hoja: el nombre del ataque elige golpe y proyectil
+	check(MiniBattle.name_category("Earthquake") == "terremoto", "Earthquake -> terremoto")
+	check(MiniBattle.name_category("Body Slam") == "embestida", "Body Slam -> embestida (aplastar se juntó)")
+	check(MiniBattle.name_category("Fly") == "picotazo", "Fly -> picotazo")
+	check(MiniBattle.name_category("Pin Missile") == "pincho", "Pin Missile -> pincho")
+	check(MiniBattle.name_category("Tackle o algo") == "", "sin categoría: efecto por tipo")
+	var a := {"m_cat": "terremoto"}
+	check(MiniBattle.special_effect(a) == "gx_terremoto", "golpe de la categoría")
+	check(MiniBattle.fx_meta("gx_terremoto").get("temblor", false), "terremoto sacude la pantalla")
+	check(str(MiniBattle.fx_meta("gx_explosion").get("modo", "")) == "atacante", "Selfdestruct sale del atacante")
+	check(MiniBattle.has_proj({"m_cat": "hidrobomba"}) and not MiniBattle.has_proj({"m_cat": "trueno"}), "proyectil solo si la categoría lo tiene")
+	check(not MiniBattle.has_proj({"m_cat": "drenar"}) and str(MiniBattle.proj_info("drenar").get("tipo", "")) == "vuelta", "drenar: las bolitas vuelven después del golpe")
+	for cat in MiniBattle._load_names().get("categorias", {}):
+		var c: Dictionary = MiniBattle._load_names()["categorias"][cat]
+		check(MiniBattle.SpecialFX.has_fx(str(c["golpe"])), "tira del golpe de " + cat)
+
+
+func test_dp() -> void:
+	print("Diamond & Pearl: LV.X, debilidad +N, bebés y textos nuevos")
+	# Subir de nivel: solo sobre el Activo del mismo nombre, no el turno en que entró
+	var g := board("dp1-4", "dp1-17")      # Empoleon vs Torterra
+	var me := g.current_player()
+	me.turns_taken = 3
+	me.hand.append("dp1-120")              # Empoleon LV.X
+	me.bench.append(mon("dp1-4"))          # otro Empoleon en la Banca
+	var lv: Array = g.legal_actions().filter(func(a): return a["t"] == "evolve" and me.hand[a["h"]] == "dp1-120")
+	check(lv.size() == 1 and lv[0]["tg"] == -1, "LV.X solo sobre el Empoleon Activo")
+	me.active.turn_played = g.turn_number
+	check(not g.legal_actions().any(func(a): return a["t"] == "evolve" and me.hand[a["h"]] == "dp1-120"), "LV.X no sobre un Pokémon que entró este turno")
+	me.active.turn_played = 0
+	me.active.cards = ["dp1-93", "dp1-58", "dp1-4"]     # Piplup, Prinplup, Empoleon
+	me.active.damage = 30
+	me.active.rotation = "asleep"
+	me.active.poison = 1
+	g.apply(lv[0])
+	var lvx := me.active
+	check(lvx.damage == 30 and not lvx.has_special_condition(), "subir de nivel: conserva el daño y se recupera de las Condiciones Especiales")
+	check(lvx.is_evolved() and CardDB.is_level_up(lvx.top()), "Empoleon LV.X sobre Empoleon (Fase 2) sigue siendo Evolucionado")
+	var lv_ko := PokemonInPlay.new("dp1-11")       # LV.X sobre un Básico (prueba sintética): no es Evolucionado
+	lv_ko.cards.append("dp1-120")
+	check(not lv_ko.is_evolved(), "un LV.X sobre un Básico no cuenta como Evolucionado")
+	var dev := PokemonInPlay.new("dp1-93")         # Piplup, Prinplup, Empoleon, Empoleon LV.X
+	dev.cards.append_array(["dp1-58", "dp1-4", "dp1-120"])
+	var gone := dev.pop_stage()
+	check(gone.size() == 2 and dev.display_name() == "Prinplup", "desevolucionar saca el LV.X junto con la Fase más alta")
+	var d4: Array[String] = []
+	for i in 3:
+		d4.append("dp1-4")
+	d4.append_array(["dp1-120", "dp1-120"])
+	check(Game.validate_deck(d4, RuleSet.from_season(3)).any(func(e): return str(e).contains("Empoleon")), "Empoleon + Empoleon LV.X: 4 copias combinadas como máximo")
+	check(lvx.display_name() == "Empoleon LV.X" and lvx.max_hp() == 140, "Empoleon LV.X en juego con 140 PS")
+	var names: Array = lvx.attacks().map(func(x): return x["name"])
+	check("Hydro Impact" in names and "Ice Blade" in names, "LV.X usa también los ataques del nivel anterior")
+	check(lvx.abilities().any(func(ab): return ab["name"] == "Supreme Command"), "LV.X tiene su Poké-Power")
+	check(CardDB.stage("dp1-120") == 2 and not CardDB.is_evolution("dp1-120") and not CardDB.is_basic_pokemon("dp1-120"),
+			"LV.X: Fase 2 como su nivel anterior, no es Básico ni carta de Evolución")
+	# Debilidad +30 (Empoleon LV.X: Lightning +30)
+	g = board("dp1-6", "dp1-120")          # Lucario (Fighting) vs Empoleon LV.X
+	var d := g.opponent_player().active
+	g.deal_attack_damage(g.current_player().active, d, 40, true, {})
+	check(d.damage == 40, "sin debilidad al tipo: 40")
+	g = board("dp1-7", "dp1-120")          # Luxray (Lightning)
+	d = g.opponent_player().active
+	g.deal_attack_damage(g.current_player().active, d, 40, true, {})
+	check(d.damage == 70, "debilidad +30 de DP: 40 hace 70 (no 80)")
+	g = board(id_of("Torchic"), id_of("Treecko"))     # la era EX sigue con x2
+	d = g.opponent_player().active
+	g.deal_attack_damage(g.current_player().active, d, 20, true, {})
+	check(d.damage == 40, "la era EX sigue con x2 (Torchic a Treecko: 20 hace 40)")
+	# Baby Evolution: Munchlax -> Snorlax desde la mano, quita el daño
+	g = board("dp1-33", "dp1-17")
+	me = g.current_player()
+	me.active.damage = 20
+	me.hand.append("dp1-37")
+	var pw: Array = g.legal_actions().filter(func(a): return a["t"] == "power" and a["n"] == "Baby Evolution")
+	check(pw.size() == 1, "Baby Evolution de Munchlax se ofrece con Snorlax en la mano")
+	if pw.size() == 1:
+		g.apply(pw[0])
+		check(me.active.display_name() == "Snorlax" and me.active.damage == 0, "Munchlax evoluciona a Snorlax sin daño")
+		# Ease Up: +30 si evolucionó de Munchlax
+		me.active.energy.append_array(["ex1-109", "ex1-109", "ex1-109", "ex1-109"])
+		var dd := g.opponent_player().active
+		var hp0 := dd.damage
+		hit(g, "Ease Up")
+		check(dd.damage - hp0 >= 70 and me.active.rotation == "asleep", "Ease Up: 40+30 y Snorlax queda Dormido")
+	# Harden (Cascoon): sin daño si es 30 o menos
+	g = board("dp1-44", "dp1-17")
+	hit(g, "Harden")
+	var cas := g.current_player().active
+	g.turn_number += 1
+	g.deal_attack_damage(g.opponent_player().active, cas, 30, true, {})
+	check(cas.damage == 0, "Harden: 30 de daño no entra")
+	g.deal_attack_damage(g.opponent_player().active, cas, 40, true, {})
+	check(cas.damage > 0, "Harden: 40 sí entra")
+	# Spike Whip solo si Budew está debajo
+	check(AttackEffects.parse("dp1-13", CardDB.get_card("dp1-13")["attacks"][1])["ops"][0].get("c", "") == "evolved_from", "Spike Whip depende de Budew debajo")
+	# Darkness y Metal Energy básicas (DP): sin el +10 / -10 de las especiales
+	g = board("dp1-40", "dp1-38")          # Weavile (Darkness) vs Steelix (Metal)
+	var wv := g.current_player().active
+	var st := g.opponent_player().active
+	wv.energy.append("dp1-129")
+	st.energy.append("dp1-130")
+	check(Abilities.pre_wr_bonus(g, wv, st, true) == 0, "Darkness Energy básica: sin +10")
+	g.deal_attack_damage(wv, st, 30, true, {})
+	var base_dmg := st.damage
+	wv.energy[0] = "ex16-87"
+	st.energy[0] = "ex16-88"
+	check(Abilities.pre_wr_bonus(g, wv, st, true) == 10, "Darkness Energy especial: +10")
+	st.damage = 0
+	g.deal_attack_damage(wv, st, 30, true, {})
+	check(st.damage == base_dmg, "especiales: +10 de Darkness y -10 de Metal se compensan")
+	check(Energy.count_type(wv, "Darkness") == 1, "la especial también da Darkness")
+	# Formato: Worlds 2007 incluye dp1 y las promos DP01-04
+	var r := RuleSet.from_season(3)
+	check(r.is_legal("dp1-1") and r.is_legal("dpp-1"), "Worlds 2007: Diamond & Pearl y promos DP legales")
+	check(not RuleSet.from_season(2).is_legal("dp1-1"), "Worlds 2006: Diamond & Pearl todavía no")

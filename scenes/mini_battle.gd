@@ -40,6 +40,13 @@ const STATUS_COL := {"Asleep": Color("#a0b8ff"), "Confused": Color("#f0a0e0"), "
 static var _rules := {}
 static var _fams := {}
 const FAMS_PATH := "res://data/familias_pmd.json"
+# Efecto por nombre del ataque (golpe + proyectil): data/ataques_efectos.json, que arma
+# tools/efectos_por_nombre.py desde la hoja "Efectos de ataque por nombre".
+const NAMES_PATH := "res://data/ataques_efectos.json"
+const PROJ_LEN := 0.7        # lo que tarda el proyectil de la categoría (14 cuadros de la maqueta)
+const MOCK_ANG := -0.6947    # dirección del disparo en la maqueta (de abajo-izq. a arriba-der.)
+static var _names := {}
+static var _fx_meta := {}    # tira -> su .json (ancla, modo, temblor; o los datos del proyectil)
 
 static var _aura := {}       # fila -> colores del aura de llamas (Pokémon δ), para _put
 static var _sil := {}        # textura -> la misma con cada píxel visible en blanco (silueta)
@@ -73,7 +80,13 @@ static func forget(sp: String) -> void:
 	_species.erase(sp)
 
 
+## Los Fósiles en juego (Trainers que se juegan como Pokémon) se ven como el sustituto de
+## Mystery Dungeon: carpeta "sustituto" (python tools/hoja_sustituto.py la arma).
+const SUSTITUTO := "sustituto"
+
 static func folder(card_id: String) -> String:
+	if CardDB.is_fossil(card_id):
+		return SUSTITUTO if has_file(SUSTITUTO, "AnimData.xml") else ""
 	for sp in BattleScene.species(CardDB.card_name(card_id)):
 		var n: String = sp.trim_suffix("#shiny") + ("_shiny" if sp.ends_with("#shiny") else "")
 		if has_file(n, "AnimData.xml"):
@@ -344,6 +357,16 @@ static func setup(a: Dictionary, att: PlayerState, def: PlayerState, atk: Dictio
 	var pick := choose(asp, CardDB.card_name(att.active.top()).trim_suffix(" ex"), str(atk.get("name", "")), typ, status)
 	var kind: String = "" if heal_only else pick[0]
 	var ranged: bool = false if heal_only else pick[1]
+	var cat := name_category(str(atk.get("name", "")))
+	a["m_cat"] = cat
+	var proj := proj_info(cat)
+	if not heal_only and not proj.is_empty() and str(proj.get("tipo", "")) != "vuelta":
+		ranged = true              # la categoría tiene algo que viaja: se dispara de lejos
+		if not pick[1]:
+			for k2 in ["Shoot", "SpAttack", "Charge"]:
+				if has_anim(asp, k2):
+					kind = k2
+					break
 	a["m_heal_only"] = heal_only
 	a["att_id"] = att.active.top()
 	a["def_id"] = def.active.top()
@@ -386,9 +409,15 @@ static func _timing(a: Dictionary) -> void:
 		atk_s = float(an["total"]) * TICK
 	var start := T_IN + T_PRE
 	var impact := start + hit_s
+	a["m_stream"] = T_STREAM
 	if a["m_ranged"]:
-		impact += T_TRAVEL
-		atk_s += T_STREAM
+		if has_proj(a):
+			impact += PROJ_LEN         # el golpe cae cuando el proyectil llega
+			a["m_stream"] = PROJ_LEN * 0.6
+			atk_s += PROJ_LEN * 0.6
+		else:
+			impact += T_TRAVEL
+			atk_s += T_STREAM
 	a["m_start"] = start
 	a["m_atk_len"] = atk_s
 	a["m_hit_s"] = hit_s
@@ -727,12 +756,13 @@ static func draw(d, a: Dictionary) -> void:
 			var hf: int = clampi(int(an["hit"]) if int(an["hit"]) >= 0 else n * 2 / 3, 0, n - 1)
 			var loop_a := mini(hf + 1, n - 1)
 			var loop_b := maxi(loop_a, n - 2)
-			if ticks >= hit_t and ticks < hit_t + T_STREAM / TICK and loop_b > loop_a:
+			var stream_t := float(a.get("m_stream", T_STREAM)) / TICK
+			if ticks >= hit_t and ticks < hit_t + stream_t and loop_b > loop_a:
 				var span := _ticks_to(an, loop_b + 1) - _ticks_to(an, loop_a)
 				var tt := _ticks_to(an, loop_a) + fmod(ticks - hit_t, float(maxi(1, span)))
 				fr = _frame_at(an, tt, false)
-			elif ticks >= hit_t + T_STREAM / TICK:
-				fr = _frame_at(an, ticks - T_STREAM / TICK, false)
+			elif ticks >= hit_t + stream_t:
+				fr = _frame_at(an, ticks - stream_t, false)
 		var g_at := ga
 		if a.get("m_lunge", false):
 			# Se acerca hasta el golpe y vuelve después
@@ -757,7 +787,9 @@ static func draw(d, a: Dictionary) -> void:
 		else:
 			apos = _put(d, asp, "Idle", ra, _idle_frame(asp, s), ga, fade)
 	# --- Efectos ---
-	if a["m_ranged"]:
+	a["m_pts"] = {"c": dpos.get("c", gd), "g": gd, "ca": apos.get("c", ga), "ga": ga}
+	# Con categoría por nombre solo viaja su proyectil (si no tiene, nada: Thunder, Psychic...)
+	if a["m_ranged"] and (a.get("m_cat", "") == "" or has_proj(a)):
 		_draw_stream(d, a, s, apos["h"], gt if bench else dpos["c"])
 	if bench:
 		return                         # el daño a la Banca se ve en la mesa (estallido y número)
@@ -766,7 +798,7 @@ static func draw(d, a: Dictionary) -> void:
 			var sfx := special_effect(a)
 			var sfr := int(after / FX_FRAME)
 			if sfr < SpecialFX.fx_count(sfx):
-				SpecialFX.fx_draw(d, sfx, sfr, dpos["c"])
+				fx_draw_at(d, a, sfx, sfr)
 		if landed:
 			_draw_hit(d, a, after, dpos["c"])
 			_draw_number(d, a, after, dpos["c"])
@@ -774,6 +806,8 @@ static func draw(d, a: Dictionary) -> void:
 			_draw_status(d, a, after, dpos["c"])
 		elif not a.get("m_heal_only", false):
 			_draw_miss(d, after, dpos["c"])
+		if str(proj_info(a.get("m_cat", "")).get("tipo", "")) == "vuelta":
+			_draw_proj(d, a, after / PROJ_LEN, dpos["c"], apos.get("c", ga))
 		# Poké-Bodies que actuaron con el golpe (Rough Skin, Safeguard...): su nombre al lado
 		draw_bodies(d, a, after, dpos.get("c", gd), apos.get("c", ga))
 		# El atacante se cura: efecto encima suyo y "+20" en verde
@@ -839,6 +873,11 @@ static func _draw_heal(d, a: Dictionary, k: float, c: Vector2) -> void:
 ## Lo que viaja de la boca del atacante al defensor en los ataques a distancia.
 static func _draw_stream(d, a: Dictionary, s: float, src: Vector2, dst: Vector2) -> void:
 	var t0 := float(a["m_start"]) + float(a["m_hit_s"])
+	if has_proj(a):
+		var t := (s - t0) / PROJ_LEN
+		if t >= 0.0 and t <= 1.0:
+			_draw_proj(d, a, t, src, dst)
+		return
 	var typ: String = a["type"]
 	var n := 10
 	for b in n:
@@ -948,6 +987,9 @@ static func special_sound(a: Dictionary) -> String:
 ## El efecto de Mystery Dungeon del golpe (tira mv_XXXX), o "" si no hay tiras.
 ## Ataques con un efecto propio sin importar el tipo (Wrap, Bind... -> los anillos de Wrap).
 static func special_effect(a: Dictionary) -> String:
+	var g := str(_load_names().get("categorias", {}).get(a.get("m_cat", ""), {}).get("golpe", ""))
+	if g != "" and SpecialFX.has_fx(g):
+		return g
 	var low := str(a.get("m_atk_name", "")).to_lower()
 	for rule in _load_fams().get("efecto_por_palabra", []):
 		for w in rule.get("palabras", []):
@@ -985,7 +1027,7 @@ static func _draw_hit(d, a: Dictionary, after: float, c: Vector2) -> void:
 		var n := SpecialFX.fx_count(mv)
 		var fr := int(after / FX_FRAME)
 		if fr < n:
-			SpecialFX.fx_draw(d, mv, fr, c)
+			fx_draw_at(d, a, mv, fr, c)
 		return
 	var typ: String = a["type"]
 	var big := int(a.get("dmg", 0)) >= 50
@@ -1075,3 +1117,125 @@ static func _draw_miss(d, after: float, c: Vector2) -> void:
 	var txt := "Miss!"
 	var p := c + Vector2(-d._text_w(txt) / 2.0, -26 - minf(after, 1.0) * 6.0)
 	d._text(p.round(), txt, Color(1, 1, 1, clampf((1.0 - after) * 3.0, 0.0, 1.0)))
+
+
+# ---------------------------------------------------------------------------
+# Efecto por nombre del ataque (categorías de la hoja)
+# ---------------------------------------------------------------------------
+
+static func _load_names() -> Dictionary:
+	if _names.is_empty():
+		var j = JSON.parse_string(FileAccess.get_file_as_string(NAMES_PATH)) if ImgLoad.exists(NAMES_PATH) else null
+		_names = j if j is Dictionary else {"ataques": {}, "categorias": {}}
+	return _names
+
+
+## Categoría del ataque por su nombre ("" si no tiene una: usa el efecto del tipo).
+static func name_category(atk_name: String) -> String:
+	return str(_load_names().get("ataques", {}).get(atk_name.to_lower(), ""))
+
+
+## Datos de la tira (el .json al lado): ancla y modo del golpe, o cómo viaja el proyectil.
+static func fx_meta(name: String) -> Dictionary:
+	if not _fx_meta.has(name):
+		var m := {}
+		for dir_path in SpecialFX.FX_DIRS:
+			var p := "%s/%s.json" % [dir_path, name]
+			if m.is_empty() and ImgLoad.exists(p):
+				var j = JSON.parse_string(FileAccess.get_file_as_string(p))
+				if j is Dictionary:
+					m = j
+		_fx_meta[name] = m
+	return _fx_meta[name]
+
+
+## Lo que viaja en esta categoría ({} si nada, o si no está la tira).
+static func proj_info(cat: String) -> Dictionary:
+	if cat == "":
+		return {}
+	var px := str(_load_names().get("categorias", {}).get(cat, {}).get("proyectil", ""))
+	if px == "" or not SpecialFX.has_fx(px):
+		return {}
+	var m := fx_meta(px).duplicate()
+	m["tira"] = px
+	return m
+
+
+static func has_proj(a: Dictionary) -> bool:
+	var p := proj_info(str(a.get("m_cat", "")))
+	return not p.is_empty() and str(p.get("tipo", "")) != "vuelta"
+
+
+## Dibuja un cuadro del golpe en su lugar: las tiras de categoría (gx_) van con su ancla
+## sobre el cuerpo del defensor, su sombra o el atacante; las demás, centradas en c.
+static func fx_draw_at(d, a: Dictionary, name: String, frame: int, c: Vector2 = Vector2.INF) -> void:
+	var pts: Dictionary = a.get("m_pts", {})
+	if c == Vector2.INF:
+		c = pts.get("c", Vector2.ZERO)
+	var m := fx_meta(name) if name.begins_with("gx_") else {}
+	if m.is_empty() or not m.has("ancla"):
+		SpecialFX.fx_draw(d, name, frame, c)
+		return
+	var target := c
+	match str(m.get("modo", "cuerpo")):
+		"suelo":
+			target = pts.get("g", c)
+		"atacante":
+			target = pts.get("ca", c)
+	var cell := SpecialFX.fx_cell(name)
+	var anc := Vector2(float(m["ancla"][0]), float(m["ancla"][1]))
+	SpecialFX.fx_draw(d, name, frame, target + cell / 2.0 - anc)
+
+
+## El proyectil de la categoría cuando va por t (0..1): como en la maqueta, n partículas
+## que salen una tras otra (espacio), ondulan y cambian de cuadro (vel, desfase).
+static func _draw_proj(d, a: Dictionary, t: float, src: Vector2, dst: Vector2) -> void:
+	var p := proj_info(str(a.get("m_cat", "")))
+	if p.is_empty() or t < 0.0 or t > 1.0:
+		return
+	var tira: String = p["tira"]
+	var nf := maxi(1, int(p.get("cuadros", 1)))
+	var vel := float(p.get("vel", 0.0))
+	var des := float(p.get("desfase", 0.0))
+	var tope: bool = p.get("tope", false)
+	var rot := (dst - src).angle() - MOCK_ANG
+	var tipo := str(p.get("tipo", "chorro"))
+	if tipo == "ola":
+		# La ola avanza por el suelo, de los pies del atacante a los del defensor
+		var pts: Dictionary = a.get("m_pts", {})
+		var g0: Vector2 = pts.get("ga", src)
+		var g1: Vector2 = pts.get("g", dst)
+		var cell := SpecialFX.fx_cell(tira)
+		var pos := g0.lerp(g1, t) + Vector2(0, -cell.y / 2.0 + 2.0 + roundf(sin(t * 12.0)))
+		SpecialFX.fx_draw(d, tira, 0, pos, 1.0, 1.0, 0.0, g1.x < g0.x)
+		return
+	if tipo == "arco":
+		var pos := src.lerp(dst, t) - Vector2(0, sin(t * PI) * float(p.get("alto", 16)))
+		var fr := posmod(int(t * vel), nf) if vel > 0.0 else 0
+		var spin := t * TAU if p.get("gira", false) else 0.0
+		SpecialFX.fx_draw(d, tira, fr, pos, 1.0, 1.0, spin)
+		return
+	var n := int(p.get("n", 1))
+	var gap := float(p.get("espacio", 0.18))
+	var wob := float(p.get("ondula", 0.0))
+	for i in n:
+		var k := t * (1.0 + gap * (n - 1)) - i * gap
+		if k < 0.0 or k > 1.0:
+			continue
+		var pos := src.lerp(dst, k) + Vector2(0, sin(k * 9.0 + i) * wob)
+		var fr := int(k * vel + i * des)
+		fr = mini(fr, nf - 1) if tope else posmod(fr, nf)
+		SpecialFX.fx_draw(d, tira, fr, pos, 1.0, 1.0, rot)
+
+
+## Temblor de la pantalla (Earthquake, Stomp...) mientras se ve el golpe; Vector2.ZERO si no.
+static func quake(a: Dictionary) -> Vector2:
+	if not a.get("mini", false) or not a.get("applied", false) or not a.has("m_impact"):
+		return Vector2.ZERO
+	var g := special_effect(a)
+	if g == "" or not g.begins_with("gx_") or not fx_meta(g).get("temblor", false):
+		return Vector2.ZERO
+	var after := float(a["t"]) * float(a["dur"]) - float(a["m_impact"])
+	if after < 0.0 or after > SpecialFX.fx_count(g) * FX_FRAME:
+		return Vector2.ZERO
+	return Vector2([-3, 3, -2, 2, -1, 1][int(after / FX_FRAME) % 6], 0)

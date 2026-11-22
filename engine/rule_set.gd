@@ -53,14 +53,14 @@ const SEASONS := [
 		"start": ["ex5", "ex6", "ex7", "ex8", "ex9", "ex10", "pop1", "pop2", "np"],
 		"steps": [["ex11", "Oct 2005"], ["ex12", "Feb 2006"], ["pop3", "Apr 2006"], ["ex13", "May 2006"]],
 		"first_player_supporter": false, "coin_winner_chooses": true},
-	# Mundial 2007 (DX-on): de EX Deoxys en adelante. Diamond & Pearl también era legal, pero
-	# todavía no está en el juego.
-	{"id": "2006-07", "name": "2006-07 · Deoxys to Power Keepers",
-		"sets": ["ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "ex14", "ex15", "ex16", "pop2", "pop3", "pop4", "pop5", "np"],
+	# Mundial 2007 (DX-on): de EX Deoxys a Diamond & Pearl (mayo de 2007) y las promos DP01-DP04.
+	# Mysterious Treasures salió el 22 de agosto, después del Mundial.
+	{"id": "2006-07", "name": "2006-07 · Deoxys to Diamond & Pearl",
+		"sets": ["ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "ex14", "ex15", "ex16", "pop2", "pop3", "pop4", "pop5", "np", "dp1", "dpp"],
 		"np_ok": [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
 		"worlds": "Worlds 2007", "where": "Hawaii · Aug 10-12, 2007",
 		"start": ["ex8", "ex9", "ex10", "ex11", "ex12", "ex13", "ex14", "pop2", "pop3", "pop4", "np"],
-		"steps": [["ex15", "Nov 2006"], ["ex16", "Feb 2007"], ["pop5", "Mar 2007"]],
+		"steps": [["ex15", "Nov 2006"], ["ex16", "Feb 2007"], ["pop5", "Mar 2007"], ["dp1", "May 2007", ["dpp"]]],
 		"first_player_supporter": false, "coin_winner_chooses": true},
 ]
 
@@ -115,6 +115,8 @@ static func from_point(i: int, n: int) -> RuleSet:
 	var sets: Array = d["start"].duplicate()
 	for j in n:
 		sets.append(steps[j][0])
+		if steps[j].size() > 2:     # sets que salieron junto con ese (promos DP con Diamond & Pearl)
+			sets.append_array(steps[j][2])
 	r.legal_sets = sets
 	r.name = "Custom %s · %s" % [d["id"], "start of season" if n == 0 else "up to " + set_title(steps[n - 1][0])]
 	return r

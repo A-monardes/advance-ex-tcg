@@ -35,3 +35,6 @@ musica/*.json
 # Recortes de arte oficial: no van al repositorio público
 sprites/*.png
 data/pmd_web.json
+
+# Logos de los Mundiales (propios del usuario)
+mundo/propios/mundiales/
