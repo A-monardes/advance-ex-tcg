@@ -80,7 +80,9 @@ func _init(deck_a: Array[String], deck_b: Array[String], seed_value: int = 0, ru
 ## "sabe" lo que ese jugador sabe: se mezclan su mazo y sus Premios, y la mano del rival
 ## se reparte al azar entre las cartas que no ve; además cambia la semilla, así no sabe
 ## qué saldrá en las monedas. Las elecciones pendientes no se copian.
-func clone(viewer: int = -1) -> Game:
+## sim_seed (IA): con la misma semilla, varias copias reparten igual las cartas ocultas y
+## empiezan con las mismas monedas; así se comparan jugadas con la misma "suerte".
+func clone(viewer: int = -1, sim_seed: int = 0) -> Game:
 	var hide := viewer >= 0
 	var empty: Array[String] = []
 	var c := Game.new(empty, empty, 1, rules.copy())
@@ -88,7 +90,10 @@ func clone(viewer: int = -1) -> Game:
 	c.rng.seed = rng.seed
 	c.rng.state = rng.state
 	if hide:
-		c.rng.randomize()
+		if sim_seed != 0:
+			c.rng.seed = sim_seed
+		else:
+			c.rng.randomize()
 	c.current = current
 	c.first_player = first_player
 	c.coin_winner = coin_winner

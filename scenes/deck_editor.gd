@@ -9,8 +9,8 @@ extends RefCounted
 ##   "rename" escribir el nombre del mazo con el teclado
 
 const TABS := ["Deck", "Pokémon", "Trainers", "Energy"]
-const ROWS := 8             # filas visibles en las listas
-const LIST_Y := 37
+const ROWS := 9             # filas visibles en las listas
+const LIST_Y := 32
 const ROW_H := 10
 
 var d                       # la pantalla de duelo (duel.gd)
@@ -661,96 +661,195 @@ func _draw_camp_list() -> void:
 	d._text_scroll(Vector2(9, 140), keys, d.C_DIM, 222, "campdkk")
 
 
+## Colores de la barra de composición del mazo: Pokémon, Entrenadores y Energías.
+const C_BAR := [Color("#58b048"), Color("#e8b030"), Color("#5080d8")]
+const C_OK := Color("#388850")
+
+
+## [Pokémon, Entrenadores, Energías] de una lista de cartas.
+static func composition(deck: Array) -> Array:
+	var out := [0, 0, 0]
+	for id in deck:
+		if CardDB.is_pokemon(id):
+			out[0] += 1
+		elif CardDB.is_energy(id):
+			out[2] += 1
+		else:
+			out[1] += 1
+	return out
+
+
+## Los Mundiales en que se puede jugar el mazo: ["2004", "2005"...] (solo las cartas legales).
+static func legal_worlds(deck: Array) -> Array:
+	var out: Array = []
+	for i in RuleSet.SEASONS.size():
+		if RuleSet.from_season(i).illegal_cards(deck).is_empty():
+			out.append(str(RuleSet.SEASONS[i]["worlds"]).right(4))
+	return out
+
+
+## Barra de tres colores con la composición (y los números al lado si `nums`).
+func _comp_bar(p: Vector2, w: float, comp: Array, nums: bool) -> void:
+	var tot: int = comp[0] + comp[1] + comp[2]
+	d.draw_rect(Rect2(p - Vector2(1, 1), Vector2(w + 2, 6)), d.C_INK)
+	d.draw_rect(Rect2(p, Vector2(w, 4)), d.C_FRAME_MID)
+	if tot == 0:
+		if nums:
+			d._draw_tiny(p + Vector2(w + 5, 0), "0 0 0", d.C_INK)
+		return
+	var x := p.x
+	for k in 3:
+		var ww := roundf(w * comp[k] / tot) if k < 2 else p.x + w - x
+		if ww > 0:
+			d.draw_rect(Rect2(x, p.y, ww, 4), C_BAR[k])
+		x += ww
+	if nums:
+		d._draw_tiny(p + Vector2(w + 5, 0), "%d %d %d" % comp, d.C_INK)
+
+
+## El panel de la derecha de la lista de mazos: carta, cantidad, en qué Mundiales es legal,
+## composición y descripción.
+func _draw_deck_panel(r: Rect2, deck_name_shown: String, deck: Array, desc: String) -> void:
+	var cover: String = d._deck_cover(deck_name_shown) if deck_name_shown != "" else ""
+	var ir := Rect2(r.position.x + 6, r.position.y + 6, 40, 40)
+	d.draw_rect(ir.grow(1), d.C_INK)
+	if cover != "":
+		d._draw_card_image(ir, cover)
+	var tx := ir.end.x + 5
+	d._text_fit(Vector2(tx, r.position.y + 5), deck_name_shown, d.C_TEXT, r.end.x - tx - 4)
+	var info := _deck_info(deck)
+	var cnt := "%d/60" % deck.size()
+	d._text(Vector2(tx, r.position.y + 16), cnt, C_OK if info["errs"].is_empty() else d.C_HP_LOW)
+	var worlds := legal_worlds(deck)
+	if info["errs"].is_empty() and not worlds.is_empty():
+		# "LEGAL" y abajo los Mundiales donde se puede jugar, de a dos años por renglón
+		d._draw_tiny(Vector2(tx, r.position.y + 28), "LEGAL", C_OK)
+		d._draw_tiny(Vector2(tx, r.position.y + 35), "WORLDS", C_OK)
+		for k in worlds.size():
+			d._draw_tiny(Vector2(tx + (k % 2) * 20, r.position.y + 42 + (k / 2) * 7), str(worlds[k]), C_OK)
+	elif not info["errs"].is_empty():
+		d._draw_tiny(Vector2(tx, r.position.y + 28), "NOT LEGAL", d.C_HP_LOW)
+	else:
+		d._draw_tiny(Vector2(tx, r.position.y + 28), "NOT LEGAL", d.C_HP_LOW)
+		d._draw_tiny(Vector2(tx, r.position.y + 35), "ANY WORLDS", d.C_HP_LOW)
+	var comp := composition(deck)
+	var by := r.position.y + 66
+	_comp_bar(Vector2(r.position.x + 6, by), r.size.x - 12, comp, false)
+	var labels := ["POKEMON %d" % comp[0], "TRAINER %d" % comp[1], "ENERGY %d" % comp[2]]
+	for k in 3:
+		d._draw_tiny(Vector2(r.position.x + 6, by + 7 + k * 7), labels[k], C_BAR[k].darkened(0.2))
+	var dl: Array = d._wrap(desc, r.size.x - 12)
+	for k in mini(dl.size(), 3):
+		d._text(Vector2(r.position.x + 6, by + 29 + k * 10), str(dl[k]), d.C_DIM)
+
+
 func _draw_list() -> void:
-	d._frame(Rect2(0, 0, d.W, 22))
-	d._text(Vector2(9, 5), "DECK EDITOR", d.C_TEXT)
-	d._text(Vector2(d.W - 9 - d._text_w("Saved automatically"), 5), "Saved automatically", d.C_DIM)
-	d._frame(Rect2(0, 20, d.W, 100))
+	var r: RuleSet = d.format_rules()
+	d._frame(Rect2(0, 0, d.W, 18))
+	d._text(Vector2(8, 4), "DECK EDITOR", d.C_TEXT)
+	var fmt := "Format: " + (str(RuleSet.SEASONS[d.season_idx]["worlds"]) if d.format_upto < 0 else "Custom " + str(RuleSet.SEASONS[d.season_idx]["id"]))
+	d._text(Vector2(d.W - 8 - d._text_w(fmt), 4), fmt, d.C_DIM)
+	var left := Rect2(0, 16, 132, 132)
+	d._frame(left)
 	var rows := _list_rows()
 	var presets := Decks.names()
-	var top := clampi(cursor - 7, 0, maxi(0, rows.size() - 8))
-	for i in range(top, mini(top + 8, rows.size())):
-		var y := 25 + (i - top) * 11
+	var vis := 10
+	var top := clampi(cursor - vis + 1, 0, maxi(0, rows.size() - vis))
+	for i in range(top, mini(top + vis, rows.size())):
+		var y := 21 + (i - top) * 12
 		var row: Dictionary = rows[i]
 		var sel := i == cursor
-		d._stripe(Rect2(4, y - 1, d.W - 8, 11), i)
+		var rr := Rect2(4, y - 1, left.size.x - 8, 12)
+		d._stripe(rr, i)
 		if sel:
-			d._text(Vector2(8, y), "▶", d.C_TEXT)
+			d.draw_rect(rr, Color("#d8e4f8"))
+			d._text(Vector2(6, y), "▶", d.C_TEXT)
 		match row["kind"]:
 			"deck":
 				var n: String = row["name"]
 				var deck := Decks.get_deck(n)
-				var ok: bool = _deck_info(deck)["errs"].is_empty()
+				var ok: bool = _deck_info(deck)["errs"].is_empty() and r.illegal_cards(deck).is_empty()
 				if sel:
-					d._text_scroll(Vector2(17, y), "★ " + n, d.C_TEXT, 170, "edl")
+					d._text_scroll(Vector2(15, y), "★ " + n, d.C_TEXT, left.size.x - 32, "edl")
 				else:
-					d._text_fit(Vector2(17, y), "★ " + n, d.C_TEXT, 170)
-				var cnt := "%d/60" % deck.size()
-				d._text(Vector2(d.W - 9 - d._text_w(cnt), y), cnt, d.C_HP_OK.darkened(0.35) if ok else d.C_HP_LOW)
+					d._text_fit(Vector2(15, y), "★ " + n, d.C_TEXT, left.size.x - 32)
+				# Puntito: verde si se puede jugar en el formato actual, rojo si no
+				d.draw_circle(Vector2(left.end.x - 11, y + 5), 3.0, d.C_INK)
+				d.draw_circle(Vector2(left.end.x - 11, y + 5), 2.0, C_OK if ok else d.C_HP_LOW)
 			"new":
-				d._text(Vector2(17, y), "+ New deck (empty)", Color("#c03028") if sel else d.C_TEXT)
+				d._text(Vector2(15, y), "+ New deck", Color("#c03028") if sel else d.C_TEXT)
 			"copy":
 				var src: String = presets[copy_from] if not presets.is_empty() else ""
-				d._text(Vector2(17, y), "+ Copy:", Color("#c03028") if sel else d.C_TEXT)
-				d._text_fit(Vector2(66, y), ("◀ " if sel else "") + src + (" ▶" if sel else ""), d.C_TEXT, 166)
-	# Cuadro de abajo
-	d._frame(Rect2(0, 118, d.W, 42))
-	var x := 9.0
-	if screen == "rename":
-		d._text(Vector2(x, 122), "Deck name (Enter saves · Esc cancels):", d.C_TEXT)
-		var blink := "_" if int(Time.get_ticks_msec() / 400) % 2 == 0 else " "
-		d._text(Vector2(x, 135), typed + blink, Color("#c03028"))
-		if msg != "":
-			d._text_fit(Vector2(120, 135), msg, d.C_HP_LOW, 112)
-		return
+				d._text(Vector2(15, y), "+ Copy", Color("#c03028") if sel else d.C_TEXT)
+				d._text_fit(Vector2(52, y), ("◀ " + src + " ▶") if sel else src, d.C_TEXT, left.size.x - 58)
+	if top > 0:
+		d._text(Vector2(left.end.x - 13, 18), "▲", d.C_DIM)
+	if top + vis < rows.size():
+		d._text(Vector2(left.end.x - 13, 21 + (vis - 1) * 12), "▼", d.C_DIM)
+	# Derecha: el mazo elegido
+	var right := Rect2(130, 16, d.W - 130, 132)
+	d._frame(right)
 	var row: Dictionary = rows[cursor] if cursor < rows.size() else {}
-	var info := ""
 	match row.get("kind", ""):
 		"deck":
-			var di := _deck_info(Decks.get_deck(row["name"]))
-			info = ("Ready to play. Formats: " + str(di["formats"])) if di["errs"].is_empty() else di["errs"][0]
-		"new":
-			info = "Starts a deck from scratch."
+			_draw_deck_panel(right, row["name"], Decks.get_deck(row["name"]), Decks.description(row["name"]))
 		"copy":
-			info = Decks.description(presets[copy_from]) if not presets.is_empty() else ""
-	d._text_scroll(Vector2(x, 122), info, d.C_TEXT, 222, "edlist%d" % cursor)
-	var keys := "Z edit · R rename · D delete · X back"
+			if not presets.is_empty():
+				var pn: String = presets[copy_from]
+				_draw_deck_panel(right, pn, Decks.get_deck(pn), Decks.description(pn))
+		"new":
+			d._text_wrap(Vector2(right.position.x + 6, right.position.y + 6), "Starts a deck from scratch.", right.size.x - 12, d.C_DIM)
+	if screen == "rename":
+		# Ventana para escribir el nombre
+		var w := Rect2(20, 58, d.W - 40, 40)
+		d.draw_rect(Rect2(0, 0, d.W, d.H), Color(0, 0, 0, 0.35))
+		d._frame(w)
+		d._text(Vector2(w.position.x + 8, w.position.y + 5), "Deck name (Enter saves · Esc cancels):", d.C_DIM)
+		var blink := "_" if int(Time.get_ticks_msec() / 400) % 2 == 0 else " "
+		d._text(Vector2(w.position.x + 8, w.position.y + 18), typed + blink, Color("#c03028"))
+		if msg != "":
+			d._text_fit(Vector2(w.position.x + 8, w.position.y + 28), msg, d.C_HP_LOW, w.size.x - 16)
+		return
+	var keys := "▲▼ choose · Z edit · R rename · D delete · X back"
 	if row.get("kind", "") == "copy":
 		keys = "◀▶ choose deck · Z copy · X back"
 	elif row.get("kind", "") == "new":
 		keys = "Z create · X back"
 	if confirm_delete:
 		keys = "Delete this deck? Press D again to confirm"
-	d._text_scroll(Vector2(x, 140), keys, d.C_HP_LOW if confirm_delete else d.C_DIM, 222, "edkeys")
+	d._text_scroll(Vector2(6, 150), keys, d.C_HP_LOW if confirm_delete else d.C_LIGHT, 228, "edkeys")
 
 
 func _draw_edit() -> void:
 	var total := _total()
 	var deck := _deck_array()
 	var errs: Array = _deck_info(deck)["errs"]
-	# Encabezado: nombre, búsqueda y cantidad
-	d._frame(Rect2(0, 0, d.W, 22))
-	d._text_fit(Vector2(9, 5), "★ " + deck_name, d.C_TEXT, 110 if (search != "" or searching) else 180)
-	if search != "" or searching:
-		d._text_fit(Vector2(122, 5), "Search: " + search + ("_" if searching else ""), Color("#c03028") if searching else d.C_DIM, 74)
+	# Arriba: nombre, cantidad y la composición siempre a la vista
+	d._frame(Rect2(0, 0, d.W, 18))
+	d._text_fit(Vector2(8, 4), "★ " + deck_name, d.C_TEXT, 84)
 	var cnt := "%d/60" % total
-	d._text(Vector2(d.W - 9 - d._text_w(cnt), 5), cnt,
-			d.C_HP_OK.darkened(0.35) if errs.is_empty() else (d.C_TEXT if total < 60 else d.C_HP_LOW))
-	# Pestañas (como carpetas)
+	d._text(Vector2(94, 4), cnt, C_OK if errs.is_empty() else (d.C_TEXT if total < 60 else d.C_HP_LOW))
+	_comp_bar(Vector2(126, 7), 58, composition(deck), true)
+	# Pestañas y el buscador (F)
 	var x := 2.0
 	for i in TABS.size():
-		var label: String = TABS[i]
-		if i == 0:
-			label += " (%d)" % total
-		var w: float = d._text_w(label) + 10
-		var r := Rect2(x, 21, w, 13)
+		var label: String = TABS[i] if i != 2 else "Trainer"
+		var w: float = d._text_w(label) + 8
+		var r := Rect2(x, 16, w, 13)
 		d.draw_rect(r, d.C_FRAME_OUT)
 		d.draw_rect(r.grow(-1), d.C_PANEL if i == tab else d.C_FRAME_MID)
-		d._text(Vector2(x + 5, 22), label, d.C_TEXT if i == tab else d.C_LIGHT)
+		d._text(Vector2(x + 4, 17), label, d.C_TEXT if i == tab else d.C_LIGHT)
 		x += w + 1
+	var sbox := Rect2(x + 2, 17, d.W - x - 4, 11)
+	d.draw_rect(sbox, d.C_INK)
+	d.draw_rect(sbox.grow(-1), d.C_PANEL)
+	if searching or search != "":
+		d._text_fit(Vector2(sbox.position.x + 3, 18), search + ("_" if searching else ""), Color("#c03028") if searching else d.C_TEXT, sbox.size.x - 6)
+	else:
+		d._text(Vector2(sbox.position.x + 3, 18), "F: search", d.C_DIM)
 	# Lista de cartas
 	var cards := _tab_cards()
-	var list := Rect2(0, 33, 172, 86)
+	var list := Rect2(0, 28, 152, 98)
 	d._frame(list)
 	var list_w := list.size.x
 	for i in range(scroll, mini(scroll + ROWS, cards.size())):
@@ -763,71 +862,62 @@ func _draw_edit() -> void:
 		d.draw_rect(Rect2(7, y + 2, 7, 7), d.C_INK)
 		d.draw_rect(Rect2(8, y + 3, 5, 5), d._card_chip_color(id))
 		var n: int = counts.get(id, 0)
-		var name_w := list_w - 17 - 74
+		var name_w := list_w - 17 - 58
 		if sel:
 			d._text_scroll(Vector2(17, y), CardDB.card_name(id), d.C_TEXT, name_w, "ed_card")
 		else:
 			d._text_fit(Vector2(17, y), CardDB.card_name(id), d.C_TEXT, name_w)
-		d._text(Vector2(list_w - 62, y), id, d.C_DIM)
+		d._draw_tiny(Vector2(list_w - 56, y + 2), id.to_upper(), d.C_DIM)
 		if camp != null and not CardDB.is_basic_energy(id):
 			# En la campaña: en el mazo / las que tenés
 			var own := "%d/%d" % [n, camp.owned(id)]
-			d._text(Vector2(list_w - 8 - d._text_w(own), y), own, Color("#c03028") if n > 0 else d.C_DIM)
+			d._text(Vector2(list_w - 7 - d._text_w(own), y), own, Color("#c03028") if n > 0 else d.C_DIM)
 			if camp.reverse.get(id, 0) > 0:      # tenés alguna reverse holo
 				var hue := fmod(Time.get_ticks_msec() / 1500.0 + i * 0.1, 1.0)
-				d._text(Vector2(list_w - 70, y), "R", Color.from_hsv(hue, 0.75, 0.85))
+				d._text(Vector2(list_w - 64, y), "R", Color.from_hsv(hue, 0.75, 0.85))
 		elif n > 0:
-			d._text(Vector2(list_w - 21, y), "×%d" % n, Color("#c03028"))
+			d._text(Vector2(list_w - 20, y), "×%d" % n, Color("#c03028"))
 	if cards.is_empty():
 		d._text_fit(Vector2(9, LIST_Y), "The deck is empty: Tab switches tabs." if tab == 0 else "Nothing matches the search or filter.", d.C_DIM, list_w - 18)
 	if scroll > 0:
 		d._text(Vector2(list_w - 12, LIST_Y - 3), "▲", d.C_DIM)
 	if scroll + ROWS < cards.size():
 		d._text(Vector2(list_w - 12, LIST_Y + (ROWS - 1) * ROW_H + 2), "▼", d.C_DIM)
-	# Imagen de la carta y resumen del mazo
-	var side := Rect2(170, 33, d.W - 170, 86)
+	# Derecha: la carta grande y sus datos en renglones cortos
+	var side := Rect2(150, 28, d.W - 150, 98)
 	d._frame(side)
 	var id_sel: String = cards[cursor] if cursor < cards.size() else ""
 	if id_sel != "":
-		d._draw_card_image(Rect2(side.position.x + (side.size.x - d.MENU_IMG) / 2.0, 38, d.MENU_IMG, d.MENU_IMG), id_sel,
-				camp != null and camp.reverse.get(id_sel, 0) > 0)
-	var np := 0
-	var nt := 0
-	var ne := 0
-	for id in counts:
-		if CardDB.is_pokemon(id):
-			np += counts[id]
-		elif CardDB.is_energy(id):
-			ne += counts[id]
-		else:
-			nt += counts[id]
-	var rows := [["Pokém.", np], ["Trainer", nt], ["Energy", ne]]
-	for j in 3:
-		var yy := 81 + j * 11
-		d._text(Vector2(side.position.x + 7, yy), rows[j][0], d.C_DIM)
-		var v := str(rows[j][1])
-		d._text(Vector2(side.end.x - 7 - d._text_w(v), yy), v, d.C_TEXT)
-	# Cuadro de abajo
-	d._frame(Rect2(0, 117, d.W, 43))
-	if id_sel != "":
-		var line: String = d._card_kind(id_sel)
+		var isz := 56.0
+		var ir := Rect2(side.position.x + (side.size.x - isz) / 2.0, side.position.y + 5, isz, isz)
+		d.draw_rect(ir.grow(1), d.C_INK)
+		d._draw_card_image(ir, id_sel, camp != null and camp.reverse.get(id_sel, 0) > 0)
+		var ty := ir.end.y + 4
+		d._text_fit(Vector2(side.position.x + 6, ty), d._card_kind(id_sel), d.C_TEXT, side.size.x - 10)
 		if CardDB.is_pokemon(id_sel):
-			line += " · HP %d · %s" % [CardDB.hp(id_sel), "/".join(CardDB.types(id_sel).map(func(t): return d.TYPE_ES.get(t, t)))]
+			var hp := "HP %d · %s" % [CardDB.hp(id_sel), "/".join(CardDB.types(id_sel).map(func(t): return d.TYPE_ES.get(t, t)))]
+			d._text_fit(Vector2(side.position.x + 6, ty + 10), hp, d.C_DIM, side.size.x - 10)
 			if CardDB.evolves_from(id_sel) != "":
-				line += " · evolves from " + CardDB.evolves_from(id_sel)
-		line += " · " + CardDB.get_card(id_sel).get("set", "")
-		d._text_scroll(Vector2(9, 121), line, d.C_TEXT, 222, "ed_info")
+				var ef := "FROM " + CardDB.evolves_from(id_sel).to_upper()
+				if ef.length() * 4 > side.size.x - 10:
+					ef = ef.left(int((side.size.x - 10) / 4) - 1) + "."
+				d._draw_tiny(Vector2(side.position.x + 6, ty + 22), ef, d.C_DIM)
+	# Abajo: la carta (nombre · código · set) y si el mazo es válido
+	d._frame(Rect2(0, 124, d.W, 24))
+	if id_sel != "":
+		var line := "%s · %s · %s" % [CardDB.card_name(id_sel), id_sel, CardDB.get_card(id_sel).get("set", "")]
+		d._text_scroll(Vector2(6, 127), line, d.C_TEXT, 228, "ed_info")
 	var status := msg
 	if status == "":
 		status = "Valid deck: ready to use." if errs.is_empty() else errs[0]
-	d._text_fit(Vector2(9, 132), status, d.C_HP_LOW if msg != "" or not errs.is_empty() else d.C_HP_OK.darkened(0.35), 222)
+	d._text_fit(Vector2(6, 136), status, d.C_HP_LOW if msg != "" or not errs.is_empty() else C_OK, 228)
 	var summary := _filter_summary()
 	if searching:
-		d._text_scroll(Vector2(9, 143), "Name, code (ex2, ecard1-33) or set · Enter done · Esc clear", d.C_DIM, 222, "ed_keys")
+		d._text_scroll(Vector2(6, 150), "Name, code (ex2, ecard1-33) or set · Enter done · Esc clear", d.C_LIGHT, 228, "ed_keys")
 	elif summary != "":
-		d._text_scroll(Vector2(9, 143), "%s  (%d)" % [summary, cards.size()], C_FILTER, 222, "ed_filt")
+		d._text_scroll(Vector2(6, 150), "%s  (%d)" % [summary, cards.size()], Color("#a8c8ff"), 228, "ed_filt")
 	else:
-		d._text_scroll(Vector2(9, 143), "◀▶ remove/add · Tab tab · F search · V filter · G family · C card · X done", d.C_DIM, 222, "ed_keys")
+		d._text_scroll(Vector2(6, 150), "◀▶ -/+ · Tab · F find · V filter · G family · C card · X done", d.C_LIGHT, 228, "ed_keys")
 	if fpanel:
 		_draw_filter_panel()
 

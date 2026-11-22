@@ -48,6 +48,7 @@ func _init() -> void:
 	test_dx()
 	test_dp()
 	test_efectos_por_nombre()
+	test_auditoria_cartas()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -1811,3 +1812,93 @@ func test_dp() -> void:
 	var r := RuleSet.from_season(3)
 	check(r.is_legal("dp1-1") and r.is_legal("dpp-1"), "Worlds 2007: Diamond & Pearl y promos DP legales")
 	check(not RuleSet.from_season(2).is_legal("dp1-1"), "Worlds 2006: Diamond & Pearl todavía no")
+
+
+## Arreglos de la auditoría de cartas (cada uno con su carta real).
+func test_auditoria_cartas() -> void:
+	print("Auditoría de cartas")
+	var ops := func(id: String, atk: String) -> Array:
+		for a in CardDB.get_card(id)["attacks"]:
+			if a["name"] == atk:
+				return AttackEffects.parse(id, a)["ops"]
+		return []
+	# "If heads" antes de su moneda (Miracle Tail, Quick Dive): la moneda va primero
+	for pair in [["ecard2-25", "Miracle Tail"], ["ex3-45", "Quick Dive"], ["ecard3-42", "Surprise Slash"]]:
+		var o: Array = ops.call(pair[0], pair[1])
+		check(o[0]["k"] == "coin" and o.filter(func(x): return x.get("c", "") == "heads").all(func(x): return x["coin_ref"] == 0),
+				"%s: la moneda se tira antes del efecto de cara" % pair[1])
+	check(ops.call("ecard2-7", "Earthquake")[0]["scope"] == "my_bench", "Earthquake (ecard2-7) solo pega a tu Banca")
+	check(ops.call("ex12-20", "Moon Guidance")[0]["filter"] == "trainer_no_supporter", "Moon Guidance no busca Partidarios")
+	check(ops.call("ex1-4", "Fire Spin")[0]["etype"] == "basic", "Fire Spin pide Energías básicas")
+	check(ops.call("ecard3-102", "Antler Swipe").any(func(x): return x["k"] == "ignore"), "Antler Swipe: cara sin Debilidad ni Resistencia")
+	# Fire Spin no acepta una Energía especial
+	var g := atk_board("ex1-4", ["Fire"])
+	g.current_player().active.energy.append(id_of("Double Rainbow Energy"))
+	var d := g.opponent_player().active
+	hit(g, "Fire Spin")
+	check(d.damage == 0, "Fire Spin con 1 básica y 1 especial no hace nada")
+	# Eruption (ex9-14): suma por cualquier Energía descartada
+	g = atk_board("ex9-14", ["Fire", "Fire", "Fire"])
+	d = g.opponent_player().active
+	g.current_player().deck.append(id_of("Water Energy"))
+	g.opponent_player().deck.append(id_of("Grass Energy"))
+	hit(g, "Eruption")
+	check(d.damage == 60, "Eruption: 40 + 10 por cada Energía descartada (hizo %d)" % d.damage)
+	# Exoskeleton: 10 o 20 según la carta
+	for pair in [["ecard3-56", 10], ["ecard1-87", 20]]:
+		g = board(neutral_def(CardDB.types(pair[0])), pair[0])
+		d = g.opponent_player().active
+		g.deal_attack_damage(g.current_player().active, d, 50, true, {"w": true, "r": true})
+		check(d.damage == 50 - pair[1], "Exoskeleton de %s reduce %d (recibió %d)" % [pair[0], pair[1], d.damage])
+	# Crust (ex7-43) baja 20 al daño de Básicos
+	g = board(neutral_def(CardDB.types("ex7-43")), "ex7-43")
+	d = g.opponent_player().active
+	g.deal_attack_damage(g.current_player().active, d, 50, true, {"w": true, "r": true})
+	check(d.damage == 30, "Crust de ex7-43 reduce 20 (recibió %d)" % d.damage)
+	# Rough Skin: ex1-22 pone 2, ex1-51 pone 1
+	for pair in [["ex1-22", 20], ["ex1-51", 10]]:
+		g = board(neutral_def(CardDB.types(pair[0])), pair[0])
+		var a := g.current_player().active
+		g.deal_attack_damage(a, g.opponent_player().active, 10, true, {"w": true, "r": true})
+		check(a.damage == pair[1], "Rough Skin de %s: %d de daño al atacante (puso %d)" % [pair[0], pair[1], a.damage])
+	# Natural Cure de ex1-32 se activa con Planta
+	g = board("ex1-32", neutral_def(["Grass"]))
+	var me := g.current_player()
+	me.active.rotation = "asleep"
+	var ge := id_of("Grass Energy")
+	me.active.energy.append(ge)
+	Abilities.on_energy_from_hand(g, me, me.active, ge)
+	check(me.active.rotation == "", "Natural Cure (ex1-32) se cura con Energía Planta")
+	# Levitate de ex5-28: con cualquier Energía, aunque sea especial
+	g = board("ex5-28", neutral_def(["Psychic"]))
+	me = g.current_player()
+	me.active.energy.append(id_of("Double Rainbow Energy"))
+	check(Abilities.retreat_cost(g, me, me.active) == 0, "Levitate (ex5-28) con una Energía especial: retirada 0")
+	# Backup (ex11-25): con menos de 6, roba hasta 6
+	g = board(neutral_def(["Fire"]), neutral_def(["Water"]))
+	me = g.current_player()
+	me.bench.append(mon("ex11-25"))
+	me.hand.resize(4)
+	var acts := g.legal_actions().filter(func(x): return x["t"] == "power" and x.get("n", "") == "Backup")
+	check(not acts.is_empty(), "Backup (ex11-25) se puede usar con 4 cartas")
+	if not acts.is_empty():
+		g.apply(acts[0])
+		check(me.hand.size() == 6, "Backup (ex11-25) roba hasta 6 (quedó con %d)" % me.hand.size())
+	# Mark of Antiquity: Kyogre ex frena a Groudon ex, no a sí mismo
+	g = board("ex5-94", "ex5-93")
+	check(Abilities.attack_blocked(g, g.opponent_player().active), "Kyogre ex Activo: Groudon ex no puede atacar")
+	g = board("ex5-94", neutral_def(["Water"]))
+	check(not Abilities.attack_blocked(g, g.current_player().active), "Kyogre ex no se frena a sí mismo")
+	# Dual Armor de ex12-19: con Agua es Agua y Rayo
+	g = board("ex12-19", neutral_def(["Water"]))
+	me = g.current_player()
+	me.active.energy.append(id_of("Water Energy"))
+	Abilities.refresh(g)
+	check(me.active.is_type("Water") and me.active.is_type("Lightning"), "Dual Armor (ex12-19) con Agua: Agua y Rayo")
+	# Pokémon Reversal de FireRed & LeafGreen: elegís vos el Pokémon de la Banca
+	g = board(neutral_def(["Fire"]), neutral_def(["Water"]))
+	me = g.current_player()
+	me.hand.clear()
+	me.hand.append("ex6-97")
+	var rev := g.legal_actions().filter(func(x): return x["t"] == "trainer")
+	check(not rev.is_empty() and rev.all(func(x): return x["p"].has("b")), "Pokémon Reversal (ex6-97) te deja elegir el Pokémon de la Banca")

@@ -484,8 +484,8 @@ static func _options(g: Game, me: PlayerState, s: int, p: PokemonInPlay, n: Stri
 				for i in with_e.size():
 					for j in range(i + 1, with_e.size()):
 						out.append({"a": with_e[i], "b": with_e[j]})
-		"Backup":
-			if me.hand.size() <= 2 and not me.deck.is_empty():
+		"Backup":     # ecard2-28: con 2 o menos, hasta 3; ex11-25: con menos de 6, hasta 6
+			if me.hand.size() < _backup_target(p) and not me.deck.is_empty():
 				out.append({})
 		"Strange Tentacles":
 			if opp.active != null and opp.active.energy.size() < me.active.energy.size():
@@ -988,9 +988,9 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 			from.damage -= 10
 			to.damage += 10
 			g.log_msg("  Moves 1 damage counter from %s to %s." % [from.display_name(), to.display_name()])
-		"Terraforming":
+		"Terraforming":     # 4 cartas (Skyridge) o 5 (ex16-1)
 			var top: Array = []
-			for i in mini(4, me.deck.size()):
+			for i in mini(5 if _ability_text(p, "Terraforming").contains("top 5") else 4, me.deck.size()):
 				top.append(me.deck.pop_back())
 			_rearrange(g, me, top, [])
 		"Soothing Aroma":
@@ -1068,7 +1068,7 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 				for x in opp.bench:
 					x.damage += 10
 		"Backup":
-			me.draw(3 - me.hand.size())
+			me.draw(_backup_target(p) - me.hand.size())
 		"Strange Tentacles":
 			opp.discard.erase(prm["pick"])
 			opp.active.energy.append(prm["pick"])
@@ -1950,7 +1950,7 @@ static func post_wr(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, is_
 	if target.is_type("Metal"):
 		dmg -= 10 * Energy.count_special_named(target, "Metal Energy")
 	if body(g, target, "Exoskeleton") and fired(g, target, "Exoskeleton"):
-		dmg -= 20
+		dmg -= _first_int(_ability_text(target, "Exoskeleton"), 20)     # 20 o 10 según la carta
 	if body(g, target, "Hard Cocoon") and dmg > 0 and g.flip() and fired(g, target, "Hard Cocoon"):
 		dmg -= 30
 	if body(g, target, "Sand Guard") and dmg > 0 and g.flip() and fired(g, target, "Sand Guard"):
@@ -1962,7 +1962,7 @@ static func post_wr(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, is_
 	if body(g, target, "Core Guard") and Energy.count_type(target, "Psychic") > 0 and fired(g, target, "Core Guard"):
 		dmg -= 10
 	if body(g, target, "Crust") and attacker.is_basic() and fired(g, target, "Crust"):
-		dmg -= 30
+		dmg -= _first_int(_ability_text(target, "Crust"), 30)     # 30 o 20 según la carta
 	if body(g, target, "Ice Wall") and attacker.special_energy_count() > 0 and fired(g, target, "Ice Wall"):
 		dmg -= 40
 	if body(g, target, "Glowing Screen") and (attacker.is_type("Fighting") or attacker.is_type("Darkness")) \
@@ -2051,12 +2051,11 @@ static func after_damaged(g: Game, attacker: PokemonInPlay, target: PokemonInPla
 	var tgt_owner := g.owner_of(target)
 	if not tgt_owner.is_active(target):
 		return
-	if body(g, target, "Rough Skin") and fired(g, target, "Rough Skin"):
-		attacker.damage += 20
-		g.log_msg("  Rough Skin: 2 damage counters on %s." % attacker.display_name())
-	if body(g, target, "Strikes Back") and fired(g, target, "Strikes Back"):
-		attacker.damage += 10
-		g.log_msg("  Strikes Back: 1 damage counter on %s." % attacker.display_name())
+	for nm in ["Rough Skin", "Strikes Back"]:     # 1 o 2 contadores según la carta
+		if body(g, target, nm) and fired(g, target, nm):
+			var k := 2 if _ability_text(target, nm).contains("put 2 damage counters") else 1
+			attacker.damage += 10 * k
+			g.log_msg("  %s: %d damage counter(s) on %s." % [nm, k, attacker.display_name()])
 	if body(g, target, "Fluffy Fur") and g.owner_of(attacker) != tgt_owner and fired(g, target, "Fluffy Fur"):
 		g.try_condition(attacker, "asleep")
 	if body(g, target, "Poison Payback") and fired(g, target, "Poison Payback"):
@@ -2131,6 +2130,11 @@ static func _ability_text(p: PokemonInPlay, ability_name: String) -> String:
 	return ""
 
 
+## Backup: hasta cuántas cartas en la mano roba (y con menos de cuántas se puede usar).
+static func _backup_target(p: PokemonInPlay) -> int:
+	return 6 if _ability_text(p, "Backup").contains("until you have 6") else 3
+
+
 static func _first_int(text: String, fallback: int) -> int:
 	var m := RegEx.create_from_string("reduced by (\\d+)").search(text)
 	return int(m.get_string(1)) if m != null else fallback
@@ -2168,7 +2172,7 @@ static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
 		return 0
 	if body(g, p, "Uplifting Glow") and me.all_in_play().any(func(x): return x.display_name() == "Illumise"):
 		return 0
-	if body(g, p, "Levitate") and p.basic_energy_count() > 0:
+	if body(g, p, "Levitate") and (p.basic_energy_count() > 0 if _ability_text(p, "Levitate").contains("basic Energy") else not p.energy.is_empty()):
 		return 0
 	if body(g, p, "Dark Lift") and Energy.count_type(p, "Darkness") > 0:
 		return 0
@@ -2274,9 +2278,11 @@ static func attack_blocked(g: Game, p: PokemonInPlay) -> bool:
 			count += pl.count_in_play(func(x): return x.name_has(team))
 		if count <= 3:
 			return true
-	if p.display_name() in ["Kyogre ex", "Rayquaza ex"]:
+	# Mark of Antiquity: Groudon ex frena a Kyogre ex y Rayquaza ex; Kyogre ex, a Groudon ex y Rayquaza ex
+	if p.display_name() in ["Kyogre ex", "Groudon ex", "Rayquaza ex"]:
 		for pl in g.players:
-			if active_body(g, pl, "Mark of Antiquity"):
+			if pl.active != null and active_body(g, pl, "Mark of Antiquity") \
+					and _ability_text(pl.active, "Mark of Antiquity").get_slice("each player's", 1).contains(p.display_name()):
 				return true
 	return false
 
@@ -2344,7 +2350,7 @@ static func on_energy_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, card
 	if n == "Warp Energy" and p == me.active and not me.bench.is_empty():
 		g.log_msg("  Warp Energy: %s switches with a Benched Pokémon." % p.display_name())
 		g.queue_choice(me.index, "switch")
-	if body(g, p, "Natural Cure") and n == "Fire Energy" and fired(g, p, "Natural Cure"):
+	if body(g, p, "Natural Cure") and n == _body_energy(p, "Natural Cure") and fired(g, p, "Natural Cure"):
 		p.clear_conditions()
 		g.log_msg("  Natural Cure: %s recovers from its Special Conditions." % p.display_name())
 	if body(g, p, "Natural Remedy") and n == "Water Energy" and fired(g, p, "Natural Remedy"):
@@ -2353,7 +2359,7 @@ static func on_energy_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, card
 		p.clear_conditions()
 		g.log_msg("  Self-healing: %s recovers from its Special Conditions." % p.display_name())
 	if body(g, p, "Crystal Type") and CardDB.is_basic_energy(card_id) \
-			and CardDB.basic_energy_type(card_id) in ["Water", "Lightning", "Psychic"] and fired(g, p, "Crystal Type"):
+			and _ability_text(p, "Crystal Type").split(" basic Energy")[0].contains(CardDB.basic_energy_type(card_id)) and fired(g, p, "Crystal Type"):
 		p.type_override = [CardDB.basic_energy_type(card_id)]
 		p.flags["type_until"] = g.turn_number
 	if body(g, p, "Pure Body") and n == _body_energy(p, "Pure Body") and fired(g, p, "Pure Body"):
@@ -2904,10 +2910,12 @@ static func refresh(g: Game) -> void:
 				p.type_override = ts.keys() if not ts.is_empty() else []
 			if body(g, p, "Reactive Colors") and p.energy.any(func(e): return CardDB.card_name(e) == "React Energy"):
 				p.type_override = ["Grass", "Fire", "Water", "Lightning", "Psychic", "Fighting"]
-			if body(g, p, "Dual Armor"):
-				var need := "Metal" if p.display_name().contains("Scizor") else "Grass"
-				var both: Array = ["Darkness", "Metal"] if need == "Metal" else ["Grass", "Darkness"]
-				p.type_override = both if Energy.count_type(p, need) > 0 else []
+			if body(g, p, "Dual Armor"):     # "has any X Energy attached to it, NAME is both A and B type"
+				var dm := RegEx.create_from_string("any (\\w+) Energy.*both (\\w+) and (\\w+) type").search(_ability_text(p, "Dual Armor"))
+				if dm != null:
+					var need := dm.get_string(1)
+					var has := p.energy.any(func(e): return CardDB.card_name(e) == "React Energy") if need == "React" else Energy.count_type(p, need) > 0
+					p.type_override = [dm.get_string(2), dm.get_string(3)] if has else []
 			if lock and p.tool != "":
 				_discard_tool(pl, p, g)
 			var modes: Array = []

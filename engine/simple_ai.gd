@@ -22,6 +22,8 @@ var sim_samples := 1    # simulaciones por jugada (Difícil 1, Experto más)
 var sim_reply := false  # simular también el turno del rival
 var sim_alternatives := 4   # alternativas a la jugada del Normal que se prueban
 var sim_margin := 30.0      # cuánto mejor tiene que ser otra jugada para cambiarla
+## Puntajes nuevos de Entrenadores (auditoría de la IA). Se puede apagar para comparar.
+static var v2 := true
 
 ## Poké-Powers que conviene usar siempre que se pueda.
 const GOOD_POWERS := {
@@ -167,11 +169,22 @@ func _choose_lookahead(g: Game, lvl: int) -> Dictionary:
 	for a in actions:
 		if a["t"] in ["attack", "end"] and a not in cands:
 			cands.append(a)
+	# v2: no retirarse a un Pokémon que ni con la Energía del turno que viene puede pegar si
+	# el Activo puede atacar ahora (la copia lo elegía para "aguantar" y perdía turnos).
+	if v2 and retreat_filter:
+		cands = cands.filter(func(a): return a == base or not _pointless_retreat(g, a))
+		if cands.is_empty():
+			return base
 	var values: Array = []
+	# v2: las mismas semillas para todas las jugadas (misma "suerte" en cada muestra): así la
+	# diferencia entre jugadas no es ruido de las monedas y del robo.
+	var seeds: Array = []
+	for k in sim_samples:
+		seeds.append(rng.randi() % 2000000000 + 1 if v2 else 0)
 	for a in cands:
 		var v := 0.0
 		for k in sim_samples:
-			v += _simulate(g, a, me, true, sim_reply)
+			v += _simulate(g, a, me, true, sim_reply, seeds[k])
 		values.append(v / sim_samples)
 	# Se cambia la jugada del Normal solo si otra es claramente mejor
 	var best_i := 0
@@ -179,12 +192,52 @@ func _choose_lookahead(g: Game, lvl: int) -> Dictionary:
 		if values[i] > values[best_i]:
 			best_i = i
 	if best_i != 0 and values[best_i] > values[0] + sim_margin:
+		if debug_dev:
+			print("  [IA] cambia %s (%.0f) por %s (%.0f)" % [_desc(g, base), values[0], _desc(g, cands[best_i]), values[best_i]])
 		return cands[best_i]
 	return base
 
 
-func _simulate(g: Game, a: Dictionary, me: int, rollout: bool, reply: bool = false) -> float:
-	var c := g.clone(me)
+static var debug_dev := false
+static var retreat_filter := true
+
+
+## Retirada (o Switch) a un Pokémon que no va a poder pegar, dejando un Activo que sí puede.
+func _pointless_retreat(g: Game, a: Dictionary) -> bool:
+	var me: PlayerState = g.players[g.actor()]
+	var opp := g.other(me)
+	if me.active == null or opp.active == null:
+		return false
+	var b := -1
+	if a["t"] == "retreat":
+		b = int(a["b"])
+	elif a["t"] == "trainer" and CardDB.card_name(me.hand[a["h"]]) == "Switch" and a.get("p", {}).has("b"):
+		b = int(a["p"]["b"])
+	if b < 0 or b >= me.bench.size():
+		return false
+	if not g.can_attack(me.active) or AIEval.best_damage(g, me.active, opp.active, 0) == 0:
+		return false
+	return AIEval.best_damage(g, me.bench[b], opp.active, 1) == 0
+
+
+func _desc(g: Game, a: Dictionary) -> String:
+	var me: PlayerState = g.players[g.actor()]
+	match a["t"]:
+		"trainer", "bench", "evolve", "energy":
+			return "%s %s%s" % [a["t"], CardDB.card_name(me.hand[a["h"]]), (" -> " + me.slot(a["tg"]).display_name()) if a.has("tg") and me.slot(a["tg"]) != null else ""]
+		"attack":
+			return "attack " + me.active.attacks()[a["a"]]["name"]
+		"retreat":
+			return "retreat -> " + me.bench[a["b"]].display_name()
+		"power":
+			return "power " + str(a["n"])
+	return a["t"]
+
+
+func _simulate(g: Game, a: Dictionary, me: int, rollout: bool, reply: bool = false, sim_seed: int = 0) -> float:
+	var c := g.clone(me, sim_seed)
+	if sim_seed != 0:
+		_helper.rng.seed = sim_seed
 	c.apply(a)
 	_settle(c)
 	if rollout:
@@ -469,7 +522,58 @@ func _trainer_score(g: Game, me: PlayerState, a: Dictionary) -> float:
 			return 15.0 if me.deck.size() < 15 else -5.0
 		"Pokémon Nurse":
 			return 30.0 if me.slot(p["tg"]).damage >= 60 and me.slot(p["tg"]).energy.size() <= 1 else -10.0
+	if v2:
+		return _trainer_score_v2(g, me, id, name, p)
 	return -10.0
+
+
+## Entrenadores que la tabla de arriba no conocía (antes quedaban en -10 y casi nunca se
+## jugaban). Primero por nombre; si no, por lo que dice la carta.
+func _trainer_score_v2(g: Game, me: PlayerState, id: String, name: String, p: Dictionary) -> float:
+	var hand := me.hand.size()
+	var no_energy := not me.hand.any(func(c): return CardDB.is_energy(c))
+	var bench_room: bool = me.bench.size() < g.rules.bench_size
+	var opp := g.other(me)
+	var tgt: PokemonInPlay = me.slot(int(p["tg"])) if p.has("tg") else null
+	match name:
+		"Prof. Oak's Research":
+			return 45.0 if hand <= 3 else -5.0
+		"Bill's Maintenance":
+			return 30.0 if hand <= 5 else 5.0
+		"Fieldworker", "Mary's Request":
+			return 40.0 if hand <= 5 else 10.0
+		"Professor Cozmo's Discovery":
+			return 30.0 if hand <= 4 else 5.0
+		"Rocket's Mission", "Holon Adventurer", "Juggler":
+			return 30.0 if hand <= 5 else 5.0
+		"Holon Scientist":
+			return 35.0 if opp.hand.size() >= hand + 2 else -5.0
+		"Master Ball", "Celio's Network", "Rocket's Poké Ball", "Fast Ball", "Holon Researcher", "Holon Mentor", "Scott", \
+				"Forest Guardian", "Castaway", "Holon Transceiver", "VS Seeker":
+			return 25.0
+		"Great Ball":
+			return 30.0 if bench_room else -10.0
+		"Moo-Moo Milk":
+			return 20.0 if tgt != null and tgt.damage >= 30 else -5.0
+		"Hyper Potion", "Night Pokémon Center":
+			return 20.0 if tgt != null and tgt.damage >= 50 else -10.0
+		"Full Heal":
+			return 25.0
+		"Fisherman", "Holon Lass":
+			return 25.0 if no_energy else 0.0
+		"Power Charge", "Energy Charge", "Pokémon Retriever", "Lure Ball", "Old Rod":
+			return 8.0
+	# Por el texto de la carta (Objetos y Partidarios que no tienen puntaje propio)
+	var txt := str(CardDB.get_card(id).get("text", ""))
+	if CardDB.is_supporter(id) and txt.contains("draw"):
+		return 35.0 if hand <= 4 else 0.0
+	if txt.contains("Search your deck for") and (txt.contains("Pokémon") or txt.contains("Evolution")):
+		return 20.0
+	if txt.contains("basic Energy") and txt.contains("into your hand"):
+		return 20.0 if no_energy else -5.0
+	if txt.begins_with("Remove") and txt.contains("damage counter"):
+		return 15.0 if tgt != null and tgt.damage >= 30 else -5.0
+	return 2.0 if not CardDB.is_supporter(id) else 5.0     # que la búsqueda en copia la pueda probar
 
 
 func _best_attack_damage(g: Game, p: PokemonInPlay) -> int:
@@ -490,11 +594,22 @@ func _attack_value(g: Game, me: PlayerState, opp: PlayerState, a: Dictionary) ->
 		opt = opt.get("gm_opt", false)
 	var dmg := float(atk.get("damage", 0))
 	var value := 0.0
+	# v2: el daño sale de AIEval.attack_estimate (mira las condiciones de verdad: si el Defensor
+	# no es ex, "+40 si es ex" no suma; si no está dormido, Dream Eater no hace nada).
+	var est := v2 and not (a.get("opt", false) is Dictionary)
+	if est:
+		dmg = AIEval.attack_estimate(g, me.active, atk, opp.active)
 	for op in ops:
 		if op.get("optional", false) and not opt:
 			continue
-		var weight := 0.5 if op.get("c", "") in ["heads", "tails", "any_heads"] else 1.0
-		if op.get("c", "") == "did" and not opt:
+		var c: String = op.get("c", "")
+		var weight := 0.5 if c in ["heads", "tails", "any_heads"] else 1.0
+		if c == "did" and not opt:
+			continue
+		if est and c not in ["", "did", "heads", "tails", "any_heads", "any_tails", "all_heads", "all_tails", "heads_at_least"] \
+				and not AttackEffects._cond_ok(g, op, {"coins": [], "heads": 0, "flips": 0, "did": true, "opt": opt}, me, opp, me.active, opp.active):
+			continue
+		if est and op["k"] in ["bonus", "set_base", "flips", "until_tails", "nothing", "formula"]:
 			continue
 		match op["k"]:
 			"burst_choice":
@@ -538,12 +653,12 @@ func _attack_value(g: Game, me: PlayerState, opp: PlayerState, a: Dictionary) ->
 			"attach": value += 15.0
 			"bench_search", "search_hand": value += 10.0
 	var d := opp.active
-	if dmg > 0:
+	if dmg > 0 and not est:
 		var types := me.active.types()
 		if types.any(func(t): return t in d.data().get("weaknesses", [])):
 			dmg *= 2
 		if types.any(func(t): return t in d.data().get("resistances", [])):
 			dmg -= 30
-		if dmg >= d.hp_left():
-			value += 100.0 * (2 if d.is_ex() else 1)
+	if dmg > 0 and dmg >= d.hp_left():
+		value += 100.0 * (2 if d.is_ex() else 1)
 	return dmg + value

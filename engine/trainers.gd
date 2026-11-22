@@ -186,8 +186,13 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 			if basics.size() >= 3:
 				out.append({"mode": "deck"})
 		"Pokémon Reversal":
-			if not opp.bench.is_empty():
-				out.append({})
+			# ecard1-146 / ex6-97 / ex10-88: vos elegís el Pokémon de la Banca; ex1-87: elige el rival
+			if str(CardDB.get_card(id).get("text", "")).contains("your opponent switches"):
+				if not opp.bench.is_empty():
+					out.append({})
+			else:
+				for bi in opp.bench.size():
+					out.append({"b": bi})
 		"Warp Point":
 			if not opp.bench.is_empty() or not me.bench.is_empty():
 				out.append({})
@@ -228,8 +233,8 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 					out.append({"pick": pick, "from": "hand"})
 				for pick in _distinct(me.discard, func(c): return CardDB.is_pokemon(c) and CardDB.card_name(c).contains("Team Magma")):
 					out.append({"pick": pick, "from": "discard"})
-		"Steven's Advice":
-			if me.hand.size() <= 7:
+		"Steven's Advice":     # ex5-92: no con más de 7 (contando esta); ex16-83: no con 7 o más
+			if me.hand.size() <= (6 if str(CardDB.get_card(id).get("text", "")).contains("7 or more") else 7):
 				out.append({})
 		"Professor Birch", "Lady Outing", "Lanette's Net Search", "TV Reporter", "Poké Ball", "Dual Ball", \
 				"Team Aqua Ball", "Team Magma Ball", "Team Aqua Conspirator", "Team Magma Conspirator":
@@ -625,7 +630,11 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 				g.shuffle(me.deck)
 		"Pokémon Reversal":
 			if g.flip():
-				g.queue_choice(opp.index, "switch")
+				if prm.has("b"):
+					if prm["b"] < opp.bench.size():
+						g.switch_active(opp, prm["b"])
+				else:
+					g.queue_choice(opp.index, "switch")
 		"Warp Point":
 			if not opp.bench.is_empty():
 				g.queue_choice(opp.index, "switch")
