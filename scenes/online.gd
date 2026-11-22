@@ -253,6 +253,7 @@ func draw() -> void:
 	for i in ROWS.size():
 		var y := 61 + i * 12 + (3 if i >= 4 else 0)
 		var sel: bool = i == row and screen == "menu"
+		d._stripe(Rect2(4, y - 1, d.W - 8, 12), i)
 		if sel:
 			d._text(Vector2(8, y), "▶", d.C_TEXT)
 		if i < 4:

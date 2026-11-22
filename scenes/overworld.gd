@@ -1210,6 +1210,7 @@ func _draw_menu() -> void:
 	d._text(Vector2(r.position.x + 16, r.position.y + 6 + MENU_ITEMS.size() * 13), cash, d.C_DIM)    # tu dinero
 	for i in MENU_ITEMS.size():
 		var y := r.position.y + 6 + i * 13
+		d._stripe(Rect2(r.position.x + 3, y - 2, r.size.x - 6, 13), i)
 		if i == menu_cursor:
 			d._text(Vector2(r.position.x + 6, y), "▶", d.C_TEXT)
 		d._text(Vector2(r.position.x + 16, y), MENU_ITEMS[i], d.C_TEXT)

@@ -2482,7 +2482,11 @@ static func _evolve_power(g: Game, me: PlayerState, p: PokemonInPlay, n: String)
 			var cands := _distinct(opp.hand, func(c): return CardDB.is_basic_pokemon(c))
 			if cands.is_empty() or opp.bench.size() >= g.rules.bench_size or opp.active == null:
 				return
-			g.ask(me.index, "Gleam Eyes: Basic Pokémon to bring out", Trainers._card_options(cands, false), func(o):
+			# La IA trae al más débil (el que entra de Activo para que lo noqueen)
+			var gl_opts := Trainers._card_options(cands, false)
+			for o2 in gl_opts:
+				o2["ai"] = 300.0 - CardDB.hp(o2["id"])
+			g.ask(me.index, "Gleam Eyes: Basic Pokémon to bring out", gl_opts, func(o):
 				if opp.hand.has(o["id"]) and opp.bench.size() < g.rules.bench_size:
 					opp.hand.erase(o["id"])
 					opp.bench.append(PokemonInPlay.new(o["id"], g.turn_number))

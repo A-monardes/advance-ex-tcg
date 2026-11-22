@@ -424,6 +424,7 @@ func _draw_menu() -> void:
 	d._frame(r)
 	for i in items.size():
 		var y := r.position.y + 4 + i * 14
+		d._stripe(Rect2(r.position.x + 3, y - 2, r.size.x - 6, 14), i)
 		if i == cursor:
 			d._text(Vector2(r.position.x + 6, y), "▶", d.C_TEXT)
 		d._text(Vector2(r.position.x + 16, y), items[i], d.C_TEXT)
@@ -435,6 +436,7 @@ func _draw_buy() -> void:
 	d._frame(r)
 	for i in items.size() + 1:
 		var y := r.position.y + 4 + i * 13
+		d._stripe(Rect2(r.position.x + 3, y - 2, r.size.x - 6, 13), i)
 		if i == buy_cursor:
 			d._text(Vector2(r.position.x + 5, y), "▶", d.C_TEXT)
 		if i == items.size():

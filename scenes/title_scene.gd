@@ -29,6 +29,23 @@ func pick() -> bool:
 	return true
 
 
+## Las especies que aparecen en la escena elegida (la web las baja al abrir el juego).
+func species() -> Array:
+	var out: Array = []
+	for a in scene.get("actores", []):
+		var sp := str(a.get("especie", ""))
+		if sp != "" and not sp in out:
+			out.append(sp)
+	return out
+
+
+## La especie terminó de bajarse (web): se vuelven a armar sus animaciones.
+func forget(sp: String) -> void:
+	for k in _anims.keys():
+		if str(k).begins_with(sp + "|"):
+			_anims.erase(k)
+
+
 func _image(path: String) -> Texture2D:
 	if path == "":
 		return null

@@ -66,11 +66,9 @@ func input(k: int, accept: bool, back: bool) -> void:
 		KEY_UP: row = (row + n_rows - 1) % n_rows
 		KEY_DOWN: row = (row + 1) % n_rows
 		KEY_LEFT, KEY_RIGHT:
-			if row == 0:
-				c_season = (c_season + (1 if k == KEY_RIGHT else -1) + n_seasons) % n_seasons
-			else:
-				tab = 0
-				row = d.season_idx
+			# ◀▶ cambian la temporada desde cualquier renglón (de pestaña se cambia solo con Tab)
+			c_season = (c_season + (1 if k == KEY_RIGHT else -1) + n_seasons) % n_seasons
+			row = mini(row, _steps(c_season).size() + 1)
 	if k in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
 		d.snd.play("move")
 	if accept and row > 0:
@@ -78,13 +76,12 @@ func input(k: int, accept: bool, back: bool) -> void:
 		_choose(c_season, -1 if n >= _steps(c_season).size() else n)
 
 
-## Elige el formato y vuelve.
+## Elige el formato y queda marcado; la pantalla sigue abierta (X vuelve).
 func _choose(season: int, upto: int) -> void:
 	d.season_idx = season
 	d.format_upto = upto
 	d._save_settings()
 	d.snd.play("ok")
-	d.title_view = back_view
 
 
 func draw() -> void:
@@ -140,7 +137,7 @@ func _draw_official() -> void:
 	var title := str(s["worlds"])
 	d._text(Vector2(60 - d._text_w(title) / 2.0, 38), title, C_WORLDS)
 	if row == d.season_idx and d.format_upto < 0:
-		d._text(Vector2(96, 38), "✓", C_ON)
+		_check(Vector2(95, 39))
 	# El logo de ese Mundial (si el jugador lo puso); si no, el lugar
 	var year := str(title).right(4)
 	var logo := _logo(year)
@@ -187,7 +184,16 @@ func _draw_official() -> void:
 	d._frame(Rect2(0, 117, d.W, 43))
 	d._text_fit(Vector2(9, 121), "%s · %s" % [s["worlds"], s["where"]], d.C_TEXT, 222)
 	d._text_fit(Vector2(9, 132), "Season %s: %s." % [s["id"], str(s["name"]).split(" · ")[1]], d.C_DIM, 222)
-	d._text_fit(Vector2(9, 143), "◀▶ choose · Z use · Tab custom · X back", d.C_DIM, 222)
+	d._text_fit(Vector2(9, 143), "◀▶ choose · Z select · Tab custom · X back", d.C_DIM, 222)
+
+
+## Tilde de "elegido" dibujada (la fuente no tiene ✓).
+func _check(p: Vector2) -> void:
+	for o in [Vector2(0, 1), Vector2(1, 0)]:
+		d.draw_line(p + Vector2(1, 4) + o, p + Vector2(3, 6) + o, d.C_FRAME_OUT, 2.0)
+		d.draw_line(p + Vector2(3, 6) + o, p + Vector2(8, 1) + o, d.C_FRAME_OUT, 2.0)
+	d.draw_line(p + Vector2(1, 4), p + Vector2(3, 6), C_ON, 2.0)
+	d.draw_line(p + Vector2(3, 6), p + Vector2(8, 1), C_ON, 2.0)
 
 
 func _draw_custom() -> void:
@@ -208,6 +214,7 @@ func _draw_custom() -> void:
 	for j in steps.size() + 1:
 		var yy := y0 + j * lh
 		var on := chosen >= j
+		d._stripe(Rect2(4, yy - 1, d.W - 8, lh), j + 1)
 		if row == j + 1:
 			d.draw_rect(Rect2(4, yy - 1, d.W - 8, lh), Color("#d8e4f8"))
 		d.draw_rect(Rect2(11, yy + 2, 5, 5), C_ON if on else d.C_DIM)
@@ -231,4 +238,4 @@ func _draw_custom() -> void:
 	var top := r.name if not (row > 0 and row - 1 >= steps.size()) else "%s (same cards)" % s["worlds"]
 	d._text_fit(Vector2(9, 121), top, d.C_TEXT, 222)
 	d._text_fit(Vector2(9, 132), "Sets join in the order they came out.", d.C_DIM, 222)
-	d._text_fit(Vector2(9, 143), "▲▼ move · ◀▶ season · Z up to here · X back", d.C_DIM, 222)
+	d._text_fit(Vector2(9, 143), "▲▼◀▶ move · Z select · Tab official · X back", d.C_DIM, 222)

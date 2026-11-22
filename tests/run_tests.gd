@@ -1707,6 +1707,16 @@ func test_dp() -> void:
 	check(lv.size() == 1 and lv[0]["tg"] == -1, "LV.X solo sobre el Empoleon Activo")
 	me.active.turn_played = g.turn_number
 	check(not g.legal_actions().any(func(a): return a["t"] == "evolve" and me.hand[a["h"]] == "dp1-120"), "LV.X no sobre un Pokémon que entró este turno")
+	check(g.why_unplayable(me, "dp1-120").contains("this turn"), "aviso: el Empoleon entró este turno")
+	var g_bench := board("dp1-17", "dp1-17")
+	var me_b := g_bench.current_player()
+	me_b.turns_taken = 3
+	me_b.hand.append("dp1-120")
+	me_b.bench.append(mon("dp1-4"))
+	check(g_bench.why_unplayable(me_b, "dp1-120") == "A LV.X can only go on your Active Empoleon.", "aviso: LV.X solo en el Activo")
+	me_b.energy_attached = true
+	me_b.hand.append("ex1-106")
+	check(g_bench.why_unplayable(me_b, "ex1-106") == "You already attached an Energy this turn.", "aviso: ya unió una Energía")
 	me.active.turn_played = 0
 	me.active.cards = ["dp1-93", "dp1-58", "dp1-4"]     # Piplup, Prinplup, Empoleon
 	me.active.damage = 30
@@ -1732,6 +1742,13 @@ func test_dp() -> void:
 	var names: Array = lvx.attacks().map(func(x): return x["name"])
 	check("Hydro Impact" in names and "Ice Blade" in names, "LV.X usa también los ataques del nivel anterior")
 	check(lvx.abilities().any(func(ab): return ab["name"] == "Supreme Command"), "LV.X tiene su Poké-Power")
+	g.other(me).hand.append_array(["dp1-1", "dp1-2"])
+	var sc_labels: Array = []
+	for act in g.legal_actions():
+		if act["t"] == "power" and act["n"] == "Supreme Command":
+			sc_labels.append(g.describe(act))
+	check((sc_labels.has("Supreme Command (1 card)") and sc_labels.has("Supreme Command (2 cards)")),
+			"Supreme Command: el menú dice si toma 1 o 2 cartas (%s)" % [sc_labels])
 	check(CardDB.stage("dp1-120") == 2 and not CardDB.is_evolution("dp1-120") and not CardDB.is_basic_pokemon("dp1-120"),
 			"LV.X: Fase 2 como su nivel anterior, no es Básico ni carta de Evolución")
 	# Debilidad +30 (Empoleon LV.X: Lightning +30)

@@ -135,8 +135,10 @@ var title_msg := ""
 var title_row := 0           # fila elegida en el menú principal (ver _draw_title)
 const TITLE_ITEMS := ["Campaign", "Options", "Edit decks", "Free duel", "Online duel"]
 const TITLE_ROWS := 5
-var duel_row := 0            # fila elegida en el armado del duelo libre (title_view "duel")
-const DUEL_ROWS := 6
+var free_cell := 5           # casilla elegida en el duelo libre (title_view "duel"; ver FREE_MOVES)
+var free_popup := ""         # ventana abierta en el duelo libre: deck_me, deck_opp, diff, battle
+var popup_cursor := 0
+var popup_scroll := 0
 ## La campaña está en desarrollo: en el juego publicado aparece como "coming soon" y no se
 ## puede entrar. Desde el editor de Godot sí, para seguir trabajándola.
 var CAMPAIGN_ON := OS.has_feature("editor")
@@ -275,6 +277,11 @@ func _ready() -> void:
 		get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	pmd_web = PmdWeb.new()
 	add_child(pmd_web)
+	if pmd_web.enabled():
+		# Web: los Pokémon de la escena del título se bajan al abrir (si no, no se veían)
+		pmd_web.listo.connect(func(sp: String): title_scene.forget(sp))
+		for sp in title_scene.species():
+			pmd_web.want(sp)
 	arte = ArteHD.new()
 	add_child(arte)
 	arte.listo.connect(_on_arte_listo)
@@ -1153,52 +1160,99 @@ func _title_input(k: int, accept: bool) -> void:
 		3:
 			snd.play("ok")
 			title_view = "duel"
-			duel_row = DUEL_ROWS - 1        # el cursor arranca en "Start duel!"
+			free_cell = 5                   # el cursor arranca en "Start duel!"
+			free_popup = ""
 		4:
 			snd.play("ok")
 			title_view = "online"
 			online.open()
 
 
-## Armado del duelo libre: mazos, dificultad, formato y tipo de batalla.
+## Armado del duelo libre: una grilla de casillas (mazo propio, rival, dificultad, formato,
+## tipo de batalla y empezar). Z abre la ventana de cada una; X cierra la ventana o vuelve.
+##   casillas: 0 tu mazo · 1 rival · 2 dificultad · 3 formato · 4 batalla · 5 empezar
+const FREE_MOVES := {      # casilla -> [arriba, abajo, izquierda, derecha]
+	0: [0, 1, 0, 3], 1: [0, 2, 1, 3], 2: [1, 2, 2, 3],
+	3: [3, 3, 0, 4], 4: [4, 5, 3, 4], 5: [4, 5, 3, 5],
+}
+const FREE_KEYS := [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
+const FD_LIST_ROWS := 9
+
 func _duel_setup_input(k: int, accept: bool, n: int) -> void:
-	match k:
-		KEY_UP:
-			duel_row = (duel_row + DUEL_ROWS - 1) % DUEL_ROWS
+	if free_popup != "":
+		_free_popup_input(k, accept, n)
+		return
+	if k in FREE_KEYS:
+		var to: int = FREE_MOVES[free_cell][FREE_KEYS.find(k)]
+		if to != free_cell:
+			free_cell = to
 			snd.play("move")
-		KEY_DOWN:
-			duel_row = (duel_row + 1) % DUEL_ROWS
-			snd.play("move")
-		KEY_X, KEY_ESCAPE, KEY_BACKSPACE:
-			title_view = ""
-			snd.play("back")
-			return
-		KEY_LEFT, KEY_RIGHT:
-			var d := 1 if k == KEY_RIGHT else -1
-			if duel_row < DUEL_ROWS - 1:
-				snd.play("move")
-			match duel_row:
-				0: my_deck = (my_deck + d + n) % n
-				1: opp_deck = (opp_deck + d + n) % n
-				2:
-					ai_level = (ai_level - 1 + d + 5) % 5 + 1
-					_save_settings()
-				3:
-					# ◀▶ recorre los Mundiales; Z abre la pantalla de formatos (también Custom)
-					season_idx = (season_idx + d + RuleSet.SEASONS.size()) % RuleSet.SEASONS.size()
-					format_upto = -1
-					_save_settings()
-				4: doubles_mode = not doubles_mode      # batalla simple o doble (2 contra 2)
+		return
+	if k in [KEY_X, KEY_ESCAPE, KEY_BACKSPACE]:
+		title_view = ""
+		snd.play("back")
+		return
 	if not accept:
 		return
-	if duel_row == 3:
-		snd.play("ok")
-		fmt_menu.open("duel")
+	match free_cell:
+		0, 1:
+			free_popup = "deck_me" if free_cell == 0 else "deck_opp"
+			popup_cursor = my_deck if free_cell == 0 else opp_deck
+			popup_scroll = clampi(popup_cursor - FD_LIST_ROWS / 2, 0, maxi(0, n - FD_LIST_ROWS))
+			snd.play("ok")
+		2:
+			free_popup = "diff"
+			popup_cursor = ai_level - 1
+			snd.play("ok")
+		3:
+			snd.play("ok")
+			fmt_menu.open("duel")
+		4:
+			free_popup = "battle"
+			popup_cursor = 1 if doubles_mode else 0
+			snd.play("ok")
+		5:
+			_free_start()
+
+
+func _free_popup_input(k: int, accept: bool, n: int) -> void:
+	if k in [KEY_X, KEY_ESCAPE, KEY_BACKSPACE]:
+		free_popup = ""
+		snd.play("back")
 		return
-	if duel_row < DUEL_ROWS - 1:
-		duel_row = DUEL_ROWS - 1
-		snd.play("move")
-		return
+	match free_popup:
+		"deck_me", "deck_opp":
+			if k == KEY_UP or k == KEY_DOWN:
+				popup_cursor = (popup_cursor + (1 if k == KEY_DOWN else -1) + n) % n
+				popup_scroll = clampi(popup_scroll, popup_cursor - FD_LIST_ROWS + 1, popup_cursor)
+				snd.play("move")
+			if accept:
+				if free_popup == "deck_me":
+					my_deck = popup_cursor
+				else:
+					opp_deck = popup_cursor
+				free_popup = ""
+				snd.play("ok")
+		"diff":
+			if k == KEY_UP or k == KEY_DOWN:
+				popup_cursor = (popup_cursor + (1 if k == KEY_DOWN else -1) + 5) % 5
+				snd.play("move")
+			if accept:
+				ai_level = popup_cursor + 1
+				_save_settings()
+				free_popup = ""
+				snd.play("ok")
+		"battle":
+			if k == KEY_LEFT or k == KEY_RIGHT:
+				popup_cursor = 1 - popup_cursor
+				snd.play("move")
+			if accept:
+				doubles_mode = popup_cursor == 1
+				free_popup = ""
+				snd.play("ok")
+
+
+func _free_start() -> void:
 	var names := Decks.names()
 	var fmt_rules := format_rules()
 	for pair in [[my_deck, "Your deck"], [opp_deck, "The opponent's deck"]]:
@@ -1210,6 +1264,243 @@ func _duel_setup_input(k: int, accept: bool, n: int) -> void:
 	snd.play("ok")
 	campaign_rival = ""
 	_go(_start_duel)
+
+
+## La carta que representa al mazo: su Pokémon más fuerte (ex y Fase 2 primero).
+func _deck_cover(deck_name: String) -> String:
+	var best := ""
+	var best_v := -1.0
+	for id in Decks.get_deck(deck_name):
+		if not CardDB.is_pokemon(id):
+			continue
+		var v := (10.0 if CardDB.is_ex(id) else 0.0) + CardDB.stage(id) * 3.0 + CardDB.hp(id) / 100.0
+		if v > best_v:
+			best_v = v
+			best = id
+	return best
+
+
+const C_FD_SEL := Color("#c03028")
+const C_FD_ME := Color("#d0dcf4")       # tu mazo / dobles
+const C_FD_OPP := Color("#f4d4cc")      # el rival / simples
+const C_FD_LINE := Color("#b8c0d0")
+
+
+func _draw_duel_setup() -> void:
+	var names := Decks.names()
+	var r := format_rules()
+	my_deck = clampi(my_deck, 0, names.size() - 1)
+	opp_deck = clampi(opp_deck, 0, names.size() - 1)
+	var panel := Rect2(2, 40, W - 4, 107)
+	_frame(panel)
+	_text_center(42, "FREE DUEL", C_DIM)
+	var x1 := 110.0
+	var x2 := 174.0
+	var top := 53.0
+	draw_rect(Rect2(6, top - 1, W - 12, 1), C_FD_LINE)
+	draw_rect(Rect2(x1, top, 1, panel.end.y - top - 4), C_FD_LINE)
+	draw_rect(Rect2(x2, top, 1, panel.end.y - top - 4), C_FD_LINE)
+	# Izquierda: los dos mazos (nombre, si es legal en el formato y su carta) y la dificultad
+	for i in 2:
+		var ry := top + 1 + i * 38
+		var cell := Rect2(5, ry, x1 - 7, 37)
+		if i == 1:
+			draw_rect(Rect2(6, ry - 1, x1 - 8, 1), C_FD_LINE)
+		var nm: String = names[my_deck if i == 0 else opp_deck]
+		draw_rect(cell, C_FD_ME if i == 0 else C_FD_OPP)       # tu mazo en azul, el del rival en rojo
+		_fd_cell_bg(cell, i)
+		_text(Vector2(8, ry + 1), "Your deck" if i == 0 else "Opponent", C_DIM)
+		_text_fit(Vector2(8, ry + 12), ("★ " if Decks.is_user(nm) else "") + nm, C_TEXT, 54)
+		var legal := _deck_legal(nm, r)
+		_draw_tiny(Vector2(8, ry + 30), "LEGAL TO USE" if legal else "NOT LEGAL IN THIS FORMAT",
+				Color("#388850") if legal else C_HP_LOW)
+		var cover := _deck_cover(nm)
+		var ir := Rect2(x1 - 34, ry + 2, 27, 26)
+		draw_rect(ir.grow(1), C_INK)
+		if cover != "":
+			_draw_card_image(Rect2(x1 - 33, ry + 2, 26, 26), cover)
+	var dy := top + 77
+	draw_rect(Rect2(6, dy - 1, x1 - 8, 1), C_FD_LINE)
+	_fd_cell_bg(Rect2(5, dy, x1 - 7, panel.end.y - dy - 4), 2)
+	_text(Vector2(8, dy + 1), "Difficulty", C_DIM)
+	var lv := "%d · %s" % [ai_level, SimpleAI.LEVEL_NAMES[ai_level - 1]]
+	_text(Vector2(x1 - 4 - _text_w(lv), dy + 1), lv, C_TEXT)
+	# Centro: el formato (con el logo del Mundial)
+	_fd_cell_bg(Rect2(x1 + 2, top, x2 - x1 - 3, panel.end.y - top - 4), 3)
+	_text(Vector2((x1 + x2) / 2.0 - _text_w("Format") / 2.0, top + 2), "Format", C_DIM)
+	var fname: String = str(RuleSet.SEASONS[season_idx]["worlds"]).to_upper() if format_upto < 0 \
+			else "CUSTOM " + str(RuleSet.SEASONS[season_idx]["id"])
+	_draw_tiny(Vector2((x1 + x2) / 2.0 - fname.length() * 2.0, top + 14), fname, C_TEXT)
+	var year := str(RuleSet.SEASONS[season_idx]["worlds"]).right(4)
+	var logo: Texture2D = fmt_menu._logo(year)
+	var lb := Rect2(x1 + 4, top + 22, x2 - x1 - 8, panel.end.y - top - 28)
+	if logo != null:
+		var sc := minf(lb.size.x / logo.get_width(), lb.size.y / logo.get_height())
+		var sz := Vector2(logo.get_width(), logo.get_height()) * sc
+		draw_texture_rect(logo, Rect2(lb.position + (lb.size - sz) / 2.0, sz), false)
+	else:
+		_text(Vector2((x1 + x2) / 2.0 - _text_w(year) / 2.0, lb.get_center().y - 5), year, C_TEXT)
+	# Derecha: tipo de batalla (con su dibujo) y empezar
+	var by := top + 58
+	var bcell := Rect2(x2 + 2, top, panel.end.x - x2 - 6, by - top - 1)
+	draw_rect(bcell, C_FD_ME if doubles_mode else C_FD_OPP)     # simples rojo, dobles azul
+	_fd_cell_bg(bcell, 4)
+	var cx := (x2 + panel.end.x - 3) / 2.0
+	_text(Vector2(cx - _text_w("Battle") / 2.0, top + 2), "Battle", C_DIM)
+	var bt := "Doubles" if doubles_mode else "Singles"
+	_text(Vector2(cx - _text_w(bt) / 2.0, top + 12), bt, C_TEXT)
+	_fd_battle_icon(Vector2(cx, top + 40), 14.0, doubles_mode)
+	draw_rect(Rect2(x2 + 2, by, panel.end.x - x2 - 6, 1), C_FD_LINE)
+	var sb := Rect2(x2 + 3, by + 10, panel.end.x - x2 - 8, 20)
+	_fd_cell_bg(Rect2(x2 + 2, by + 1, panel.end.x - x2 - 6, panel.end.y - by - 5), 5)
+	_frame(sb)
+	_text(Vector2(sb.get_center().x - _text_w("Start duel!") / 2.0, sb.position.y + 5), "Start duel!",
+			C_FD_SEL if free_cell == 5 else C_TEXT)
+	match free_popup:
+		"deck_me", "deck_opp":
+			_fd_deck_window(names, r)
+		"diff":
+			_fd_diff_window()
+		"battle":
+			_fd_battle_window()
+
+
+## Casilla del duelo libre: la elegida, con fondo y borde (los mazos ya tienen su color).
+func _fd_cell_bg(r: Rect2, cell: int) -> void:
+	if cell != free_cell or free_popup != "":
+		return
+	if cell in [2, 3, 5]:
+		draw_rect(r, Color("#d8e4f8"))
+	else:
+		draw_rect(r, Color(1, 1, 1, 0.25))
+	_outline(r, C_FD_SEL)
+
+
+## Imagen de la batalla (mundo/propios/ui/batalla_singles.png o batalla_dobles.png, propias del
+## jugador), recortada al centro y achicada al rectángulo pedido. null si no está.
+var _fd_pics := {}
+
+func _fd_pic(doubles: bool, w: int, h: int) -> Texture2D:
+	var key := "%s|%dx%d" % [doubles, w, h]
+	if not _fd_pics.has(key):
+		var tex: Texture2D = null
+		var p := "res://mundo/propios/ui/%s.png" % ("batalla_dobles" if doubles else "batalla_singles")
+		if ImgLoad.exists(p):
+			var img := ImgLoad.load(p)
+			if img != null:
+				img.convert(Image.FORMAT_RGBA8)
+				var sc := maxf(float(w) / img.get_width(), float(h) / img.get_height())
+				var cw := int(w / sc)
+				var ch := int(h / sc)
+				img = img.get_region(Rect2i((img.get_width() - cw) / 2, (img.get_height() - ch) / 2, cw, ch))
+				img.resize(w, h, Image.INTERPOLATE_LANCZOS)
+				tex = ImageTexture.create_from_image(img)
+		_fd_pics[key] = tex
+	return _fd_pics[key]
+
+
+## El dibujito de la batalla: cartas propias abajo a la izquierda, las del rival arriba a la derecha.
+func _fd_battle_icon(c: Vector2, rad: float, doubles: bool) -> void:
+	# Con imagen propia: un rectángulo de 3:2 con borde y el fondo del color del tipo de batalla
+	var pw := int(rad * 3.4)
+	var ph := int(rad * 2.2)
+	var img := _fd_pic(doubles, pw, ph)
+	if img != null:
+		var pr := Rect2((c - Vector2(pw, ph) / 2.0).round(), Vector2(pw, ph))
+		draw_rect(pr.grow(2), Color("#5878c8") if doubles else Color("#c85848"))     # dobles azul, simples rojo
+		draw_rect(pr.grow(1), C_INK)
+		draw_texture(img, pr.position)
+		return
+	draw_circle(c, rad + 1, C_INK)
+	draw_circle(c, rad, Color("#a8c0f0") if doubles else Color("#f0b0a0"))
+	var cw := rad * 0.42
+	var ch := rad * 0.56
+	var n := 2 if doubles else 1
+	for side in 2:
+		var col := Color("#c85848") if side == 0 else Color("#4878c8")
+		var base := c + (Vector2(rad * 0.35, -rad * 0.38) if side == 0 else Vector2(-rad * 0.35, rad * 0.38))
+		for k in n:
+			var off := (k - (n - 1) / 2.0) * (cw + 2.0)
+			var r := Rect2(base + Vector2(off - cw / 2.0, -ch / 2.0), Vector2(cw, ch)).abs()
+			draw_rect(r.grow(1), C_INK)
+			draw_rect(r, col)
+
+
+func _fd_window(r: Rect2, title: String) -> void:
+	draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.35))
+	_frame(r)
+	_text(Vector2(r.position.x + 8, r.position.y + 4), title, C_DIM)
+
+
+func _fd_deck_window(names: Array, r: RuleSet) -> void:
+	var win := Rect2(10, 14, W - 20, 128)
+	_fd_window(win, "YOUR DECK" if free_popup == "deck_me" else "OPPONENT'S DECK")
+	var lw := 150.0
+	for i in range(popup_scroll, mini(popup_scroll + FD_LIST_ROWS, names.size())):
+		var y := win.position.y + 17 + (i - popup_scroll) * 11
+		var nm: String = names[i]
+		_stripe(Rect2(win.position.x + 4, y - 1, lw, 11), i)
+		if i == popup_cursor:
+			draw_rect(Rect2(win.position.x + 4, y - 1, lw, 11), Color("#d8e4f8"))
+			_text(Vector2(win.position.x + 6, y), "▶", C_TEXT)
+		var legal := _deck_legal(nm, r)
+		_text_fit(Vector2(win.position.x + 15, y), ("★ " if Decks.is_user(nm) else "") + nm,
+				C_TEXT if legal else C_DIM, lw - 14)
+	if names.size() > FD_LIST_ROWS:
+		if popup_scroll > 0:
+			_text(Vector2(win.position.x + lw - 4, win.position.y + 16), "▲", C_DIM)
+		if popup_scroll + FD_LIST_ROWS < names.size():
+			_text(Vector2(win.position.x + lw - 4, win.position.y + 16 + (FD_LIST_ROWS - 1) * 11), "▼", C_DIM)
+	# A la derecha: la carta del mazo elegido y si se puede usar en el formato
+	var sel: String = names[popup_cursor]
+	var px := win.position.x + lw + 10
+	var cover := _deck_cover(sel)
+	if cover != "":
+		var ir := Rect2(px + 4, win.position.y + 18, 40, 40)
+		draw_rect(ir.grow(1), C_INK)
+		_draw_card_image(ir, cover)
+	var legal_sel := _deck_legal(sel, r)
+	_draw_tiny(Vector2(px, win.position.y + 64), "LEGAL" if legal_sel else "NOT LEGAL", Color("#388850") if legal_sel else C_HP_LOW)
+	var dl := _wrap(Decks.description(sel), win.end.x - px - 6)
+	for k in mini(dl.size(), 5):
+		_text(Vector2(px, win.position.y + 72 + k * 10), str(dl[k]), C_DIM)
+
+
+func _fd_diff_window() -> void:
+	var win := Rect2(60, 44, 120, 76)
+	_fd_window(win, "DIFFICULTY")
+	for i in 5:
+		var y := win.position.y + 17 + i * 11
+		_stripe(Rect2(win.position.x + 4, y - 1, win.size.x - 8, 11), i)
+		if i == popup_cursor:
+			draw_rect(Rect2(win.position.x + 4, y - 1, win.size.x - 8, 11), Color("#d8e4f8"))
+			_text(Vector2(win.position.x + 7, y), "▶", C_TEXT)
+		_text(Vector2(win.position.x + 17, y), "%d · %s" % [i + 1, SimpleAI.LEVEL_NAMES[i]],
+				C_FD_SEL if i == ai_level - 1 else C_TEXT)
+
+
+func _fd_battle_window() -> void:
+	var win := Rect2(28, 20, 184, 112)
+	draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.35))
+	_frame(win)
+	var half := win.size.x / 2.0
+	draw_rect(Rect2(win.position.x + half, win.position.y + 5, 1, win.size.y - 10), C_FD_LINE)
+	for i in 2:
+		var hx := win.position.x + i * half
+		var sel := i == popup_cursor
+		var cell := Rect2(hx + 4, win.position.y + 4, half - 8, win.size.y - 8)
+		draw_rect(cell, C_FD_ME if i == 1 else C_FD_OPP)
+		if sel:
+			_outline(cell, C_FD_SEL)
+		else:
+			draw_rect(cell, Color(1, 1, 1, 0.35))
+		var lbl := "DOUBLES" if i == 1 else "SINGLES"
+		_text(Vector2(hx + half / 2.0 - _text_w(lbl) / 2.0, win.position.y + 9), lbl, C_FD_SEL if sel else C_TEXT)
+		_fd_battle_icon(Vector2(hx + half / 2.0, win.position.y + 54), 24.0, i == 1)
+		var sub := "2 vs 2" if i == 1 else "1 vs 1"
+		_text(Vector2(hx + half / 2.0 - _text_w(sub) / 2.0, win.position.y + 90), sub, C_DIM)
+	_text(Vector2(win.position.x - 9, win.get_center().y - 5), "◀", C_LIGHT)
+	_text(Vector2(win.end.x + 3, win.get_center().y - 5), "▶", C_LIGHT)
 
 
 # ===========================================================================
@@ -2886,6 +3177,15 @@ func _draw_logo(y: float, t: float = -1.0) -> void:
 			draw_texture_rect_region(_logo_shine, Rect2(pos, Vector2(w, h)), Rect2(f * w, 0, w, h))
 
 
+## Fondo intercalado de las listas y menús: los renglones impares un poco más oscuros, así
+## cada opción se distingue de la de al lado. i es el número de renglón (desde 0).
+const C_STRIPE := Color(0.16, 0.22, 0.42, 0.09)
+
+func _stripe(r: Rect2, i: int) -> void:
+	if i % 2 == 1:
+		draw_rect(r, C_STRIPE)
+
+
 func _draw_title() -> void:
 	if title_attract:
 		_draw_attract()
@@ -2911,6 +3211,7 @@ func _draw_title() -> void:
 			var sel := i == title_row and title_view == ""
 			var label: String = TITLE_ITEMS[i]
 			var col: Color = Color("#c03028") if sel else C_TEXT
+			_stripe(Rect2(panel.position.x + 4, y - 1, panel.size.x - 8, 12), i)
 			if i == 0 and not CAMPAIGN_ON:
 				label = "Campaign (soon)"
 				col = C_DIM
@@ -2924,6 +3225,7 @@ func _draw_title() -> void:
 		for i in 6:
 			var y := o.position.y + 16 + i * 11
 			var sel := i == opt_cursor
+			_stripe(Rect2(o.position.x + 4, y - 1, o.size.x - 8, 11), i)
 			if sel:
 				_text(Vector2(o.position.x + 8, y), "▶", C_TEXT)
 			var label: String = PAUSE_ITEMS[i + 1] if i < 5 else "Card art"
@@ -2934,47 +3236,18 @@ func _draw_title() -> void:
 	if title_msg != "":
 		_text_scroll(Vector2(6, 149), title_msg, Color("#f8a090"), 228, "title_msg")
 	elif title_view == "duel":
-		_text(Vector2(6, 149), "Z: all formats (Official / Custom)" if duel_row == 3 else "▲▼ select · ◀▶ change · Z start · X back", C_LIGHT)
+		var hint := "▲▼◀▶ move · Z open · X back"
+		if free_popup != "":
+			hint = "◀▶ choose · Z select · X back" if free_popup == "battle" else "▲▼ choose · Z select · X back"
+		elif free_cell == 3:
+			hint = "Z: all formats (Official / Custom)"
+		elif free_cell == 5:
+			hint = "▲▼◀▶ move · Z start duel · X back"
+		_text(Vector2(6, 149), hint, C_LIGHT)
 	elif title_view == "online":
 		_text_scroll(Vector2(6, 149), online.keys_text(), C_LIGHT, 228, "online_keys")
 	else:
 		_text(Vector2(6, 149), "▲▼ select · Z accept", C_LIGHT)
-
-
-## Armado del duelo libre (se entra desde "Free duel" del menú principal).
-func _draw_duel_setup() -> void:
-	var names := Decks.names()
-	var r := format_rules()
-	var fmt := r.name
-	if not r.missing_sets().is_empty():
-		fmt += " (in progress: %d/%d sets)" % [r.legal_sets.size() - r.missing_sets().size(), r.legal_sets.size()]
-	my_deck = clampi(my_deck, 0, names.size() - 1)
-	opp_deck = clampi(opp_deck, 0, names.size() - 1)
-	if not _deck_legal(names[my_deck], r):
-		fmt += " · your deck isn't legal"
-	elif not _deck_legal(names[opp_deck], r):
-		fmt += " · the opponent's deck isn't legal"
-	var star := func(nm: String) -> String: return ("★ " if Decks.is_user(nm) else "") + nm
-	var rows := [["Your deck", star.call(names[my_deck])], ["Opponent", star.call(names[opp_deck])],
-			["Difficulty", "%d · %s" % [ai_level, SimpleAI.LEVEL_NAMES[ai_level - 1]]], ["Format", fmt],
-			["Battle", "Doubles (2 vs 2)" if doubles_mode else "Singles"], ["", "Start duel!"]]
-	var panel := Rect2(0, 44, W, 100)
-	_frame(panel)
-	_text(Vector2(9, 48), "FREE DUEL", C_DIM)
-	for i in rows.size():
-		var y := 61 + i * 12 + (3 if i == rows.size() - 1 else 0)
-		var sel := i == duel_row
-		if sel:
-			_text(Vector2(8, y), "▶", C_TEXT)
-		if rows[i][0] != "":
-			_text(Vector2(17, y), rows[i][0], C_DIM)
-			var val: String = rows[i][1]
-			if sel:
-				_text_scroll(Vector2(72, y), "◀ " + val + " ▶", C_TEXT, 158, "duel%d" % i)
-			else:
-				_text_fit(Vector2(72, y), val, C_TEXT, 158)
-		else:
-			_text(Vector2(17, y), rows[i][1], Color("#c03028") if sel else C_TEXT)
 
 
 # ===========================================================================
@@ -3837,6 +4110,7 @@ func _draw_command_menu() -> void:
 	for i in n:
 		var ox := 124 + (i % 2) * 58
 		var oy := y + (i / 2) * lh
+		_stripe(Rect2(ox - 9, oy - 1, 57, lh), (i / 2 + i % 2))
 		var label: String = menu_items[i]["label"]
 		if label == "End turn":
 			label = "End turn"
@@ -3856,6 +4130,7 @@ func _draw_list_menu() -> void:
 	var y := BOX_Y + 4.0
 	for i in range(scroll, mini(scroll + MENU_LINES, menu_items.size())):
 		var ly := y + (i - scroll) * LINE
+		_stripe(Rect2(4, ly - 1, left.size.x - 8, LINE), i)
 		if i == cursor:
 			_text(Vector2(8, ly), "▶", C_TEXT)
 			_text_scroll(Vector2(17, ly), menu_items[i]["label"], C_TEXT, left.size.x - 32, "menu")
@@ -4704,6 +4979,7 @@ func _draw_hand() -> void:
 	for i in range(top, mini(top + HAND_ROWS, rows.size())):
 		var id: String = rows[i][0]
 		var y := 22 + (i - top) * LINE_S
+		_stripe(Rect2(6, y - 1, 154, LINE_S), i)
 		if i == hand_cursor:
 			draw_rect(Rect2(6, y - 1, 154, LINE_S), bg)
 			_text(Vector2(10, y), "▶", C_TEXT)
@@ -4729,6 +5005,13 @@ func _draw_hand() -> void:
 			sub = CardDB.basic_energy_type(sel)
 		_text_fit(Vector2(164, 77), sub, C_TEXT, 70)
 		_text_fit(Vector2(164, 88), sel, C_DIM, 70)
+		# En tu turno: por qué esta carta no se puede jugar ahora (LV.X en la Banca, Partidario repetido...)
+		if pile_view == "hand" and mode == "duel" and game.actor() == human:
+			var why := game.why_unplayable(game.players[human], sel)
+			if why != "":
+				var wl := _wrap(why, 72)
+				for k in mini(wl.size(), 4):
+					_text(Vector2(164, 100 + k * 10), str(wl[k]), Color("#c03028"))
 	if rows.size() > HAND_ROWS:
 		_text(Vector2(152, 22), "▲" if top > 0 else "", C_DIM)
 		_text(Vector2(152, 22 + (HAND_ROWS - 1) * LINE_S), "▼" if top + HAND_ROWS < rows.size() else "", C_DIM)
@@ -7304,6 +7587,35 @@ const TINY := {
 	"/": ["001", "001", "010", "100", "100"],
 	"H": ["101", "101", "111", "101", "101"], "P": ["111", "101", "111", "100", "100"], "S": ["111", "100", "111", "001", "111"],
 	"+": ["000", "010", "111", "010", "000"],
+	# Letras (renglones chicos: "LEGAL TO USE", nombre del formato...)
+	"A": ["010", "101", "111", "101", "101"],
+	"B": ["110", "101", "110", "101", "110"],
+	"C": ["011", "100", "100", "100", "011"],
+	"D": ["110", "101", "101", "101", "110"],
+	"E": ["111", "100", "110", "100", "111"],
+	"F": ["111", "100", "110", "100", "100"],
+	"G": ["011", "100", "101", "101", "011"],
+	"I": ["111", "010", "010", "010", "111"],
+	"J": ["001", "001", "001", "101", "010"],
+	"K": ["101", "101", "110", "101", "101"],
+	"L": ["100", "100", "100", "100", "111"],
+	"M": ["101", "111", "111", "101", "101"],
+	"N": ["110", "101", "101", "101", "101"],
+	"O": ["010", "101", "101", "101", "010"],
+	"Q": ["010", "101", "101", "110", "011"],
+	"R": ["110", "101", "110", "101", "101"],
+	"T": ["111", "010", "010", "010", "010"],
+	"U": ["101", "101", "101", "101", "111"],
+	"V": ["101", "101", "101", "101", "010"],
+	"W": ["101", "101", "111", "111", "101"],
+	"X": ["101", "101", "010", "101", "101"],
+	"Y": ["101", "101", "010", "010", "010"],
+	"Z": ["111", "001", "010", "100", "111"],
+	".": ["000", "000", "000", "000", "010"],
+	"-": ["000", "000", "111", "000", "000"],
+	"·": ["000", "000", "010", "000", "000"],
+	"(": ["010", "100", "100", "100", "010"],
+	")": ["010", "001", "001", "001", "010"],
 }
 
 
@@ -8733,6 +9045,7 @@ func _draw_pause() -> void:
 	for i in PAUSE_ITEMS.size():
 		var y := r.position.y + 16 + i * 11
 		var sel := i == pause_cursor
+		_stripe(Rect2(r.position.x + 4, y - 1, r.size.x - 8, 11), i)
 		if sel:
 			_text(Vector2(r.position.x + 8, y), "▶", C_TEXT)
 		_text(Vector2(r.position.x + 17, y), PAUSE_ITEMS[i], Color("#c03028") if i == 7 else C_TEXT)

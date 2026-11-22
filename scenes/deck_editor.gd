@@ -615,6 +615,7 @@ func _draw_camp_list() -> void:
 		var sel: bool = i == cursor
 		var size: int = camp.deck_size(i)
 		var empty: bool = size == 0 and str(camp.decks[i]["nombre"]) == ""
+		d._stripe(Rect2(5, y - 2, d.W - 10, 22), i)
 		if sel:
 			d.draw_rect(Rect2(5, y - 2, d.W - 10, 22), Color("#f8e8c0") if d._ui_tex("fondo") != null else Color("#e8f0f8"))
 			d._text(Vector2(8, y), "▶", d.C_TEXT)
@@ -636,6 +637,7 @@ func _draw_camp_list() -> void:
 		d._frame(r)
 		for j in CAMP_OPTIONS.size():
 			var oy := r.position.y + 5 + j * 12
+			d._stripe(Rect2(r.position.x + 3, oy - 1, r.size.x - 6, 12), j)
 			if j == camp_menu:
 				d._text(Vector2(r.position.x + 6, oy), "▶", d.C_TEXT)
 			var col: Color = d.C_TEXT
@@ -671,6 +673,7 @@ func _draw_list() -> void:
 		var y := 25 + (i - top) * 11
 		var row: Dictionary = rows[i]
 		var sel := i == cursor
+		d._stripe(Rect2(4, y - 1, d.W - 8, 11), i)
 		if sel:
 			d._text(Vector2(8, y), "▶", d.C_TEXT)
 		match row["kind"]:
@@ -754,6 +757,7 @@ func _draw_edit() -> void:
 		var id: String = cards[i]
 		var y := LIST_Y + (i - scroll) * ROW_H
 		var sel := i == cursor
+		d._stripe(Rect2(4, y - 1, list_w - 8, ROW_H), i)
 		if sel:
 			d.draw_rect(Rect2(4, y - 1, list_w - 8, ROW_H), Color("#d8e4f8"))
 		d.draw_rect(Rect2(7, y + 2, 7, 7), d.C_INK)

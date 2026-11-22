@@ -45,6 +45,31 @@ const GOOD_POWERS := {
 	"Ion Coating": -5.0, "Magnetic Flow": -5.0, "Terraforming": -5.0, "Investigate": -5.0,
 	"Apricorn Forest": 25.0, "Undersea Ruins": -10.0, "Power Plant": 5.0, "Ancient Ruins": 20.0,
 	"Mystery Zone": 5.0, "Underground Lake": 25.0,
+	# Diamond & Pearl (los que eligen un blanco se ajustan en _power_score)
+	"Dark Palm": 40.0, "Darkness Fan": 30.0, "Supreme Command": 35.0, "Burning Head": 30.0,
+	"Forest Murmurs": 20.0, "Intense Voltage": 10.0, "ANALYZE": 5.0, "CALL": 15.0, "DRAW": 10.0,
+	"BOUNCE": -10.0,
+	# Resto de las eras. Los que la IA no sabe aprovechar quedan en negativo: con 0 los usaba
+	# igual (el ruido del desempate los volvía positivos), aunque le hicieran mal.
+	"Quick Search": 30.0, "Wishing Star": 25.0, "Swing Dance": 25.0, "Echo Draw": 25.0,
+	"Delta Control": 25.0, "Invitation": 25.0, "Delta Sign": 25.0, "Evolutionary Light": 30.0,
+	"Item Search": 20.0, "Night Cry": 20.0, "Primal Light": 20.0, "Power of Evolution": 20.0,
+	"Emerge": 30.0, "Smooth Over": 10.0, "Excavate": 5.0, "Cunning": 5.0, "Gift Exchange": 5.0,
+	"Power Circulation": 5.0, "Sharing": 10.0, "Night Vision": -1.0, "Psychic Vision": -1.0,
+	"Darkness Navigation": 25.0, "Metal Navigation": 25.0, "Reactive Generator": 20.0,
+	"Delta Charge": 20.0, "Delta Support": 20.0, "Super Connectivity": 15.0, "Nurture and Heal": 20.0,
+	"Energy Rain": 10.0, "Delta Supply": 15.0, "Extra Boost": 15.0,
+	"Ripples": 15.0, "Happy Dance": 20.0, "Delta Heal": 20.0, "Assistance": 15.0,
+	"Black Beam": 25.0, "Fire Breath": 25.0, "Poison Structure": 25.0, "Imprison": 30.0,
+	"Dark Spell": 20.0, "Distortion": 25.0, "Dragon Curse": 30.0, "Spike Storm": 25.0,
+	"Splash Back": 40.0, "Fan Action": 15.0, "Magnetic Reversal": 15.0, "Driving Howl": 15.0,
+	"Nectar Pod": 15.0, "Shady Move": 15.0,
+	"Head Trip": -15.0, "Final Sting": -20.0, "Extra Energy Bomb": -10.0, "3-D Reset": -10.0,
+	"Form Variation": -5.0, "Form Change": -5.0, "Duplicate": -5.0, "Shuffle": -5.0,
+	"Strange Behavior": -5.0, "Dark Trance": -5.0, "Snappy Move": -5.0, "Makeover": -5.0,
+	"Prize Shift": -5.0, "Reactive Shift": -5.0, "Type Change": -5.0, "Delta Transport": -5.0,
+	"Constrain": -5.0, "Energy Recycle": -5.0, "Fellow Boost": -5.0, "Type Shift": -5.0,
+	"Volunteer": -5.0, "Magnetic Redraw": -5.0, "Psymimic": -5.0, "Dozing": -5.0, "Psychic Trace": 0.0,
 }
 
 
@@ -262,7 +287,7 @@ func _score_raw(g: Game, a: Dictionary) -> float:
 		"power":
 			if a["n"] == Abilities.DISCARD_FOSSIL:
 				return -10.0
-			return GOOD_POWERS.get(a["n"], 0.0)
+			return _power_score(g, me, opp, a)
 		"retreat":
 			var target := me.bench[a["b"]]
 			var my_dmg := _best_attack_damage(g, me.active)
@@ -282,6 +307,46 @@ func _score_raw(g: Game, a: Dictionary) -> float:
 		"end":
 			return 0.0
 	return 0.0
+
+
+## Puntaje de un Poké-Power: el de la tabla, ajustado por el blanco que elige.
+func _power_score(g: Game, me: PlayerState, opp: PlayerState, a: Dictionary) -> float:
+	var base: float = GOOD_POWERS.get(a["n"], 0.0)
+	var prm: Dictionary = a.get("p", {})
+	match a["n"]:
+		"Supreme Command":
+			return base + float(prm.get("n", 0))       # mejor 2 cartas que 1
+		"Dark Palm":
+			# El que más le cuesta perder: Energías unidas y Fases encima
+			var x := opp.bench[int(prm["b"])] if int(prm.get("b", -1)) in range(opp.bench.size()) else null
+			return base + (Energy.total(x) * 6.0 + (x.cards.size() - 1) * 8.0 if x != null else 0.0)
+		"Forest Murmurs":
+			# Traer al frente al que se puede noquear (o al más débil) y no a uno que pega fuerte
+			var x := opp.bench[int(prm["b"])] if int(prm.get("b", -1)) in range(opp.bench.size()) else null
+			if x == null or me.active == null:
+				return base
+			var dmg := AIEval.best_damage(g, me.active, x, 0)
+			return base + (30.0 if dmg >= x.hp_left() else 0.0) - x.hp_left() * 0.1 - _best_attack_damage(g, x) * 0.2
+		"Dark Spell", "Distortion", "Dragon Curse", "Spike Storm":
+			# Contadores de daño: al que quede noqueado, si no al Activo (el que pelea)
+			var t: int = int(prm.get("tg", -9))
+			var x := opp.slot(t) if t != -9 else null
+			if x == null:
+				return base
+			var n := 2 if a["n"] == "Dragon Curse" else 1
+			if x.hp_left() <= n * 10:
+				return base + 30.0
+			return base + (5.0 if PlayerState.is_active_slot(t) else 0.0) - x.hp_left() * 0.02
+		"Psychic Trace":
+			# Barajar la mano y robar tantas como tiene el rival: solo si se gana en cartas
+			return (opp.hand.size() - me.hand.size()) * 6.0 - 3.0
+		"Dozing":
+			# Se cura 20 y se duerme: solo si está bastante lastimado
+			return 15.0 if me.active != null and me.active.damage >= 40 else -5.0
+		"Intense Voltage":
+			# Mover Energía al Electivire solo si es el Activo (el que ataca)
+			return base if me.active != null and me.active.display_name() == "Electivire" else -5.0
+	return base
 
 
 func _energy_score(g: Game, me: PlayerState, a: Dictionary) -> float:

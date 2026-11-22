@@ -648,6 +648,59 @@ func attack_usable(a: PokemonInPlay, atk: Dictionary) -> bool:
 	return true
 
 
+## Por qué una carta de la mano no se puede jugar ahora (texto corto, en inglés), o "" si se
+## puede (o si no es el momento de preguntar: fuera del turno principal del jugador).
+func why_unplayable(me: PlayerState, id: String) -> String:
+	if phase != "main" or current_player() != me:
+		return ""
+	var h := me.hand.find(id)
+	if h < 0:
+		return ""
+	if legal_actions().any(func(a): return a.has("h") and a["h"] < me.hand.size() and me.hand[a["h"]] == id):
+		return ""
+	if CardDB.is_level_up(id) or CardDB.is_evolution(id):
+		var base := CardDB.evolves_from(id)
+		var level := CardDB.is_level_up(id)
+		var targets: Array = []
+		for s in me.slots():
+			if CardDB.evolves_onto(id, me.slot(s).display_name()):
+				targets.append(s)
+		if me.turns_taken <= 1:
+			return "You can't evolve or level up on your first turn."
+		if targets.is_empty():
+			return "You have no %s in play." % base
+		if level and not targets.any(func(s): return PlayerState.is_active_slot(s)):
+			return "A LV.X can only go on your Active %s." % base
+		if level:
+			targets = targets.filter(func(s): return PlayerState.is_active_slot(s))
+		if targets.all(func(s): return me.slot(s).turn_played >= turn_number):
+			return "Your %s came into play or evolved this turn." % base
+		return "An effect prevents it from evolving right now."
+	if CardDB.is_playable_basic(id):
+		if me.bench.size() >= rules.bench_size:
+			return "Your Bench is full."
+		return "You can't play it right now."
+	if CardDB.is_energy(id):
+		if me.energy_attached:
+			return "You already attached an Energy this turn."
+		return "No Pokémon can take this Energy right now."
+	if CardDB.is_trainer(id):
+		if not Trainers.is_implemented(id):
+			return "This card isn't available yet."
+		if CardDB.is_supporter(id) and me.supporter_played:
+			return "You already played a Supporter this turn."
+		if CardDB.is_supporter(id) and turn_number == 1 and not rules.first_player_supporter:
+			return "The player who goes first can't play a Supporter on the first turn."
+		if CardDB.is_stadium(id) and me.stadium_played:
+			return "You already played a Stadium this turn."
+		if CardDB.is_stadium(id) and stadium == id:
+			return "That Stadium is already in play."
+		if not _can_play_trainer(me, id):
+			return "An effect prevents you from playing it."
+		return "Its conditions aren't met right now."
+	return ""
+
+
 func _can_play_trainer(me: PlayerState, id: String) -> bool:
 	if not Trainers.is_implemented(id):
 		return false
@@ -1576,11 +1629,11 @@ func _describe_raw(a: Dictionary) -> String:
 				return _choices[0]["options"][a["i"]]["label"]
 			if a.has("act") and phase == "choice":
 				var cp: PlayerState = players[_choices[0]["p"]]
-				return "%s ⇄ %s" % [cp.active2.display_name() if cp.active2 != null else "?", slot_name(cp, a["b"])]
+				return "%s <-> %s" % [cp.active2.display_name() if cp.active2 != null else "?", slot_name(cp, a["b"])]
 			if rules.doubles and phase == "choice" and _choices[0]["kind"] == "switch":
 				var cp: PlayerState = players[_choices[0]["p"]]
 				if cp.active2 != null:
-					return "%s ⇄ %s" % [cp.active.display_name(), slot_name(cp, a["b"])]
+					return "%s <-> %s" % [cp.active.display_name(), slot_name(cp, a["b"])]
 			return slot_name(me, a["b"])
 		"bench": return "Bench " + CardDB.card_name(me.hand[a["h"]])
 		"evolve": return "%s → %s" % [slot_name(me, a["tg"]), CardDB.card_name(me.hand[a["h"]])]
@@ -1620,6 +1673,8 @@ func _describe_raw(a: Dictionary) -> String:
 				s += " → " + slot_name(opp, p["b"])
 			if p.has("mb"):
 				s += " → " + slot_name(me, p["mb"])
+			if p.has("n"):
+				s += " (%d card%s)" % [p["n"], "" if int(p["n"]) == 1 else "s"]     # Supreme Command: 1 o 2
 			if p.has("to"):
 				s += ": %s → %s" % [slot_name(me, p["from"]), slot_name(me, p["to"])]
 			elif p.has("from"):

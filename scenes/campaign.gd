@@ -595,7 +595,7 @@ func _draw_name() -> void:
 			if sel:
 				d.draw_rect(Rect2(p - Vector2(4, 0), Vector2(16, 11)), Color("#f8d8a0"))
 			var ch := row.substr(rx, 1)
-			d._text(p, "␣" if ch == " " else ch, Color("#c03028") if sel else d.C_TEXT)
+			d._text(p, "_" if ch == " " else ch, Color("#c03028") if sel else d.C_TEXT)
 	var by := kb.position.y + 4 + NAME_ROWS.size() * 11 + 6
 	for i in 2:
 		var lbl := "Delete" if i == 0 else "Done"
