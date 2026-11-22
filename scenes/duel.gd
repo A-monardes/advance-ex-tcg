@@ -1176,7 +1176,7 @@ const FREE_MOVES := {      # casilla -> [arriba, abajo, izquierda, derecha]
 	3: [3, 3, 0, 4], 4: [4, 5, 3, 4], 5: [4, 5, 3, 5],
 }
 const FREE_KEYS := [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
-const FD_LIST_ROWS := 9
+const FD_LIST_ROWS := 6     # renglones de la lista de mazos (abajo va la descripción entera)
 
 func _duel_setup_input(k: int, accept: bool, n: int) -> void:
 	if free_popup != "":
@@ -1333,8 +1333,22 @@ func _draw_duel_setup() -> void:
 	_draw_tiny(Vector2((x1 + x2) / 2.0 - fname.length() * 2.0, top + 14), fname, C_TEXT)
 	var year := str(RuleSet.SEASONS[season_idx]["worlds"]).right(4)
 	var logo: Texture2D = fmt_menu._logo(year)
-	var lb := Rect2(x1 + 4, top + 22, x2 - x1 - 8, panel.end.y - top - 28)
-	if logo != null:
+	var lb := Rect2(x1 + 4, top + 22, x2 - x1 - 8, panel.end.y - top - 36)
+	# Abajo, chiquito: con cuántos sets se juega (los POP aparte; las promos no cuentan)
+	var ls: Array = r.legal_sets.filter(func(c): return not str(c).begins_with("np"))
+	var n_pop := ls.filter(func(c): return str(c).begins_with("pop")).size()
+	var cnt := "%d SETS" % (ls.size() - n_pop) + (" + %d POP" % n_pop if n_pop > 0 else "")
+	_draw_tiny(Vector2(roundf((x1 + x2) / 2.0 - cnt.length() * 2.0), panel.end.y - 11), cnt, C_DIM)
+	if format_upto >= 0:
+		# Custom: del set más viejo (arriba) al último que entra (abajo), con una flecha
+		var rng := _fd_set_range()
+		var hb := (lb.size.y - 10) / 2.0
+		_fd_set_logo(Rect2(lb.position, Vector2(lb.size.x, hb)), rng[0])
+		var ay := lb.position.y + hb + 1
+		var ax := lb.get_center().x
+		draw_colored_polygon(PackedVector2Array([Vector2(ax - 4, ay + 1), Vector2(ax + 4, ay + 1), Vector2(ax, ay + 7)]), C_FD_SEL)
+		_fd_set_logo(Rect2(lb.position + Vector2(0, hb + 10), Vector2(lb.size.x, hb)), rng[1])
+	elif logo != null:
 		var sc := minf(lb.size.x / logo.get_width(), lb.size.y / logo.get_height())
 		var sz := Vector2(logo.get_width(), logo.get_height()) * sc
 		draw_texture_rect(logo, Rect2(lb.position + (lb.size - sz) / 2.0, sz), false)
@@ -1363,6 +1377,81 @@ func _draw_duel_setup() -> void:
 			_fd_diff_window()
 		"battle":
 			_fd_battle_window()
+
+
+## Formato Custom: [el set más viejo, el último que entra] (sin POP ni promos).
+func _fd_set_range() -> Array:
+	var d: Dictionary = RuleSet.SEASONS[season_idx]
+	var steps: Array = d.get("steps", [])
+	var st: Array = d["start"].filter(func(c): return not str(c).begins_with("pop") and not str(c).begins_with("np"))
+	var n := format_upto if format_upto >= 0 and format_upto <= steps.size() else steps.size()
+	var newest: String = str(st[-1])
+	for j in n:          # el último set que entra (un POP solo si tiene su símbolo; las promos no)
+		var c := str(steps[j][0])
+		if c.begins_with("np") or (c.begins_with("pop") and _fd_set_symbol(c, 20) == null):
+			continue
+		newest = c
+	return [str(st[0]), newest]
+
+
+## El símbolo de un set achicado a `size` de alto (null si no está).
+var _set_syms := {}
+
+func _fd_set_symbol(code: String, size: int) -> Texture2D:
+	var key := "%s|%d" % [code, size]
+	if not _set_syms.has(key):
+		var tex: Texture2D = null
+		var p := "res://mundo/propios/sets/simbolos/%s.png" % code
+		if ImgLoad.exists(p):
+			var img := ImgLoad.load(p)
+			if img != null:
+				img.convert(Image.FORMAT_RGBA8)
+				var sc := float(size) / maxi(img.get_width(), img.get_height())
+				img.resize(maxi(1, roundi(img.get_width() * sc)), maxi(1, roundi(img.get_height() * sc)), Image.INTERPOLATE_LANCZOS)
+				tex = ImageTexture.create_from_image(img)
+		_set_syms[key] = tex
+	return _set_syms[key]
+
+
+## El logo de un set (mundo/propios/sets/<código>.png, propio del jugador) o su nombre.
+var _set_logos := {}
+
+func _fd_set_logo(r: Rect2, code: String) -> void:
+	# Con el símbolo del set (mundo/propios/sets/simbolos/<código>.png): el ícono y el nombre al lado
+	var sym := _fd_set_symbol(code, int(clampf(r.size.y - 8.0, 10.0, 20.0)))
+	if sym != null:
+		# El símbolo y, debajo, el nombre en letra chica
+		var hh := sym.get_height() + 7
+		var sp := Vector2(r.get_center().x - sym.get_width() / 2.0, r.get_center().y - hh / 2.0).round()
+		draw_texture(sym, sp)
+		var nm := RuleSet.set_title(code).replace("EX ", "").replace(" Base Set", "").to_upper()
+		if nm.length() * 4 - 1 > r.size.x + 4:
+			nm = nm.left(int((r.size.x + 5) / 4) - 1) + "."
+		_draw_tiny(Vector2(r.get_center().x - nm.length() * 2.0, sp.y + sym.get_height() + 2), nm, C_TEXT)
+		return
+	if not _set_logos.has(code):
+		var tex: Texture2D = null
+		for ext in ["png", "webp", "jpg"]:
+			var p := "res://mundo/propios/sets/%s.%s" % [code, ext]
+			if tex == null and ImgLoad.exists(p):
+				var img := ImgLoad.load(p)
+				if img != null:
+					var sc := minf(r.size.x / img.get_width(), r.size.y / img.get_height())
+					if sc < 1.0:
+						img.resize(maxi(1, roundi(img.get_width() * sc)), maxi(1, roundi(img.get_height() * sc)), Image.INTERPOLATE_LANCZOS)
+					tex = ImageTexture.create_from_image(img)
+		_set_logos[code] = tex
+	var t: Texture2D = _set_logos[code]
+	if t != null:
+		var sc2 := minf(1.0, minf(r.size.x / t.get_width(), r.size.y / t.get_height()))
+		var sz := Vector2(t.get_width(), t.get_height()) * sc2
+		draw_texture_rect(t, Rect2((r.position + (r.size - sz) / 2.0).round(), sz), false)
+		return
+	# Sin logo: el nombre del set, en uno o dos renglones
+	var lines := _wrap(RuleSet.set_title(code).replace("EX ", ""), r.size.x)
+	var y0 := r.get_center().y - mini(lines.size(), 2) * 5.0
+	for k in mini(lines.size(), 2):
+		_text(Vector2(r.get_center().x - _text_w(str(lines[k])) / 2.0, y0 + k * 10), str(lines[k]), C_TEXT)
 
 
 ## Casilla del duelo libre: la elegida, con fondo y borde (los mazos ya tienen su color).
@@ -1461,9 +1550,12 @@ func _fd_deck_window(names: Array, r: RuleSet) -> void:
 		_draw_card_image(ir, cover)
 	var legal_sel := _deck_legal(sel, r)
 	_draw_tiny(Vector2(px, win.position.y + 64), "LEGAL" if legal_sel else "NOT LEGAL", Color("#388850") if legal_sel else C_HP_LOW)
-	var dl := _wrap(Decks.description(sel), win.end.x - px - 6)
-	for k in mini(dl.size(), 5):
-		_text(Vector2(px, win.position.y + 72 + k * 10), str(dl[k]), C_DIM)
+	# Abajo, a todo lo ancho: la descripción del mazo
+	var dy := win.position.y + 17 + FD_LIST_ROWS * 11 + 3
+	draw_rect(Rect2(win.position.x + 4, dy - 2, win.size.x - 8, 1), C_FD_LINE)
+	var dl := _wrap(Decks.description(sel), win.size.x - 16)
+	for k in mini(dl.size(), int((win.end.y - dy - 4) / 10)):
+		_text(Vector2(win.position.x + 8, dy + k * 10), str(dl[k]), C_DIM)
 
 
 func _fd_diff_window() -> void:
@@ -7615,6 +7707,7 @@ const TINY := {
 	"-": ["000", "000", "111", "000", "000"],
 	"·": ["000", "000", "010", "000", "000"],
 	"(": ["010", "100", "100", "100", "010"],
+	"&": ["010", "101", "010", "101", "011"], "\'": ["010", "010", "000", "000", "000"],
 	")": ["010", "001", "001", "001", "010"],
 }
 

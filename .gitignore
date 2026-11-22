@@ -38,3 +38,6 @@ data/pmd_web.json
 
 # Logos de los Mundiales (propios del usuario)
 mundo/propios/mundiales/
+
+# Logos de los sets (propios del usuario)
+mundo/propios/sets/
