@@ -26,7 +26,7 @@ const FONDO_POR_TIPO := {
 	"Colorless": "grass3", "Dragon": "arena4",
 }
 const FORMAS := {"Rain Castform": "castform_rain", "Snow-cloud Castform": "castform_snow",
-		"Sunny Castform": "castform_sun"}
+		"Sunny Castform": "castform_sun", "Pichu Bros.": "pichu"}
 
 # Dónde va cada uno (en la pantalla de 240x160; el fondo ocupa las primeras 112 filas)
 const FRONT_POS := Vector2(144, 8)     # sprite del rival, de frente
@@ -79,6 +79,9 @@ static func species(card_name: String) -> Array:
 		dark = true
 	if n.ends_with(" ex"):
 		n = n.left(n.length() - 3)
+	n = n.trim_suffix(" LV.X")          # el LV.X es el mismo Pokémon
+	if n.begins_with("Unown ["):
+		n = "Unown"                     # Unown [A], [B]... de DP: el mismo sprite
 	if FORMAS.has(n):
 		return [FORMAS[n]]
 	n = n.to_lower().replace("♀", "_f").replace("♂", "_m")

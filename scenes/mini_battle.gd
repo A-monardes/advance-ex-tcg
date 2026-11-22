@@ -83,10 +83,20 @@ static func forget(sp: String) -> void:
 ## Los Fósiles en juego (Trainers que se juegan como Pokémon) se ven como el sustituto de
 ## Mystery Dungeon: carpeta "sustituto" (python tools/hoja_sustituto.py la arma).
 const SUSTITUTO := "sustituto"
+# Cartas de una forma que el nombre no dice (la de la ilustración): id -> carpeta de PMD
+const FORMA_CARTA := {
+	"ex8-17": "deoxys_ataque", "ex8-18": "deoxys_defensa", "ex8-98": "deoxys_ataque",
+	"ex8-99": "deoxys_defensa", "ex9-2": "deoxys_velocidad", "ex9-93": "deoxys_velocidad",
+	"ex13-3": "deoxys_ataque", "ex13-4": "deoxys_defensa", "ex13-6": "deoxys_velocidad",
+	"pop4-17": "deoxys_velocidad",
+}
 
 static func folder(card_id: String) -> String:
-	if CardDB.is_fossil(card_id):
+	if CardDB.is_fossil(card_id) or CardDB.card_name(card_id) == "Buried Fossil":
 		return SUSTITUTO if has_file(SUSTITUTO, "AnimData.xml") else ""
+	var forma: String = FORMA_CARTA.get(card_id, "")
+	if forma != "" and has_file(forma, "AnimData.xml"):
+		return forma
 	for sp in BattleScene.species(CardDB.card_name(card_id)):
 		var n: String = sp.trim_suffix("#shiny") + ("_shiny" if sp.ends_with("#shiny") else "")
 		if has_file(n, "AnimData.xml"):

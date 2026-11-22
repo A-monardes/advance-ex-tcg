@@ -28,6 +28,12 @@ BASE = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/%
 POKEDEX = "https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/pokedex.json"
 
 
+# Formas que no salen del nombre de la carta (MiniBattle.FORMA_CARTA dice qué carta usa cuál):
+# carpeta -> (número de la Pokédex, subcarpeta de SpriteCollab)
+FORMAS_PMD = {"deoxys_ataque": (386, "0001/"), "deoxys_defensa": (386, "0002/"),
+              "deoxys_velocidad": (386, "0003/")}
+
+
 def folder_name(card_name):
     """Igual que BattleScene.species() (sin las formas especiales)."""
     n = card_name
@@ -41,6 +47,10 @@ def folder_name(card_name):
         n = n[5:]
     if n.endswith(" ex"):
         n = n[:-3]
+    if n.endswith(" LV.X"):
+        n = n[:-5]
+    if n.startswith("Unown ["):
+        n = "Unown"
     n = n.lower().replace("♀", "_f").replace("♂", "_m")
     for ch in ".'’:":
         n = n.replace(ch, "")
@@ -68,6 +78,8 @@ def main():
         want[n] = dex[n]
         if "★" in c["name"]:
             want[n + "_shiny"] = dex[n]
+    for f, (num, _) in FORMAS_PMD.items():
+        want[f] = num
     only = sys.argv[1:]
     names = sorted(n for n in want if (n in only if only else not os.path.exists(os.path.join(DESTINO, n, "AnimData.xml"))))
     sin_dex = sorted({folder_name(c["name"]) for c in cards if c["supertype"] == "Pokémon"} - set(dex))
@@ -75,7 +87,7 @@ def main():
         print("Sin número de Pokédex (se saltean):", ", ".join(sin_dex))
     need = usadas()
     for n in names:
-        url = BASE % want[n] + ("0000/0001/" if n.endswith("_shiny") else "")
+        url = BASE % want[n] + ("0000/0001/" if n.endswith("_shiny") else FORMAS_PMD.get(n, (0, ""))[1])
         try:
             xml = get(url + "AnimData.xml")
         except Exception as e:  # noqa: BLE001

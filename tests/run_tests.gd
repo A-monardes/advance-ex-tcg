@@ -1680,6 +1680,11 @@ func test_efectos_por_nombre() -> void:
 	check(str(MiniBattle.fx_meta("gx_explosion").get("modo", "")) == "atacante", "Selfdestruct sale del atacante")
 	check(MiniBattle.has_proj({"m_cat": "hidrobomba"}) and not MiniBattle.has_proj({"m_cat": "trueno"}), "proyectil solo si la categoría lo tiene")
 	check(not MiniBattle.has_proj({"m_cat": "drenar"}) and str(MiniBattle.proj_info("drenar").get("tipo", "")) == "vuelta", "drenar: las bolitas vuelven después del golpe")
+	# Formas de Deoxys según la ilustración de cada carta
+	if MiniBattle.has_file("deoxys_ataque", "AnimData.xml"):
+		check(MiniBattle.folder("ex8-17") == "deoxys_ataque" and MiniBattle.folder("ex8-99") == "deoxys_defensa"
+				and MiniBattle.folder("ex9-93") == "deoxys_velocidad" and MiniBattle.folder("ex8-16") == "deoxys",
+				"Deoxys: cada carta con su forma")
 	for cat in MiniBattle._load_names().get("categorias", {}):
 		var c: Dictionary = MiniBattle._load_names()["categorias"][cat]
 		check(MiniBattle.SpecialFX.has_fx(str(c["golpe"])), "tira del golpe de " + cat)
