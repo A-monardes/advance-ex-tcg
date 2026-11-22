@@ -19,6 +19,7 @@ Escribe:
         Cada partícula i va por k (0..1) del atacante al defensor; usa el cuadro
         int(k * vel + i * desfase), dando la vuelta (o quedándose en el último si "tope").
     data/ataques_efectos.json            {"ataques": {nombre en minúsculas: cat}, "categorias": {...}}
+        cada categoría: {"golpe": "gx_...", "proyectil": "px_..." o "", "sonido": "agua_distancia" o "wrap"}
 
 Las posiciones salen de la maqueta (la mini pelea a escala 1:1): el centro del defensor está
 14 px arriba de su sombra.
@@ -70,6 +71,41 @@ GOLPES = {
     "tumba": ("rr_tomb", "c"), "dragon_aliento": ("rd_rage_hit", "s"), "dragon_pulso": ("rd_pulse_hit", "c"),
     "furia_dragon": ("rd_outrage", "s"), "spacial_rend": ("rd_rend", "c"), "time_bellow": ("rd_time", "c"),
     "hueso": ("0242", "c"), "pincho": ("0076", "c"),
+}
+
+
+# --- Sonido por categoría: (familia de sonidos/golpes/, alcance) -> <familia>_<alcance>_<debil|fuerte>.ogg;
+#     ("wrap", "") es un sonido propio (sonidos/golpes/wrap.ogg) ---
+SONIDOS = {
+    "puño_fuego": ("fuego", "fisico"), "puño_hielo": ("hielo", "fisico"), "puño_rayo": ("electrico", "fisico"),
+    "puño_agua": ("agua", "fisico"), "patada_fuego": ("fuego", "fisico"), "colmillo_fuego": ("fuego", "fisico"),
+    "colmillo_hielo": ("hielo", "fisico"), "colmillo_rayo": ("electrico", "fisico"), "colmillo_veneno": ("veneno", "fisico"),
+    "onda_trueno": ("electrico", "distancia"), "rayo_hielo": ("hielo", "distancia"), "rayo_solar": ("planta", "distancia"),
+    "psicorrayo": ("psiquico", "distancia"), "bola_sombra": ("fantasma", "distancia"), "hojas_navaja": ("planta", "distancia"),
+    "hoja_espada": ("planta", "fisico"), "latigo_liana": ("planta", "fisico"), "semillas": ("planta", "distancia"),
+    "drenar": ("planta", "distancia"), "giro_fuego": ("fuego", "distancia"), "fuego_fatuo": ("fantasma", "distancia"),
+    "barro": ("tierra", "distancia"), "hidrobomba": ("agua", "distancia"), "remolino": ("agua", "distancia"),
+    "cascada": ("agua", "fisico"), "burbujas": ("agua", "distancia"), "ola": ("agua", "distancia"),
+    "lluvia": ("agua", "distancia"), "chorro_agua": ("agua", "distancia"), "niebla": ("hielo", "distancia"),
+    "ventisca": ("hielo", "distancia"), "trueno": ("electrico", "distancia"), "chispa": ("electrico", "distancia"),
+    "lanzallamas": ("fuego", "distancia"), "llamarada": ("fuego", "distancia"), "magma": ("fuego", "distancia"),
+    "ascuas": ("fuego", "distancia"), "gas_veneno": ("veneno", "distancia"), "polvo": ("veneno", "distancia"),
+    "lodo": ("veneno", "distancia"), "aguijon": ("veneno", "distancia"), "veneno": ("veneno", "fisico"),
+    "hilo": ("wrap", ""), "terremoto": ("tierra", "fisico"), "excavar": ("tierra", "fisico"),
+    "arena": ("tierra", "distancia"), "piedras": ("roca", "distancia"), "psiquico": ("psiquico", "distancia"),
+    "confusion": ("psiquico", "distancia"), "hipnosis": ("psiquico", "distancia"), "mirada": ("fantasma", "distancia"),
+    "maldicion": ("fantasma", "distancia"), "sombra": ("siniestro", "distancia"), "onda_sonido": ("normal", "distancia"),
+    "dragon_garra": ("dragon", "fisico"), "rafaga": ("volador", "distancia"), "estrellas": ("normal", "distancia"),
+    "destello": ("psiquico", "distancia"), "rayo_energia": ("normal", "distancia"), "esfera_energia": ("normal", "distancia"),
+    "explosion": ("normal", "fisico"), "metal": ("acero", "fisico"), "puño": ("lucha", "fisico"),
+    "patada": ("lucha", "fisico"), "pisoton": ("tierra", "fisico"), "mordida": ("siniestro", "fisico"),
+    "lamida": ("fantasma", "fisico"), "picotazo": ("volador", "fisico"), "cuerno": ("normal", "fisico"),
+    "arañazo": ("normal", "fisico"), "corte": ("normal", "fisico"), "cola": ("normal", "fisico"),
+    "ala": ("volador", "fisico"), "constriccion": ("wrap", ""), "bofetada": ("normal", "fisico"),
+    "giro": ("normal", "fisico"), "rapido": ("normal", "fisico"), "embestida": ("normal", "fisico"),
+    "derrumbe": ("roca", "distancia"), "tumba": ("roca", "distancia"), "dragon_aliento": ("dragon", "distancia"),
+    "dragon_pulso": ("dragon", "distancia"), "furia_dragon": ("dragon", "fisico"), "spacial_rend": ("dragon", "distancia"),
+    "time_bellow": ("dragon", "distancia"), "hueso": ("tierra", "fisico"), "pincho": ("veneno", "distancia"),
 }
 
 
@@ -256,6 +292,9 @@ def main():
     cats = {}
     for cat, spec in GOLPES.items():
         cats[cat] = {"golpe": build_hit(cat, spec), "proyectil": ""}
+    for cat, (fam, alc) in SONIDOS.items():
+        if cat in cats:
+            cats[cat]["sonido"] = fam if alc == "" else "%s_%s" % (fam, alc)
     for cat, p in proyectiles().items():
         cats[cat]["proyectil"] = build_proj(cat, p)
     mapa = {}

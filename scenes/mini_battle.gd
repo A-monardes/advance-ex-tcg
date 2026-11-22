@@ -976,6 +976,17 @@ static func sound_names(a: Dictionary) -> Array:
 	var special := special_sound(a)
 	if special != "":
 		out.append(special)
+	# La categoría del ataque elige su sonido (Earthquake suena a tierra aunque lo use Snorlax)
+	var cat := str(a.get("m_cat", ""))
+	if cat == "":
+		cat = name_category(str(a.get("atk_name", a.get("m_atk_name", ""))))
+	var cs := str(_load_names().get("categorias", {}).get(cat, {}).get("sonido", ""))
+	if cs != "":
+		if cs.count("_") == 0:
+			out.append(cs)
+		else:
+			out.append("%s_%s" % [cs, "fuerte" if strong else "debil"])
+			out.append("%s_%s" % [cs, "debil" if strong else "fuerte"])
 	for combo in [[r1, s1], [r1, s2], [r2, s1], [r2, s2]]:
 		for fm in fams:
 			out.append("%s_%s_%s" % [fm, combo[0], combo[1]])

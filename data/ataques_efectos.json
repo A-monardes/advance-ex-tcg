@@ -1068,343 +1068,428 @@
  "categorias": {
   "aguijon": {
    "golpe": "gx_aguijon",
-   "proyectil": "px_aguijon"
+   "proyectil": "px_aguijon",
+   "sonido": "veneno_distancia"
   },
   "ala": {
    "golpe": "gx_ala",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "volador_fisico"
   },
   "arañazo": {
    "golpe": "gx_aranazo",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "arena": {
    "golpe": "gx_arena",
-   "proyectil": "px_arena"
+   "proyectil": "px_arena",
+   "sonido": "tierra_distancia"
   },
   "ascuas": {
    "golpe": "gx_ascuas",
-   "proyectil": "px_ascuas"
+   "proyectil": "px_ascuas",
+   "sonido": "fuego_distancia"
   },
   "barro": {
    "golpe": "gx_barro",
-   "proyectil": "px_barro"
+   "proyectil": "px_barro",
+   "sonido": "tierra_distancia"
   },
   "bofetada": {
    "golpe": "gx_bofetada",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "bola_sombra": {
    "golpe": "gx_bola_sombra",
-   "proyectil": "px_bola_sombra"
+   "proyectil": "px_bola_sombra",
+   "sonido": "fantasma_distancia"
   },
   "burbujas": {
    "golpe": "gx_burbujas",
-   "proyectil": "px_burbujas"
+   "proyectil": "px_burbujas",
+   "sonido": "agua_distancia"
   },
   "cascada": {
    "golpe": "gx_cascada",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "agua_fisico"
   },
   "chispa": {
    "golpe": "gx_chispa",
-   "proyectil": "px_chispa"
+   "proyectil": "px_chispa",
+   "sonido": "electrico_distancia"
   },
   "chorro_agua": {
    "golpe": "gx_chorro_agua",
-   "proyectil": "px_chorro_agua"
+   "proyectil": "px_chorro_agua",
+   "sonido": "agua_distancia"
   },
   "cola": {
    "golpe": "gx_cola",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "colmillo_rayo": {
    "golpe": "gx_colmillo_rayo",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "electrico_fisico"
   },
   "colmillo_veneno": {
    "golpe": "gx_colmillo_veneno",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "veneno_fisico"
   },
   "confusion": {
    "golpe": "gx_confusion",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "psiquico_distancia"
   },
   "constriccion": {
    "golpe": "gx_constriccion",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "wrap"
   },
   "corte": {
    "golpe": "gx_corte",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "cuerno": {
    "golpe": "gx_cuerno",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "derrumbe": {
    "golpe": "gx_derrumbe",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "roca_distancia"
   },
   "destello": {
    "golpe": "gx_destello",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "psiquico_distancia"
   },
   "dragon_aliento": {
    "golpe": "gx_dragon_aliento",
-   "proyectil": "px_dragon_aliento"
+   "proyectil": "px_dragon_aliento",
+   "sonido": "dragon_distancia"
   },
   "dragon_garra": {
    "golpe": "gx_dragon_garra",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "dragon_fisico"
   },
   "dragon_pulso": {
    "golpe": "gx_dragon_pulso",
-   "proyectil": "px_dragon_pulso"
+   "proyectil": "px_dragon_pulso",
+   "sonido": "dragon_distancia"
   },
   "drenar": {
    "golpe": "gx_drenar",
-   "proyectil": "px_drenar"
+   "proyectil": "px_drenar",
+   "sonido": "planta_distancia"
   },
   "embestida": {
    "golpe": "gx_embestida",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "esfera_energia": {
    "golpe": "gx_esfera_energia",
-   "proyectil": "px_esfera_energia"
+   "proyectil": "px_esfera_energia",
+   "sonido": "normal_distancia"
   },
   "estrellas": {
    "golpe": "gx_estrellas",
-   "proyectil": "px_estrellas"
+   "proyectil": "px_estrellas",
+   "sonido": "normal_distancia"
   },
   "excavar": {
    "golpe": "gx_excavar",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "tierra_fisico"
   },
   "explosion": {
    "golpe": "gx_explosion",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "fuego_fatuo": {
    "golpe": "gx_fuego_fatuo",
-   "proyectil": "px_fuego_fatuo"
+   "proyectil": "px_fuego_fatuo",
+   "sonido": "fantasma_distancia"
   },
   "furia_dragon": {
    "golpe": "gx_furia_dragon",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "dragon_fisico"
   },
   "gas_veneno": {
    "golpe": "gx_gas_veneno",
-   "proyectil": "px_gas_veneno"
+   "proyectil": "px_gas_veneno",
+   "sonido": "veneno_distancia"
   },
   "giro": {
    "golpe": "gx_giro",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "normal_fisico"
   },
   "giro_fuego": {
    "golpe": "gx_giro_fuego",
-   "proyectil": "px_giro_fuego"
+   "proyectil": "px_giro_fuego",
+   "sonido": "fuego_distancia"
   },
   "hidrobomba": {
    "golpe": "gx_hidrobomba",
-   "proyectil": "px_hidrobomba"
+   "proyectil": "px_hidrobomba",
+   "sonido": "agua_distancia"
   },
   "hilo": {
    "golpe": "gx_hilo",
-   "proyectil": "px_hilo"
+   "proyectil": "px_hilo",
+   "sonido": "wrap"
   },
   "hipnosis": {
    "golpe": "gx_hipnosis",
-   "proyectil": "px_hipnosis"
+   "proyectil": "px_hipnosis",
+   "sonido": "psiquico_distancia"
   },
   "hoja_espada": {
    "golpe": "gx_hoja_espada",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "planta_fisico"
   },
   "hojas_navaja": {
    "golpe": "gx_hojas_navaja",
-   "proyectil": "px_hojas_navaja"
+   "proyectil": "px_hojas_navaja",
+   "sonido": "planta_distancia"
   },
   "hueso": {
    "golpe": "gx_hueso",
-   "proyectil": "px_hueso"
+   "proyectil": "px_hueso",
+   "sonido": "tierra_fisico"
   },
   "lamida": {
    "golpe": "gx_lamida",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "fantasma_fisico"
   },
   "lanzallamas": {
    "golpe": "gx_lanzallamas",
-   "proyectil": "px_lanzallamas"
+   "proyectil": "px_lanzallamas",
+   "sonido": "fuego_distancia"
   },
   "latigo_liana": {
    "golpe": "gx_latigo_liana",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "planta_fisico"
   },
   "llamarada": {
    "golpe": "gx_llamarada",
-   "proyectil": "px_llamarada"
+   "proyectil": "px_llamarada",
+   "sonido": "fuego_distancia"
   },
   "lluvia": {
    "golpe": "gx_lluvia",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "agua_distancia"
   },
   "lodo": {
    "golpe": "gx_lodo",
-   "proyectil": "px_lodo"
+   "proyectil": "px_lodo",
+   "sonido": "veneno_distancia"
   },
   "magma": {
    "golpe": "gx_magma",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "fuego_distancia"
   },
   "maldicion": {
    "golpe": "gx_maldicion",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "fantasma_distancia"
   },
   "metal": {
    "golpe": "gx_metal",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "acero_fisico"
   },
   "mirada": {
    "golpe": "gx_mirada",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "fantasma_distancia"
   },
   "mordida": {
    "golpe": "gx_mordida",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "siniestro_fisico"
   },
   "niebla": {
    "golpe": "gx_niebla",
-   "proyectil": "px_niebla"
+   "proyectil": "px_niebla",
+   "sonido": "hielo_distancia"
   },
   "ola": {
    "golpe": "gx_ola",
-   "proyectil": "px_ola"
+   "proyectil": "px_ola",
+   "sonido": "agua_distancia"
   },
   "onda_sonido": {
    "golpe": "gx_onda_sonido",
-   "proyectil": "px_onda_sonido"
+   "proyectil": "px_onda_sonido",
+   "sonido": "normal_distancia"
   },
   "onda_trueno": {
    "golpe": "gx_onda_trueno",
-   "proyectil": "px_onda_trueno"
+   "proyectil": "px_onda_trueno",
+   "sonido": "electrico_distancia"
   },
   "patada": {
    "golpe": "gx_patada",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "lucha_fisico"
   },
   "patada_fuego": {
    "golpe": "gx_patada_fuego",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "fuego_fisico"
   },
   "picotazo": {
    "golpe": "gx_picotazo",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "volador_fisico"
   },
   "piedras": {
    "golpe": "gx_piedras",
-   "proyectil": "px_piedras"
+   "proyectil": "px_piedras",
+   "sonido": "roca_distancia"
   },
   "pincho": {
    "golpe": "gx_pincho",
-   "proyectil": "px_pincho"
+   "proyectil": "px_pincho",
+   "sonido": "veneno_distancia"
   },
   "pisoton": {
    "golpe": "gx_pisoton",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "tierra_fisico"
   },
   "polvo": {
    "golpe": "gx_polvo",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "veneno_distancia"
   },
   "psicorrayo": {
    "golpe": "gx_psicorrayo",
-   "proyectil": "px_psicorrayo"
+   "proyectil": "px_psicorrayo",
+   "sonido": "psiquico_distancia"
   },
   "psiquico": {
    "golpe": "gx_psiquico",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "psiquico_distancia"
   },
   "puño": {
    "golpe": "gx_puno",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "lucha_fisico"
   },
   "puño_agua": {
    "golpe": "gx_puno_agua",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "agua_fisico"
   },
   "puño_fuego": {
    "golpe": "gx_puno_fuego",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "fuego_fisico"
   },
   "puño_hielo": {
    "golpe": "gx_puno_hielo",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "hielo_fisico"
   },
   "puño_rayo": {
    "golpe": "gx_puno_rayo",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "electrico_fisico"
   },
   "rafaga": {
    "golpe": "gx_rafaga",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "volador_distancia"
   },
   "rapido": {
    "golpe": "gx_rapido",
-   "proyectil": "px_rapido"
+   "proyectil": "px_rapido",
+   "sonido": "normal_fisico"
   },
   "rayo_energia": {
    "golpe": "gx_rayo_energia",
-   "proyectil": "px_rayo_energia"
+   "proyectil": "px_rayo_energia",
+   "sonido": "normal_distancia"
   },
   "rayo_hielo": {
    "golpe": "gx_rayo_hielo",
-   "proyectil": "px_rayo_hielo"
+   "proyectil": "px_rayo_hielo",
+   "sonido": "hielo_distancia"
   },
   "rayo_solar": {
    "golpe": "gx_rayo_solar",
-   "proyectil": "px_rayo_solar"
+   "proyectil": "px_rayo_solar",
+   "sonido": "planta_distancia"
   },
   "remolino": {
    "golpe": "gx_remolino",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "agua_distancia"
   },
   "semillas": {
    "golpe": "gx_semillas",
-   "proyectil": "px_semillas"
+   "proyectil": "px_semillas",
+   "sonido": "planta_distancia"
   },
   "sombra": {
    "golpe": "gx_sombra",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "siniestro_distancia"
   },
   "spacial_rend": {
    "golpe": "gx_spacial_rend",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "dragon_distancia"
   },
   "terremoto": {
    "golpe": "gx_terremoto",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "tierra_fisico"
   },
   "time_bellow": {
    "golpe": "gx_time_bellow",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "dragon_distancia"
   },
   "trueno": {
    "golpe": "gx_trueno",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "electrico_distancia"
   },
   "tumba": {
    "golpe": "gx_tumba",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "roca_distancia"
   },
   "veneno": {
    "golpe": "gx_veneno",
-   "proyectil": ""
+   "proyectil": "",
+   "sonido": "veneno_fisico"
   },
   "ventisca": {
    "golpe": "gx_ventisca",
-   "proyectil": "px_ventisca"
+   "proyectil": "px_ventisca",
+   "sonido": "hielo_distancia"
   }
  }
 }

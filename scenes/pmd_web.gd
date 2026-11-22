@@ -42,10 +42,18 @@ func want_cards(ids: Array) -> void:
 		return
 	var seen := {}
 	for id in ids:
-		if not CardDB.is_pokemon(id):
+		if not CardDB.is_pokemon(id) and not CardDB.is_fossil(id):
 			continue
+		# Primero lo que no sale del nombre: la forma de la ilustración (Deoxys) y el sustituto
+		# de los Fósiles; después la especie por el nombre
+		var names: Array = []
+		if MiniBattle.FORMA_CARTA.has(id):
+			names.append(MiniBattle.FORMA_CARTA[id])
+		if CardDB.is_fossil(id) or CardDB.card_name(id) == "Buried Fossil":
+			names.append(MiniBattle.SUSTITUTO)
 		for sp in BattleScene.species(CardDB.card_name(id)):
-			var n: String = sp.trim_suffix("#shiny") + ("_shiny" if sp.ends_with("#shiny") else "")
+			names.append(sp.trim_suffix("#shiny") + ("_shiny" if sp.ends_with("#shiny") else ""))
+		for n in names:
 			if _files.has(n):
 				if not seen.has(n):
 					seen[n] = true
