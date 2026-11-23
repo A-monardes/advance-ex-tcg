@@ -61,8 +61,8 @@ func _run() -> void:
 		scene.setup_screen = ""
 		scene.intro = ""
 		scene.rival_intro = {}
-		if not scene.prize_anim.is_empty() and scene.prize_anim[0].get("choose", false) and scene._prize_showing():
-			scene._pick_prize(steps % 3)        # elige un Premio (viaja como acción)
+		if not scene.prize_anim.is_empty() and scene.prize_anim[0].get("choose", false) and scene.anim_cartas._prize_showing():
+			scene.paneles._pick_prize(steps % 3)        # elige un Premio (viaja como acción)
 			picks += 1
 		elif g.actor() == scene.human and scene.anim.is_empty() and scene.coin_anim.is_empty() and scene.trainer_anim.is_empty() \
 				and scene.power_anim.is_empty() and scene.banner.is_empty() and scene.evo_anim.is_empty() and scene.prize_anim.is_empty() \

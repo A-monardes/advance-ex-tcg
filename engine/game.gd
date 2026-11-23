@@ -392,6 +392,14 @@ func _main_actions() -> Array:
 		if CardDB.is_playable_basic(id):
 			if me.bench.size() < rules.bench_size and (CardDB.is_basic_pokemon(id) or _can_play_trainer(me, id)):
 				out.append({"t": "bench", "h": h})
+			# Bebés de e-Card: el Básico en que evolucionan se pone encima (cuenta como evolucionar)
+			if me.turns_taken > 1 and CardDB.is_basic_pokemon(id):
+				for s in me.slots():
+					var p := me.slot(s)
+					if CardDB.evolves_onto_baby(id, p.top()) and p.turn_played < turn_number \
+							and not (s == -1 and Abilities.evolve_active_blocked(self, me)) \
+							and not (not PlayerState.is_active_slot(s) and Abilities.evolve_bench_blocked(self)):
+						out.append({"t": "evolve", "h": h, "tg": s})
 		elif CardDB.is_evolution(id):
 			if me.turns_taken > 1:
 				for s in me.slots():
@@ -934,6 +942,13 @@ func _resolve_attack(index: int, target: int, opt) -> void:
 	else:
 		log_msg("%s uses %s." % [attacker.display_name(), atk["name"]])
 	var does_nothing := false
+	# Regla del Bebé (e-Card): si el Activo rival es un Pokémon Bebé, antes de nada se tira una
+	# moneda; con cruz el turno termina sin atacar.
+	var baby_def := other(me).actives().any(func(x): return CardDB.is_baby(x.top()))
+	if baby_def and not flip():
+		log_msg("  Baby Pokémon: tails, the turn ends without an attack.")
+		attacker.flags["attacked_turn"] = turn_number
+		return
 	if attacker.rotation == "confused" and not flip():
 		attacker.damage += rules.confusion_self_damage
 		log_msg("  It's Confused and hurts itself for %d damage!" % rules.confusion_self_damage)
@@ -1082,7 +1097,7 @@ func _check_knockouts() -> void:
 				p.flags["ko_by_attack_turn"] = turn_number
 			ko_log.append({"p": p.index, "slot": s, "id": mon.top(), "name": mon.display_name()})
 			var cards := mon.all_cards()
-			if CardDB.card_name(mon.tool) == "Time Shard" and current != p.index:
+			if CardDB.card_name(mon.tool) == "Time Shard" and current != p.index and mon.flags.get("hit_turn", -1) == turn_number:
 				# Time Shard: hasta 2 Energías básicas vuelven a la mano
 				var back := 0
 				for e in mon.energy.duplicate():

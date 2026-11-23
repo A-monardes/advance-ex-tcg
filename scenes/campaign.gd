@@ -217,9 +217,9 @@ func _packs_input(k: int, accept: bool, echo: bool) -> void:
 		var entries: Array = []
 		for cid in cards:
 			var c2: String = cid
-			entries.append(func(): return d._card_lines(c2, null))
+			entries.append(func(): return d.fichas._card_lines(c2, null))
 		d.snd.play("ok")
-		d._open_info(entries, pack_cursor, func(j: int): pack_cursor = j)
+		d.fichas._open_info(entries, pack_cursor, func(j: int): pack_cursor = j)
 		return
 	if not accept:
 		return
@@ -391,7 +391,7 @@ func _draw_new() -> void:
 		d._frame(r)
 		if sel:
 			d._outline(r.grow(-2), Color("#c03028"))
-		d._draw_card_image(Rect2(r.position.x + 18, r.position.y + 8, d.MENU_IMG, d.MENU_IMG), s["carta"])
+		d.imagenes._draw_card_image(Rect2(r.position.x + 18, r.position.y + 8, d.MENU_IMG, d.MENU_IMG), s["carta"])
 		var tw = d._text_w(s["titulo"])
 		d._text(Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + 52), s["titulo"], Color("#c03028") if sel else d.C_TEXT)
 		var dn: String = s["deck"]
@@ -480,7 +480,7 @@ func _draw_pack_opening(set_id: String) -> void:
 	# Brillo detrás
 	if t > 0.45:
 		var glow := clampf((t - 0.45) / 0.4, 0.0, 1.0)
-		d._draw_burst(art.get_center(), 60.0 + glow * 10.0, Color(1, 0.95, 0.6, 0.25 * glow), 12)
+		d.anim_ataques._draw_burst(art.get_center(), 60.0 + glow * 10.0, Color(1, 0.95, 0.6, 0.25 * glow), 12)
 	var torn := t >= 0.8
 	# Cartas que asoman por arriba (detrás del sobre)
 	if t > 0.95:
@@ -490,7 +490,7 @@ func _draw_pack_opening(set_id: String) -> void:
 			var ch := 60.0
 			var cx := art.get_center().x - cw / 2.0 + (i - 1) * 8.0
 			var cy := art.position.y + 6 - up * (32.0 + i * 7.0)
-			d._draw_card_back(Rect2(cx, cy, cw, ch))
+			d.anim_cartas._draw_card_back(Rect2(cx, cy, cw, ch))
 	draw_pack(art, set_id, true, not torn)
 	# El borde de arriba sale volando
 	if torn and t < 1.4:
@@ -531,31 +531,31 @@ func _draw_packs() -> void:
 			d.draw_rect(cell, Color("#f8d030") if rare else d.C_INK)
 			d.draw_rect(cell.grow(-1), Color("#f8f8e8"))
 			if rev:
-				d._draw_reverse(cell.grow(-1), Rect2(cell.position + Vector2(2, 2), Vector2(30, 30)), id)
-			d._draw_card_image(Rect2(cell.position + Vector2(2, 2), Vector2(30, 30)), id, rev)
+				d.imagenes._draw_reverse(cell.grow(-1), Rect2(cell.position + Vector2(2, 2), Vector2(30, 30)), id)
+			d.imagenes._draw_card_image(Rect2(cell.position + Vector2(2, 2), Vector2(30, 30)), id, rev)
 			if pk["new"].has(id):
 				d.draw_rect(Rect2(cell.position.x + 1, cell.end.y - 5, cell.size.x - 2, 4), Color("#c03028"))
 		else:
-			d._draw_card_back(cell)
+			d.anim_cartas._draw_card_back(cell)
 	# Con todas a la vista, la marcada (la que se ve a la derecha) titila
 	if browsing:
 		var pc := clampi(pack_cursor, 0, cards.size() - 1)
 		last = cards[pc]
 		last_rev = pc == pk.get("reverse", -1)
 		var cell := Rect2(9 + (pc % 3) * 37, 26 + (pc / 3) * 42, 34, 38)
-		var on := int(Time.get_ticks_msec() / 300.0) % 2 == 0
+		var on := int(Clock.ms() / 300.0) % 2 == 0
 		d._outline(cell.grow(1), Color("#f85838") if on else Color("#f8d030"))
 		d._outline(cell.grow(2), Color(0, 0, 0, 0.4))
 	# A la derecha, la última carta que salió
 	var side = Rect2(126, 20, d.W - 126, 140)
 	d._frame(side)
 	if last != "":
-		d._draw_card_image(Rect2(side.position.x + (side.size.x - d.MENU_IMG) / 2.0, 28, d.MENU_IMG, d.MENU_IMG), last, last_rev)
+		d.imagenes._draw_card_image(Rect2(side.position.x + (side.size.x - d.MENU_IMG) / 2.0, 28, d.MENU_IMG, d.MENU_IMG), last, last_rev)
 		d._text_scroll(Vector2(side.position.x + 9, 74), CardDB.card_name(last), d.C_TEXT, side.size.x - 18, "pack_name")
 		var rr: String = RARITY_ES.get(st.rarity.get(last, ""), "")
 		if last_rev:
 			rr = "Reverse holo"
-		var rc: Color = Color.from_hsv(fmod(Time.get_ticks_msec() / 1500.0, 1.0), 0.7, 0.85) if last_rev \
+		var rc: Color = Color.from_hsv(fmod(Clock.ms() / 1500.0, 1.0), 0.7, 0.85) if last_rev \
 				else (Color("#b08800") if (rr.begins_with("Rare") or rr == "Secret Rare") else d.C_DIM)
 		d._text(Vector2(side.position.x + 9, 86), rr, rc)
 		if pk["new"].has(last):
@@ -582,7 +582,7 @@ func _draw_name() -> void:
 		var ch := name_buf.substr(i, 1) if i < name_buf.length() else ""
 		if ch != "":
 			d._text(Vector2(x + 1, nb.position.y + 4), ch, d.C_TEXT)
-		var cur := i == name_buf.length() and int(Time.get_ticks_msec() / 400.0) % 2 == 0
+		var cur := i == name_buf.length() and int(Clock.ms() / 400.0) % 2 == 0
 		d.draw_rect(Rect2(x, nb.position.y + 16, 10, 1), Color("#c03028") if cur else d.C_DIM)
 	# Teclado
 	var kb := Rect2(4, 50, d.W - 8, 92)

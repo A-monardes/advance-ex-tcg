@@ -289,12 +289,12 @@ func _draw_card(center: Vector2) -> void:
 	var sx := maxf(absf(flip), 0.04)
 	# brillo detrás cuando ya muestra la cara
 	if face:
-		d._draw_burst(pos, 30.0 + sin(t * 3.0) * 2.0, Color(1, 1, 0.8, 0.18 * -flip), 12)
+		d.anim_ataques._draw_burst(pos, 30.0 + sin(t * 3.0) * 2.0, Color(1, 1, 0.8, 0.18 * -flip), 12)
 	d.draw_set_transform(d._base_off + pos, 0, Vector2(sx, 1.0))
 	if face:
-		d._draw_trainer_card(Vector2.ZERO, CARD_SCALE, card, a)
+		d.anim_cartas._draw_trainer_card(Vector2.ZERO, CARD_SCALE, card, a)
 	else:
-		d._draw_card_back(Rect2(Vector2(-24, -32) * CARD_SCALE, Vector2(48, 64) * CARD_SCALE), a)
+		d.anim_cartas._draw_card_back(Rect2(Vector2(-24, -32) * CARD_SCALE, Vector2(48, 64) * CARD_SCALE), a)
 	d.draw_set_transform(d._base_off)
 
 
@@ -311,7 +311,7 @@ func _draw_mon(ground: Vector2) -> void:
 	# Sale con un destello blanco que se abre (o se cierra al volver)
 	if (not mon_back and age < 0.45) or mon_back:
 		var fl := 1.0 - k if not mon_back else k
-		d._draw_burst(ground + Vector2(0, -12), 6.0 + 22.0 * (1.0 - fl), Color(1, 1, 1, 0.8 * fl), 10)
+		d.anim_ataques._draw_burst(ground + Vector2(0, -12), 6.0 + 22.0 * (1.0 - fl), Color(1, 1, 1, 0.8 * fl), 10)
 	var an := MiniBattle._anim(sp, "Idle")
 	var fr := MiniBattle._frame_at(an, t / MiniBattle.TICK, true) if not an.is_empty() else 0
 	var sc := 2.0 * k

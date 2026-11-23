@@ -49,6 +49,7 @@ func _init() -> void:
 	test_dp()
 	test_efectos_por_nombre()
 	test_auditoria_cartas()
+	test_auditoria_2()
 	simulate_all(games)
 	print("\n%d comprobaciones, %d fallos" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -602,6 +603,7 @@ func test_trainer_choices() -> void:
 	check(g.phase == "main", "vuelve a la fase principal")
 	# Mr. Briney's Compassion con el Activo pide un nuevo Activo
 	me.supporter_played = false
+	g.rules.first_player_supporter = true
 	me.hand.append(id_of("Mr. Briney's Compassion"))
 	var briney := g.legal_actions().filter(func(a): return a["t"] == "trainer" and CardDB.card_name(me.hand[a["h"]]) == "Mr. Briney's Compassion" and a["p"]["tg"] == -1)
 	g.apply(briney[0])
@@ -1902,3 +1904,130 @@ func test_auditoria_cartas() -> void:
 	me.hand.append("ex6-97")
 	var rev := g.legal_actions().filter(func(x): return x["t"] == "trainer")
 	check(not rev.is_empty() and rev.all(func(x): return x["p"].has("b")), "Pokémon Reversal (ex6-97) te deja elegir el Pokémon de la Banca")
+
+
+func test_auditoria_2() -> void:
+	print("Segunda auditoría (habilidades)")
+	# Conductive Body (Beldum δ ex11-59): cuenta Beldum en la Banca, no Magnemite
+	var g := board("ex11-59", neutral_def(["Lightning"]))
+	var me := g.current_player()
+	me.bench.clear()
+	me.bench.append(mon(CardDB.find("Magnemite")))
+	check(Abilities.retreat_cost(g, me, me.active) == 1, "Conductive Body (ex11-59) no cuenta Magnemite")
+	me.bench.append(mon(CardDB.find("Beldum")))
+	check(Abilities.retreat_cost(g, me, me.active) == 0, "Conductive Body (ex11-59) cuenta Beldum")
+	# Jynx δ ex15-17 evolucionada: tus Fuego y Psíquico pagan 1 menos para retirarse
+	g = board("ex1-3", neutral_def(["Fire"]))
+	me = g.current_player()
+	var base := Abilities.retreat_cost(g, me, me.active)
+	var jy := mon(CardDB.find("Smoochum"))
+	jy.cards.append("ex15-17")
+	me.bench.append(jy)
+	check(Abilities.retreat_cost(g, me, me.active) == maxi(0, base - 1), "Jynx δ (ex15-17) baja la retirada de los Fuego (%d → %d)" % [base, Abilities.retreat_cost(g, me, me.active)])
+	# Natural Remedy: una sola vez por turno
+	g = board("ex1-23", neutral_def(["Water"]))
+	me = g.current_player()
+	me.active.damage = 40
+	Abilities.on_energy_from_hand(g, me, me.active, id_of("Water Energy"))
+	Abilities.on_energy_from_hand(g, me, me.active, id_of("Water Energy"))
+	check(me.active.damage == 30, "Natural Remedy cura una sola vez por turno (quedó %d)" % me.active.damage)
+	# Investigate: se puede mirar el mazo rival o los Premios
+	g = board("ecard3-40", neutral_def(["Colorless"]))
+	var acts := g.legal_actions().filter(func(x): return x["t"] == "power" and x.get("n", "") == "Investigate")
+	check(not acts.is_empty(), "Investigate se puede usar")
+	if not acts.is_empty():
+		g.apply(acts[0])
+		var ch := g.pending_choice()
+		var labels: Array = ch.get("options", []).map(func(o): return o["label"])
+		check(labels.size() == 4, "Investigate ofrece los dos mazos y los dos Premios (%s)" % [labels])
+	# Elegir la Energía que se devuelve (Fan Away / Silver Sparkle)
+	g = board(neutral_def(["Grass"]), neutral_def(["Water"]))
+	me = g.current_player()
+	var opp := g.opponent_player()
+	var dre := id_of("Double Rainbow Energy")
+	var fe := id_of("Fire Energy")
+	opp.active.energy.append_array([dre, fe])
+	Abilities._ask_energy_off(g, me, opp, opp.active, "test", true)
+	g.phase = "choice"       # fuera de apply() la cola no cambia la fase sola
+	var o2: Array = g.pending_choice().get("options", [])
+	check(o2.size() == 2, "Se puede elegir entre las 2 Energías")
+	var pick_i := -1
+	for i in o2.size():
+		if o2[i]["id"] == fe:
+			pick_i = i
+	g.apply({"t": "choose", "i": maxi(0, pick_i)})
+	check(opp.active.energy == [dre] and opp.hand.has(fe), "Vuelve a la mano la Energía elegida")
+	# Pokémon Bebé (e-Card): se juegan como Básicos, se evolucionan poniendo el Básico encima y
+	# frenan la mitad de los ataques
+	check(CardDB.is_basic_pokemon("ecard1-22"), "Pichu (ecard1-22) cuenta como Pokémon Básico")
+	g = board(neutral_def(["Lightning"]), neutral_def(["Water"]))
+	me = g.current_player()
+	me.turns_taken = 3
+	me.hand.clear()
+	me.hand.append("ecard1-22")
+	check(g.legal_actions().any(func(x): return x["t"] == "bench"), "Pichu (ecard1-22) se puede bajar a la Banca")
+	me.bench[0] = mon("ecard1-22")
+	me.bench[0].turn_played = -5
+	me.hand.clear()
+	me.hand.append(CardDB.find("Pikachu", "ecard1"))
+	var evo := g.legal_actions().filter(func(x): return x["t"] == "evolve" and x["tg"] == 0)
+	check(not evo.is_empty(), "Pikachu se pone encima de Pichu")
+	if not evo.is_empty():
+		g.apply(evo[0])
+		check(me.bench[0].display_name() == "Pikachu" and me.bench[0].is_evolved(), "Pichu evolucionó en Pikachu")
+	var tails := 0
+	for sd in 12:
+		g = atk_board(neutral_def(["Water"]), [])
+		g.opponent_player().active = mon("ecard1-22")
+		g.rng.seed = sd
+		var at := g.current_player().active
+		at.energy.clear()
+		for c in at.attacks()[0]["cost"]:
+			at.energy.append(id_of(("Water" if c == "Colorless" else c) + " Energy"))
+		g.apply({"t": "attack", "a": 0, "tg": -1, "opt": false})
+		while g.has_pending_choices():
+			g.apply(g.legal_actions()[0])
+		if g.log_lines.any(func(l): return l.contains("Baby Pokémon: tails")):
+			tails += 1
+	check(tails > 0 and tails < 12, "Regla del Bebé: con cruz el turno termina sin atacar (%d de 12)" % tails)
+	# Strength Charm: ex4-74 suma después de W/R; ex8-92 antes (con Debilidad x2 se nota)
+	var weak_fire := ""
+	for id in CardDB.all_ids():
+		var cd := CardDB.get_card(id)
+		if CardDB.is_basic_pokemon(id) and cd.get("abilities", []).is_empty() and "Fire" in cd.get("weaknesses", []) \
+				and cd.get("resistances", []).is_empty() and CardDB.hp(id) >= 90:
+			weak_fire = id
+			break
+	for pair in [["ex4-74", 70], ["ex8-92", 80]]:
+		g = board(id_of("Torchic"), weak_fire)
+		var att := g.current_player().active
+		att.tool = pair[0]
+		var dmg := g.deal_attack_damage(att, g.opponent_player().active, 30, true, {})
+		check(dmg == pair[1], "Strength Charm %s: 30 con Debilidad hace %d (esperado %d)" % [pair[0], dmg, pair[1]])
+	# Mr. Stone's Project ex13-88: solo Energías básicas
+	g = board(neutral_def(["Fire"]), neutral_def(["Water"]))
+	me = g.current_player()
+	me.deck.clear()
+	me.deck.append(id_of("Mudkip"))
+	me.hand.clear()
+	me.hand.append("ex13-88")
+	me.turns_taken = 3
+	me.supporter_played = false
+	g.rules.first_player_supporter = true
+	check(not g.legal_actions().any(func(x): return x["t"] == "trainer"), "Mr. Stone's Project (ex13-88) no busca Pokémon Básicos")
+	me.hand[0] = "ex9-79"
+	check(g.legal_actions().any(func(x): return x["t"] == "trainer"), "Mr. Stone's Project (ex9-79) sí busca Pokémon Básicos")
+	# Kindle (Numel ex3-70): el atacante elige qué Energía del Defensor se descarta
+	g = atk_board("ex3-70", ["Fire", "Fire"])
+	var dfd := g.opponent_player().active
+	dfd.energy.append_array([id_of("Water Energy"), id_of("Double Rainbow Energy")])
+	var ki := atk_index(g, "Kindle")
+	g.apply({"t": "attack", "a": ki, "tg": -1, "opt": false})
+	var ch2 := g.pending_choice()
+	var o5: Array = ch2.get("options", [])
+	check(o5.size() == 2, "Kindle deja elegir entre las 2 Energías del Defensor (%d opciones)" % o5.size())
+	for i in o5.size():
+		if o5[i]["id"] == id_of("Water Energy"):
+			g.apply({"t": "choose", "i": i})
+			break
+	check(dfd.energy == [id_of("Double Rainbow Energy")] or not g.opponent_player().all_in_play().has(dfd), "Kindle descarta la elegida")

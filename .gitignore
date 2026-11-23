@@ -10,6 +10,7 @@ __pycache__/
 efectos/propios/*.json
 mundo/propios/*.json
 mundo/propios/monedas/
+mundo/propios/equipos/
 mundo/propios/tipos/
 mundo/propios/ui/
 mundo/propios/batalla/

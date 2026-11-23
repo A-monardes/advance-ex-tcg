@@ -2384,8 +2384,8 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 			if op.get("that", false) and opp.slot(ctx["target"]) != null:
 				t = opp.slot(ctx["target"])
 			if t != null and not Abilities.blocks_effects(g, a, t):
-				for i in (int(ctx["heads"]) if op.get("per_heads", false) else op["count"]):
-					_discard_defender_energy(g, opp, t, op.get("special", false))
+				_discard_defender_energy(g, me, opp, t, op.get("special", false),
+						int(ctx["heads"]) if op.get("per_heads", false) else int(op["count"]))
 		"mass_destruction":
 			if a.special_energy_count() > 0:
 				g.log_msg("  It has Special Energy: the attack does nothing.")
@@ -2517,11 +2517,9 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 				a.flags["next_bonus_attack"] = op["bonus_attack"]
 			if op.has("bonus_all"):
 				a.flags["next_bonus_all"] = op["bonus_all"]
-		"return_def_energy":
+		"return_def_energy":     # "choose 1 Energy attached to the Defending Pokémon"
 			if d != null and not blocked and not d.energy.is_empty():
-				var e: String = d.energy.pop_back()
-				opp.hand.append(e)
-				g.log_msg("  %s returns to the opponent's hand." % CardDB.card_name(e))
+				Abilities._ask_energy_off(g, me, opp, d, "Energy to return to the opponent's hand", true)
 		"opp_hand_pick":
 			if not opp.hand.is_empty():
 				g.log_msg("  Looks at the opponent's hand: " + ", ".join(opp.hand.map(func(c): return CardDB.card_name(c))))
@@ -2530,9 +2528,11 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 					opp.discard.append(o["id"]))
 		"def_energy_to_deck":
 			if d != null and not blocked and not d.energy.is_empty():
-				var e: String = d.energy.pop_back()
-				opp.deck.insert(0, e)
-				g.log_msg("  %s goes to the bottom of the opponent's deck." % CardDB.card_name(e))
+				g.ask(me.index, "Energy for the bottom of the opponent's deck", Abilities._energy_options(d), func(o):
+					if opp.all_in_play().has(d) and o["id"] in d.energy:
+						d.energy.erase(o["id"])
+						opp.deck.insert(0, o["id"])
+						g.log_msg("  %s goes to the bottom of the opponent's deck." % CardDB.card_name(o["id"])))
 		"self_damage":
 			var sd: int = op["n"]
 			if op.get("per", "") == "my_bench":
@@ -2668,13 +2668,17 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 		"strip_def_trainers":
 			if d != null:
 				_strip_trainers(opp, d)
-		"def_energy_shuffle":
+		"def_energy_shuffle":     # "choose N Energy cards attached to the Defending Pokémon"
 			if d != null and not blocked and not d.energy.is_empty():
-				for i in mini(int(op["n"]), d.energy.size()):
-					var e: String = d.energy.pop_back()
-					opp.deck.append(e)
-					g.log_msg("  %s is shuffled into the opponent's deck." % CardDB.card_name(e))
-				g.shuffle(opp.deck)
+				Trainers.chain(g, me.index, "Energy to shuffle into the opponent's deck", mini(int(op["n"]), d.energy.size()),
+						func(_p): return Trainers._distinct(d.energy, func(_c): return true) if opp.all_in_play().has(d) else [], false,
+						func(id):
+							if not (opp.all_in_play().has(d) and d.energy.has(id)):
+								return
+							d.energy.erase(id)
+							opp.deck.append(id)
+							g.log_msg("  %s is shuffled into the opponent's deck." % CardDB.card_name(id)),
+						func(): g.shuffle(opp.deck))
 		"devolve_bottom":
 			var evos: Array = opp.all_in_play().filter(func(x): return x.is_evolved())
 			if not evos.is_empty():
@@ -3016,10 +3020,11 @@ static func _post(g: Game, op: Dictionary, ctx: Dictionary, me: PlayerState, opp
 					2: d.damage = maxi(0, d.damage - 10)
 					3: d.damage += 10 * int(op["three"])
 		"until_tails_discard":
+			var hu := 0
 			while g.flip():
-				if d == null or blocked or d.energy.is_empty() or not opp.all_in_play().has(d):
-					continue
-				_discard_defender_energy(g, opp, d, false)
+				hu += 1
+			if d != null and not blocked and hu > 0:
+				_discard_defender_energy(g, me, opp, d, false, hu)
 		"vine_tease":
 			if not me.deck.is_empty() and not me.prizes.is_empty():
 				var opts7: Array = []
@@ -3596,15 +3601,19 @@ static func _discard_own_energy(me: PlayerState, p: PokemonInPlay, op: Dictionar
 	return removed > 0 if count == 99 else removed >= count
 
 
-static func _discard_defender_energy(g: Game, opp: PlayerState, d: PokemonInPlay, special_only: bool) -> void:
-	for i in range(d.energy.size() - 1, -1, -1):
-		var e := d.energy[i]
-		if special_only and CardDB.is_basic_energy(e):
-			continue
-		opp.discard.append(e)
-		d.energy.remove_at(i)
-		g.log_msg("  Discards %s from %s." % [CardDB.card_name(e), d.display_name()])
+## "Discard N Energy attached to the Defending Pokémon": las elige el atacante, de a una.
+static func _discard_defender_energy(g: Game, me: PlayerState, opp: PlayerState, d: PokemonInPlay, special_only: bool, n: int) -> void:
+	if n <= 0:
 		return
+	Trainers.chain(g, me.index, "Energy to discard from %s" % d.display_name(), n,
+			func(_p): return Trainers._distinct(d.energy, func(e): return not (special_only and CardDB.is_basic_energy(e))) \
+					if opp.all_in_play().has(d) else [], false,
+			func(e):
+				if opp.all_in_play().has(d) and d.energy.has(e):     # si quedó KO, sus cartas ya están en el descarte
+					d.energy.erase(e)
+					opp.discard.append(e)
+					g.log_msg("  Discards %s from %s." % [CardDB.card_name(e), d.display_name()]),
+			func(): pass)
 
 
 static func _strip_trainers(owner: PlayerState, p: PokemonInPlay) -> void:

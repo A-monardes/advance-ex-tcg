@@ -868,9 +868,7 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 			p.flags["type_until"] = g.turn_number
 		"Fan Away":
 			if g.flip():
-				var e: String = opp.active.energy.pop_back()
-				opp.hand.append(e)
-				g.log_msg("  %s returns to the opponent's hand." % CardDB.card_name(e))
+				_ask_energy_off(g, me, opp, opp.active, "Fan Away: Energy to return to the opponent's hand", true)
 		"Chaos Flash":
 			if g.flip():
 				g.try_condition(opp.active, "confused")
@@ -962,9 +960,7 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 		"Jet Stream":
 			if g.flip():
 				if not p.energy.is_empty():
-					var e: String = p.energy.pop_back()
-					me.discard.append(e)
-					g.log_msg("  Discards %s." % CardDB.card_name(e))
+					_ask_energy_off(g, me, me, p, "Jet Stream: Energy to discard from %s" % p.display_name(), false)
 				if opp.active != null and not opp.active.energy.is_empty():
 					_ask_discard_energy(g, me, opp, opp.active, "Jet Stream: discard an Energy")
 		"Miraculous Powder":
@@ -1147,11 +1143,25 @@ static func use_power(g: Game, me: PlayerState, s: int, n: String, prm: Dictiona
 				for pl in g.players:
 					if pl.active != null:
 						pl.active.damage = max(0, pl.active.damage - 20)
-		"Investigate":
-			var seen: Array = []
-			for i in mini(2, me.deck.size()):
-				seen.append(CardDB.card_name(me.deck[-1 - i]))
-			g.log_msg("  Top of the deck: %s." % ", ".join(seen))
+		"Investigate":     # el top 2 del mazo de cualquier jugador o hasta 2 Premios de cualquiera
+			var inv_opts: Array = []
+			for pl in [me, opp]:
+				var whose := "your" if pl == me else "the opponent's"
+				if not pl.deck.is_empty():
+					inv_opts.append({"label": "Top 2 cards of %s deck" % whose, "pl": pl.index, "prizes": false, "ai": 0.6 if pl == me else 0.3})
+				if not pl.prizes.is_empty():
+					inv_opts.append({"label": "2 of %s Prize cards" % whose, "pl": pl.index, "prizes": true, "ai": 0.5 if pl == me else 0.2})
+			g.ask(me.index, "Investigate: what to look at", inv_opts, func(o):
+				var pl: PlayerState = g.players[o["pl"]]
+				var seen: Array = []
+				if o["prizes"]:
+					for i in mini(2, pl.prizes.size()):
+						seen.append(CardDB.card_name(pl.prizes[i]))
+					g.log_msg("  Prize cards: %s." % ", ".join(seen))
+				else:
+					for i in mini(2, pl.deck.size()):
+						seen.append(CardDB.card_name(pl.deck[-1 - i]))
+					g.log_msg("  Top of the deck: %s." % ", ".join(seen)))
 		"Reconstruction":
 			Trainers._ask_from_deck(g, me, "Reconstruction: Omanyte or Kabuto", func(c): return CardDB.card_name(c) in ["Omanyte", "Kabuto"])
 			var cands := _distinct(me.hand, func(c): return CardDB.is_basic_energy(c))
@@ -1630,6 +1640,24 @@ static func _ask_discard_energy(g: Game, me: PlayerState, owner: PlayerState, p:
 			g.log_msg("  Discards %s from %s." % [CardDB.card_name(o["id"]), p.display_name()]))
 
 
+## "chooser" elige una Energía unida a "p" (de "owner") y la descarta o la devuelve a la mano
+## de su dueño. Si es de un Pokémon propio, la IA prefiere soltar la menos valiosa.
+static func _ask_energy_off(g: Game, chooser: PlayerState, owner: PlayerState, p: PokemonInPlay, prompt: String, to_hand: bool) -> void:
+	var opts := _energy_options(p)
+	if owner == chooser:
+		for o in opts:
+			o["ai"] = 1.0 - float(o["ai"])
+	g.ask(chooser.index, prompt, opts, func(o):
+		if owner.all_in_play().has(p) and o["id"] in p.energy:
+			p.energy.erase(o["id"])
+			if to_hand:
+				owner.hand.append(o["id"])
+				g.log_msg("  %s returns to the hand." % CardDB.card_name(o["id"]))
+			else:
+				owner.discard.append(o["id"])
+				g.log_msg("  Discards %s from %s." % [CardDB.card_name(o["id"]), p.display_name()]))
+
+
 ## Terraforming: el jugador vuelve a poner las cartas de a una, de abajo hacia arriba
 ## (la última elegida queda arriba de todo).
 static func _rearrange(g: Game, me: PlayerState, cards: Array, placed: Array) -> void:
@@ -1740,7 +1768,7 @@ static func blocks_effects(g: Game, attacker: PokemonInPlay, target: PokemonInPl
 	if _shielded(g, attacker, target):
 		return true
 	if g.owner_of(attacker) != g.owner_of(target):
-		if stages(g, target, "Jynx") or holon(target, "Holon Energy WP", "Water"):
+		if stages(g, target, "Jynx", "no Weakness") or holon(target, "Holon Energy WP", "Water"):
 			return true
 		if body(g, target, "Darkness Veil") and Energy.count_type(target, "Darkness") > 0 and fired(g, target, "Darkness Veil"):
 			return true
@@ -1794,8 +1822,11 @@ static func holon(p: PokemonInPlay, holon_name: String, basic: String) -> bool:
 
 
 ## "Stages of Evolution": cada carta tiene un efecto distinto (y solo si está evolucionada).
-static func stages(g: Game, p: PokemonInPlay, who: String) -> bool:
-	return p.is_evolved() and p.display_name() == who and body(g, p, "Stages of Evolution")
+## "key": hay cartas con el mismo nombre y distinto efecto (Jynx ex10-28 / ex15-17), así que se
+## puede exigir un fragmento del texto.
+static func stages(g: Game, p: PokemonInPlay, who: String, key := "") -> bool:
+	return p.is_evolved() and p.display_name() == who and body(g, p, "Stages of Evolution") \
+			and (key == "" or _ability_text(p, "Stages of Evolution").contains(key))
 
 
 ## Fluff (Jumpluff): si ya tenía daño, una moneda por ataque; con cara se previene todo.
@@ -1811,11 +1842,18 @@ static func _fluff(g: Game, attacker: PokemonInPlay, target: PokemonInPlay) -> b
 
 
 ## Modificadores antes de Debilidad/Resistencia.
+static func _charm_pre_wr(p: PokemonInPlay) -> bool:
+	return str(CardDB.get_card(p.tool).get("text", "")).contains("(before applying Weakness")
+
+
 static func pre_wr_bonus(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, is_active: bool) -> int:
 	var bonus := 0
 	var att_owner := g.owner_of(attacker)
 	var tgt_owner := g.owner_of(target)
 	if is_active:
+		if CardDB.card_name(attacker.tool) == "Strength Charm" and _charm_pre_wr(attacker):
+			bonus += 10
+			attacker.flags["discard_tool"] = g.turn_number
 		if attacker.flags.get("plus_power", [0, -1])[1] == g.turn_number:     # PlusPower (DP): +10 al Activo
 			bonus += 10 * int(attacker.flags["plus_power"][0])
 		if attacker.is_type("Darkness") or attacker.name_has("Dark"):
@@ -1887,7 +1925,7 @@ static func weakness_types(g: Game, target: PokemonInPlay) -> Array:
 		return []
 	if g.stadium_name() == "Glacia's Stadium" and target.is_type("Water") and not target.is_ex():
 		return []
-	if target.flags.get("no_weakness", -1) >= g.turn_number or stages(g, target, "Jynx") or holon(target, "Holon Energy FF", "Fire") \
+	if target.flags.get("no_weakness", -1) >= g.turn_number or stages(g, target, "Jynx", "no Weakness") or holon(target, "Holon Energy FF", "Fire") \
 			or CardDB.card_name(target.tool) == "Protective Orb":
 		return []
 	var tow := g.owner_of(target)
@@ -1941,7 +1979,10 @@ static func ignores_resistance(g: Game, attacker: PokemonInPlay, target: Pokemon
 ## Modificadores después de Debilidad/Resistencia. Devuelve el daño final.
 static func post_wr(g: Game, attacker: PokemonInPlay, target: PokemonInPlay, is_active: bool, dmg: int, ignore_fx: bool) -> int:
 	var tgt_owner := g.owner_of(target)
-	if is_active and CardDB.card_name(attacker.tool) == "Strength Charm" and dmg > 0:
+	# Strength Charm: ecard1-150 suma después de W/R a cualquier Pokémon dañado; ex4-74 solo al
+	# Activo; ex8-92 y ex15-81 suman antes de W/R (eso va en pre_wr_bonus).
+	if CardDB.card_name(attacker.tool) == "Strength Charm" and dmg > 0 and not _charm_pre_wr(attacker) \
+			and (is_active or not str(CardDB.get_card(attacker.tool).get("text", "")).contains("to the Active")):
 		dmg += 10
 		attacker.flags["discard_tool"] = g.turn_number
 	dmg -= 10 * Energy.count_named(attacker, "Double Rainbow Energy")
@@ -2066,10 +2107,7 @@ static func after_damaged(g: Game, attacker: PokemonInPlay, target: PokemonInPla
 		attacker.damage += 20
 		g.log_msg("  Stages of Evolution: 2 damage counters on %s." % attacker.display_name())
 	if body(g, target, "Silver Sparkle") and fired(g, target, "Silver Sparkle") and g.flip() and not attacker.energy.is_empty():
-		var att_owner := g.owner_of(attacker)
-		var e: String = attacker.energy.pop_back()
-		att_owner.hand.append(e)
-		g.log_msg("  Silver Sparkle: %s returns to the opponent's hand." % CardDB.card_name(e))
+		_ask_energy_off(g, tgt_owner, g.owner_of(attacker), attacker, "Silver Sparkle: Energy to return to the opponent's hand", true)
 	if body(g, target, "Spiny") and fired(g, target, "Spiny"):
 		var h := 0
 		while g.flip():
@@ -2220,7 +2258,8 @@ static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
 	if body(g, p, "Lightweight"):
 		cost -= Energy.count_named(p, "Grass Energy")
 	if body(g, p, "Conductive Body"):
-		cost -= me.bench.filter(func(x): return x.display_name() == "Magnemite").size()
+		var own_nm := CardDB.evo_name(p.display_name())      # "for each Beldum/Magnemite on your Bench" (δ no cambia el nombre)
+		cost -= me.bench.filter(func(x): return CardDB.evo_name(x.display_name()) == own_nm).size()
 	if body(g, p, "Heavyweight") and Energy.count_named(p, "Grass Energy") > 0:
 		cost += 2
 	if me.is_active(p) and body_anywhere(g, "Gluey Slime"):
@@ -2229,6 +2268,9 @@ static func retreat_cost(g: Game, me: PlayerState, p: PokemonInPlay) -> int:
 		cost += 2
 	if me.is_active(p) and g.other(me).all_in_play().any(func(x): return stages(g, x, "Wobbuffet")):
 		cost += 1
+	if me.is_active(p) and (p.is_type("Fire") or p.is_type("Psychic")) \
+			and me.all_in_play().any(func(x): return stages(g, x, "Jynx δ", "less to retreat")):
+		cost -= 1
 	if me.is_active(p) and not p.is_ex() and not _is_baby(p.top()) and me.bench.any(func(x): return body(g, x, "Retreat Aid")):
 		cost -= 2
 	if p.display_name() in ["Jigglypuff", "Wigglytuff", "Wigglytuff ex", "Igglybuff"] and body_in_play(g, me, "Hover Lift"):
@@ -2353,7 +2395,9 @@ static func on_energy_from_hand(g: Game, me: PlayerState, p: PokemonInPlay, card
 	if body(g, p, "Natural Cure") and n == _body_energy(p, "Natural Cure") and fired(g, p, "Natural Cure"):
 		p.clear_conditions()
 		g.log_msg("  Natural Cure: %s recovers from its Special Conditions." % p.display_name())
-	if body(g, p, "Natural Remedy") and n == "Water Energy" and fired(g, p, "Natural Remedy"):
+	if body(g, p, "Natural Remedy") and n == "Water Energy" and p.flags.get("natural_remedy", -1) != g.turn_number \
+			and fired(g, p, "Natural Remedy"):
+		p.flags["natural_remedy"] = g.turn_number      # "Once during your turn"
 		p.damage = max(0, p.damage - 10)
 	if body(g, p, "Self-healing") and n == _body_energy(p, "Self-healing") and fired(g, p, "Self-healing"):
 		p.clear_conditions()

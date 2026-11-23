@@ -8,9 +8,9 @@ func _initialize() -> void:
 	sheet.fill(Color(0.1, 0.1, 0.15))
 	var t0 := Time.get_ticks_msec()
 	for i in ids.size():
-		var raw: Image = scene._load_card_image_raw(ids[i])
-		var a: Image = scene._gba_art(raw, 40, 40)
-		var b: Image = scene._gba_art(scene._load_card_image(ids[i]), 40, 40)
+		var raw: Image = scene.imagenes._load_card_image_raw(ids[i])
+		var a: Image = scene.mesa._gba_art(raw, 40, 40)
+		var b: Image = scene.mesa._gba_art(scene.imagenes._load_card_image(ids[i]), 40, 40)
 		a.resize(80, 80, Image.INTERPOLATE_NEAREST)
 		b.resize(80, 80, Image.INTERPOLATE_NEAREST)
 		sheet.blit_rect(a, Rect2i(0, 0, 80, 80), Vector2i(i * 84 + 2, 2))

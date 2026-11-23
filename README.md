@@ -176,11 +176,11 @@ el arcoíris y se prenden a destiempo, como al inclinar la carta, mientras el Po
 limpio. La cantidad de cada tamaño está en `_build_cosmos` (la lista `kinds`). Cada unos 8 segundos el efecto se desvanece un momento
 y se ve la ilustración original, como al girar una carta de verdad. Además, una franja de luz la
 cruza cada tanto (arcoíris en las holo ex y las secretas). Todo es una capa encima: tus imágenes
-no se modifican. Los tiempos y la intensidad están en `scenes/duel.gd` (`COSMOS_*`).
+no se modifican. Los tiempos y la intensidad están en `scenes/duel_imagenes.gd` (`COSMOS_*`).
 Además, las imágenes escaneadas de cartas holo traen el brillo "cosmos" del papel
 (puntitos de colores). Al achicarlas quedaban como ruido, así que el juego las limpia solo con un
 filtro de mediana (según `data/rarezas.json`). Tus archivos no se tocan; si preferís verlas tal
-cual, poné `HOLO_FILTER := false` en `scenes/duel.gd`.
+cual, poné `HOLO_FILTER := false` en `scenes/duel_imagenes.gd`.
 
 ## Íconos de Energía
 
@@ -221,6 +221,13 @@ vivos de 15 bits:
   ilustración. El Activo es una carta grande con su recuadro de nombre, barra de PS
   (verde, amarilla o roja), condiciones y Energías; la Banca son cartitas con los PS
   que les quedan en números y las Energías como cuadraditos.
+- **Pokémon especiales**: los δ tienen un aura de llamas en la pelea y la δ de fondo en su
+  ficha; los ★, una estrella dorada en la ficha. Los **Dark** (Dark Tyranitar, Dark
+  Dragonite...) pelean con una sombra violeta casi negra y humo que les sube de los
+  costados, como en sus ilustraciones. Los de **Team Aqua, Team Magma y Rocket's** muestran
+  el logo de su equipo arriba al empezar la pelea (se desvanece en medio segundo) y de
+  fondo en la ficha del Activo; los logos los arma `tools/armar_equipos.py` en
+  `mundo/propios/equipos/` (sin ellos no se dibujan).
 - **Premios** como dorsos de carta; **mazo, mano y descarte** con íconos y números.
 - **Cuadros de texto y menús** como los de Ruby/Sapphire: el menú principal pregunta
   "¿Qué hará...?" con las opciones en dos columnas (◀▶ cambia de columna, ▲▼ de fila);
@@ -271,7 +278,7 @@ Cada ataque tiene una animación corta según el tipo del atacante: bolas de fue
 (Fuego), chorro de gotas (Agua), hojas (Planta), rayo con destello (Rayo), ondas
 (Psíquico), embestida con impacto (Lucha), tajos en la oscuridad (Oscuro) y
 esquirlas (Metal). El defensor tiembla y aparece el daño flotando.
-Todo está dibujado por código en `scenes/duel.gd` (sección "Animaciones de ataque").
+Todo está dibujado por código en `scenes/duel_anim_ataques.gd`.
 
 ![Animaciones](docs/ataques.gif)
 
@@ -547,7 +554,17 @@ engine/                ← motor de reglas, sin dependencias de pantalla
   simple_ai.gd           IA por puntuación
   rule_set.gd            reglas por época
   card_db.gd, decks.gd, pokemon_in_play.gd, player_state.gd
-scenes/duel.gd         ← pantalla 240×160
+scenes/duel.gd         ← pantalla 240×160: estado, flujo, teclas y dibujo general
+  duel_titulo.gd         título, menú principal y armado del duelo libre
+  duel_mesa.gd           la mesa (singles y dobles), cartas, recuadros de PS, contadores
+  duel_imagenes.gd       imágenes de cartas: arte, recortes, holo, dorso, íconos de Energía
+  duel_paneles.gd        cuadro de texto y menús, registro, mano, Premios, pausa, resultados
+  duel_fichas.gd         fichas de cartas (C), vista partida, arte en grande
+  duel_anim_ataques.gd   animaciones de ataque y de Pokémon que cambian de lugar
+  duel_anim_cartas.gd    unir Energía, Premios, barajar y robar, Entrenadores, Poké-Powers
+  duel_anim_pokemon.gd   evolución, PS, Fuera de Combate, cartel de turno
+  duel_monedas.gd        monedas
+  (cada módulo recibe la pantalla como `d`: lo que vive en duel.gd se escribe d.algo)
 data/cards_adv.json    ← 508 cartas de la era ADV
 tools/fetch_cards.py   ← regenera las cartas (con --all baja los 16 sets EX)
 tests/                 ← tests, cobertura y capturas
@@ -562,6 +579,8 @@ godot --headless --script res://tests/run_tests.gd -- 40
 Prueba reglas puntuales (habilidades, Entrenadores con elección, Estadios, TMs...) y
 juega todos los cruces de mazos IA contra IA más partidas con acciones al azar,
 comprobando en cada paso que nadie gane ni pierda cartas.
+`tests/golden_shots.gd` saca capturas fijas de las pantallas principales (reloj congelado,
+misma partida); `tools/comparar_capturas.py base nueva` dice si algo cambió un píxel.
 `tests/ui_smoke.gd` juega partidas enteras a través de la pantalla para comprobar que
 ninguna animación se trabe.
 `tests/doubles_tests.gd` prueba las batallas dobles: reglas puntuales (atacar a cada

@@ -280,9 +280,10 @@ static func options(g: Game, me: PlayerState, hand_idx: int) -> Array:
 					if p.is_basic() and not p.is_ex() and not p.is_fossil():
 						out.append({"tg": s})
 		"Mr. Stone's Project":
-			if me.deck.any(func(c): return _is_basic_card(c)):
+			var ok := _stone_pred(id)
+			if me.deck.any(ok):
 				out.append({"from": "deck"})
-			if me.discard.any(func(c): return _is_basic_card(c)):
+			if me.discard.any(ok):
 				out.append({"from": "discard"})
 		"Scott":
 			if me.deck.any(func(c): return CardDB.is_supporter(c) or CardDB.is_stadium(c)):
@@ -679,7 +680,9 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 				g.log_msg("  Didn't find anything.")
 		"Dual Ball":
 			var heads := g.flip_many(2)
-			_ask_repeat(g, me, heads, "Choose a Basic Pokémon", func(c): return CardDB.is_basic_pokemon(c))
+			# ecard1-139: "other than a Baby Pokémon card"
+			var no_baby := str(CardDB.get_card(card_id).get("text", "")).contains("other than a Baby")
+			_ask_repeat(g, me, heads, "Choose a Basic Pokémon", func(c): return CardDB.is_basic_pokemon(c) and not (no_baby and CardDB.is_baby(c)))
 		"Team Aqua Ball", "Team Magma Ball":
 			var team := "Team Aqua" if n.begins_with("Team Aqua") else "Team Magma"
 			if g.flip():
@@ -694,7 +697,7 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 		"Lanette's Net Search":
 			var fn := func(picked: Array) -> Array:
 				var types := picked.map(func(c): return Trainers._first_type(c))
-				return Trainers._distinct(me.deck, func(c): return CardDB.is_basic_pokemon(c) and Trainers._first_type(c) not in types)
+				return Trainers._distinct(me.deck, func(c): return CardDB.is_basic_pokemon(c) and not CardDB.is_baby(c) and Trainers._first_type(c) not in types)
 			_pick_sequence(g, me, "Basic Pokémon (different types)", 3, fn, [])
 		"Team Aqua Conspirator", "Team Magma Conspirator":
 			var team := "Team Aqua" if n.begins_with("Team Aqua") else "Team Magma"
@@ -900,15 +903,16 @@ static func play(g: Game, me: PlayerState, card_id: String, prm: Dictionary) -> 
 			else:
 				me.draw(2)
 		"Mr. Stone's Project":
+			var ok := _stone_pred(card_id)
 			if prm["from"] == "deck":
-				_pick_sequence(g, me, "Mr. Stone's Project: Basic card", 2, func(_p): return _distinct(me.deck, func(c): return Trainers._is_basic_card(c)), [])
+				_pick_sequence(g, me, "Mr. Stone's Project: Basic card", 2, func(_p): return _distinct(me.deck, ok), [])
 			else:
 				chain(g, me.index, "Mr. Stone's Project: Basic card", 2,
 						func(picked):
 							var left: Array = me.discard.duplicate()
 							for c in picked:
 								left.erase(c)
-							return _distinct(left, func(c): return Trainers._is_basic_card(c)), true,
+							return _distinct(left, ok), true,
 						func(id):
 							me.discard.erase(id)
 							me.hand.append(id),
@@ -1363,6 +1367,14 @@ static func _windstorm(g: Game, me: PlayerState, n: int) -> void:
 				g.log_msg("  Discards %s." % CardDB.card_name(x.tool))
 				x.tool = ""
 		Trainers._windstorm(g, me, n - 1))
+
+
+## Mr. Stone's Project: ex9-79 busca "Basic cards" (Básicos y Energías básicas); ex13-88 y
+## ex15-77, solo Energías básicas.
+static func _stone_pred(card_id: String) -> Callable:
+	if str(CardDB.get_card(card_id).get("text", "")).contains("basic Energy cards"):
+		return func(c): return CardDB.is_basic_energy(c)
+	return func(c): return Trainers._is_basic_card(c)
 
 
 static func _is_basic_card(c: String) -> bool:

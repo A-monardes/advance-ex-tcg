@@ -23,8 +23,8 @@ func _run():
 					else: shuffles += 1
 			if scene.intro == "call":
 				scene._opening_call(steps % 2 == 0)     # cara o cruz
-			if not scene.prize_anim.is_empty() and scene.prize_anim[0].get("choose", false) and scene._prize_showing():
-				scene._pick_prize(steps % 4)
+			if not scene.prize_anim.is_empty() and scene.prize_anim[0].get("choose", false) and scene.anim_cartas._prize_showing():
+				scene.paneles._pick_prize(steps % 4)
 				picks += 1
 			if scene.setup_screen == "mull":
 				scene.setup_screen = ""            # como apretar X en la pantalla del mulligan

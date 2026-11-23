@@ -159,6 +159,9 @@ static func draw(d, a: Dictionary) -> void:
 		_draw_mon(d, front_id, true, fpos, sink if front_hit else 0.0)
 	if not (blink and not front_hit):
 		_draw_mon(d, back_id, false, bpos, sink if not front_hit else 0.0)
+	# Team Aqua, Team Magma y Rocket's: el logo arriba de cada uno cuando terminan de entrar
+	MiniBattle.draw_team_logo(d, front_id, fpos + Vector2(SPR / 2.0, 10), s - 0.6, 0.1)
+	MiniBattle.draw_team_logo(d, back_id, bpos + Vector2(SPR / 2.0, 10), s - 0.6, 0.1)
 	# El efecto del ataque, con las tiras de efectos/propios: uno para golpes de menos de 50
 	# y otro más fuerte para 50 o más
 	var fc := FRONT_POS + Vector2(32, 34)
@@ -252,13 +255,16 @@ static func _draw_mon(d, id: String, front: bool, pos: Vector2, sink: float) -> 
 		if not cols.is_empty() and h > 0:
 			MiniBattle.draw_aura(d, tex, Rect2(pos + Vector2(0, sink), Vector2(SPR, h)), Rect2(0, 0, SPR, h), cols, 1.0,
 					pos + Vector2(SPR / 2.0, SPR * 0.6))
+		if MiniBattle.is_dark(id) and h > 0:          # Pokémon Dark: sombra violeta y humo
+			MiniBattle.draw_dark(d, tex, Rect2(pos + Vector2(0, sink), Vector2(SPR, h)), Rect2(0, 0, SPR, h), 1.0,
+					pos + Vector2(SPR / 2.0, SPR * 0.6))
 		d.draw_texture_rect_region(tex, Rect2(pos + Vector2(0, sink), Vector2(SPR, h)), Rect2(0, 0, SPR, h))
 		return
 	var r := Rect2(pos + Vector2(10, 10 if front else 14), Vector2(44, 44))
 	var h2 := r.size.y - sink * 44.0 / SPR
 	if h2 <= 0:
 		return
-	var art: Texture2D = d._art_texture(id, 40, 40)
+	var art: Texture2D = d.mesa._art_texture(id, 40, 40)
 	d.draw_rect(Rect2(r.position + Vector2(0, r.size.y - h2), Vector2(r.size.x, h2)), Color("#384050"))
 	if art != null:
 		d.draw_texture_rect_region(art, Rect2(r.position + Vector2(2, 2 + (r.size.y - h2)), Vector2(40, maxf(0, h2 - 4))),

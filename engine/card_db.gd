@@ -59,8 +59,24 @@ static func is_basic_energy(id: String) -> bool:
 	return is_energy(id) and "Basic" in subtypes(id)
 
 
+## Los Pokémon Bebé de la era e-Card (Pichu, Magby...) "cuentan como Pokémon Básico".
 static func is_basic_pokemon(id: String) -> bool:
-	return is_pokemon(id) and "Basic" in subtypes(id)
+	return is_pokemon(id) and ("Basic" in subtypes(id) or "Baby" in subtypes(id))
+
+
+static func is_baby(id: String) -> bool:
+	return is_pokemon(id) and "Baby" in subtypes(id)
+
+
+## En qué Básicos evoluciona cada Bebé ("Evolves into Pikachu": se pone Pikachu encima).
+const BABY_INTO := {"Pichu": ["Pikachu"], "Magby": ["Magmar"], "Elekid": ["Electabuzz"], "Smoochum": ["Jynx"],
+		"Tyrogue": ["Hitmonlee", "Hitmonchan", "Hitmontop"], "Cleffa": ["Clefairy"], "Igglybuff": ["Jigglypuff"]}
+
+
+## ¿El Básico "basic_id" se puede poner encima del Bebé "baby_id"?
+static func evolves_onto_baby(basic_id: String, baby_id: String) -> bool:
+	return is_baby(baby_id) and "Basic" in subtypes(basic_id) \
+			and evo_name(card_name(basic_id)) in BABY_INTO.get(evo_name(card_name(baby_id)), [])
 
 
 ## Fósiles: Entrenadores que se juegan como Pokémon Básicos.

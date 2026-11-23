@@ -26,7 +26,7 @@ func _run() -> void:
 		g.players[0].active = PokemonInPlay.new(ATTACKERS[type], 0)
 		g.players[1].active = PokemonInPlay.new("ex2-83", 0)    # Wailmer
 		scene._rebuild_menu()
-		scene._start_attack_anim({"t": "attack", "a": 0, "tg": -2, "opt": false})
+		scene.anim_ataques._start_attack_anim({"t": "attack", "a": 0, "tg": -2, "opt": false})
 		var n := 0
 		while not scene.anim.is_empty():
 			scene.queue_redraw()
@@ -35,16 +35,16 @@ func _run() -> void:
 			root.get_texture().get_image().save_png(out.path_join("%s_%02d.png" % [type, n]))
 			n += 1
 			if not scene.coin_anim.is_empty():
-				scene._update_coins(0.05)
+				scene.monedas._update_coins(0.05)
 			else:
-				scene._update_anim(0.05)
+				scene.anim_ataques._update_anim(0.05)
 	# Demostración de monedas: normal, quemadura y sueño
 	scene._start_duel()
 	# Resultados fijos para ver todas las caras: normal, quemadura con cruz, dormido con cruz y con cara.
 	for e in [[true, ""], [false, "burn"], [false, "sleep"], [true, "sleep"]]:
 		scene.game.coin_log.append(e[0])
 		scene.game.coin_reasons.append(e[1])
-	scene._check_coins()
+	scene.monedas._check_coins()
 	var m := 0
 	while not scene.coin_anim.is_empty():
 		scene.queue_redraw()
@@ -52,6 +52,6 @@ func _run() -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(out.path_join("Coins_%03d.png" % m))
 		m += 1
-		scene._update_coins(0.04)
+		scene.monedas._update_coins(0.04)
 	print("ok")
 	quit()

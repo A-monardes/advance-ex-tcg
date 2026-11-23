@@ -46,10 +46,10 @@ func _run() -> void:
 	scene._rebuild_menu()
 	print("menu tras turno nuevo: ", scene.menu_level, " ", scene.menu_items.map(func(x): return x["label"]))
 	await shot("01_menu")
-	scene.info_lines = scene._card_lines("ex4-89", me.active)
+	scene.info_lines = scene.fichas._card_lines("ex4-89", me.active)
 	scene.info_offset = 0
 	await shot("02_ficha")
-	scene.info_lines = scene._card_lines("ex5-94", null)
+	scene.info_lines = scene.fichas._card_lines("ex5-94", null)
 	await shot("03_ficha_kyogre")
 	scene.info_lines = []
 	scene.show_log = true

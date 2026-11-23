@@ -11,11 +11,11 @@ func _initialize() -> void:
 			break
 	var ok := true
 	for id in ids:
-		var a: Image = scene._load_card_image(id)
+		var a: Image = scene.imagenes._load_card_image(id)
 		var w0 := a.get_width()
-		scene._card_texture(id, 16)
-		scene._card_texture(id, 40)
-		var b: Image = scene._load_card_image(id)
+		scene.imagenes._card_texture(id, 16)
+		scene.imagenes._card_texture(id, 40)
+		var b: Image = scene.imagenes._load_card_image(id)
 		if b.get_width() != w0:
 			ok = false
 			print("FALLA ", id, " ", w0, " -> ", b.get_width())

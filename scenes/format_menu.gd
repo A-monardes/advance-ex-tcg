@@ -32,7 +32,7 @@ func open(from_view: String) -> void:
 	tab = 1 if d.format_upto >= 0 else 0
 	c_season = d.season_idx
 	row = d.season_idx if tab == 0 else d.format_upto + 1
-	_list_t0 = Time.get_ticks_msec()
+	_list_t0 = Clock.ms()
 	d.title_view = "format"
 
 
@@ -57,7 +57,7 @@ func input(k: int, accept: bool, back: bool) -> void:
 			KEY_DOWN, KEY_RIGHT: row = (row + 1) % n_seasons
 		if k in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
 			d.snd.play("move")
-			_list_t0 = Time.get_ticks_msec()
+			_list_t0 = Clock.ms()
 		if accept:
 			_choose(row, -1)
 		return
@@ -160,7 +160,7 @@ func _draw_official() -> void:
 	var off := 0
 	if extra > 0:
 		# quieto 2 s arriba, baja un renglón cada 0.7 s, quieto 2 s abajo, y vuelve
-		var t := (Time.get_ticks_msec() - _list_t0) / 1000.0
+		var t := (Clock.ms() - _list_t0) / 1000.0
 		var cycle := 4.0 + extra * 0.7 * 2.0
 		var u := fmod(t, cycle)
 		if u < 2.0:

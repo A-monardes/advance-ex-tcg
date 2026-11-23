@@ -38,3 +38,8 @@ ui/estado_psn.png / par / slp / brn / cnf las pastillas de estado de la ficha de
 y ui/flor.png las flores del patio que se mecen con el viento. Las arma tools/armar_ui.py
 (con las capturas de la pantalla de equipo, las pastillas y las flores). Sin ellas se ve
 el estilo de siempre.
+
+Logos de equipo: equipos/aqua.png, magma.png, rocket.png (el logo en pixel art de 14 px que
+aparece arriba de los Pokémon de Team Aqua, Team Magma y Rocket's al empezar la pelea) y
+equipos/aqua_fuente.png ... (el logo grande, del que sale la marca de agua de la ficha del
+Activo). Los arma tools/armar_equipos.py. Sin ellos no se dibuja ningún logo.

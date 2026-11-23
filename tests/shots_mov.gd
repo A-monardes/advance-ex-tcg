@@ -73,7 +73,7 @@ func _run() -> void:
 	var before: Dictionary = scene._snapshot()
 	me.discard.append_array(me.active.cards)
 	me.active = me.bench.pop_front()
-	scene._check_moves(before)
+	scene.anim_ataques._check_moves(before)
 	print("promo ", scene.move_anim.map(func(b): return b["text"]))
 	for i in 2:
 		freeze_at([0.4, 0.7][i])

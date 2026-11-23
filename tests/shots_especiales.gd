@@ -45,7 +45,7 @@ func _run() -> void:
 		scene.vs_anim = {}
 		scene.vs_seen = {}
 		scene.anim = {}
-		scene._check_vs()
+		scene.anim_ataques._check_vs()
 		print("vs ", VS[i], " -> ", scene.vs_anim.get("title", "NADA"))
 		for tt in [0.5]:
 			scene.vs_anim["t"] = tt
@@ -62,7 +62,7 @@ func _run() -> void:
 		a.active = PokemonInPlay.new(SIGS[i][1])
 		d.active = PokemonInPlay.new("ex1-1" if attacker_human else "ex1-59")
 		g.current = a.index
-		scene._start_attack_anim({"t": "attack", "a": 0}, 0)
+		scene.anim_ataques._start_attack_anim({"t": "attack", "a": 0}, 0)
 		scene.anim["power"] = SpecialFX.power(SIGS[i][1])
 		if SIGS[i][0] != "":
 			scene.anim["sig"] = SIGS[i][0]

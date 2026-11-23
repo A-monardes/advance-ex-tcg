@@ -1225,9 +1225,9 @@ func _draw_dialog() -> void:
 		var id: String = cards[mini(dialog["page"] - first, cards.size() - 1)]
 		var pr := Rect2((d.W - 56) / 2.0, 40, 56, 56)
 		var glow := 0.5 + 0.5 * sin(clock * 4.0)
-		d._draw_burst(pr.get_center(), 40.0 + glow * 4.0, Color(1, 0.95, 0.6, 0.35), 12)
+		d.anim_ataques._draw_burst(pr.get_center(), 40.0 + glow * 4.0, Color(1, 0.95, 0.6, 0.35), 12)
 		d._frame(pr.grow(4))
-		d._draw_card_image(pr, id)
+		d.imagenes._draw_card_image(pr, id)
 	d._frame(box)
 	var name: String = dialog["name"]
 	if name != "":

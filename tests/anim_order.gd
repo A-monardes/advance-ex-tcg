@@ -33,8 +33,8 @@ func _run() -> void:
 					and scene.evo_anim.is_empty() and scene.trainer_anim.is_empty()
 			if scene.intro == "call":
 				scene._opening_call(true)
-			if scene._prize_showing() and scene.prize_anim[0].get("choose", false):
-				scene._pick_prize(0)
+			if scene.anim_cartas._prize_showing() and scene.prize_anim[0].get("choose", false):
+				scene.paneles._pick_prize(0)
 			if idle and g.actor() == scene.human and scene.menu_items.size() > 0:
 				scene._do(ai.choose(g))
 			if not scene.coin_anim.is_empty() and scene.coin_anim.has("then"):
@@ -49,12 +49,12 @@ func _run() -> void:
 					root.get_texture().get_image().save_png(out.path_join("moneda.png"))
 			else:
 				seen_then = false
-			if not scene.ko_anim.is_empty() and scene._prize_showing():
+			if not scene.ko_anim.is_empty() and scene.anim_cartas._prize_showing():
 				stats["premio_con_ko"] += 1
 			if not scene.deck_anim.is_empty() and scene.deck_anim[0]["k"] == "recover":
 				if scene.deck_anim[0]["t"] == 0.0:
 					stats["recuperar"] += 1
-				if out != "" and not shots.has("recuperar") and scene._deck_showing() and scene.deck_anim[0]["t"] > 0.35:
+				if out != "" and not shots.has("recuperar") and scene.anim_cartas._deck_showing() and scene.deck_anim[0]["t"] > 0.35:
 					shots["recuperar"] = true
 					await RenderingServer.frame_post_draw
 					root.get_texture().get_image().save_png(out.path_join("recuperar.png"))

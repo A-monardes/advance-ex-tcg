@@ -474,8 +474,8 @@ func _edit_input(event: InputEventKey, k: int, back: bool) -> void:
 				var entries: Array = []
 				for cid in tab_list:
 					var c2: String = cid
-					entries.append(func(): return d._card_lines(c2, null))
-				d._open_info(entries, cursor, func(j: int):
+					entries.append(func(): return d.fichas._card_lines(c2, null))
+				d.fichas._open_info(entries, cursor, func(j: int):
 					cursor = j
 					if cursor < scroll:
 						scroll = cursor
@@ -648,7 +648,7 @@ func _draw_camp_list() -> void:
 	d._frame(Rect2(0, 118, d.W, 42))
 	if screen == "rename":
 		d._text(Vector2(9, 122), "Deck name (Enter saves · Esc cancels):", d.C_TEXT)
-		var blink := "_" if int(Time.get_ticks_msec() / 400) % 2 == 0 else " "
+		var blink := "_" if int(Clock.ms() / 400) % 2 == 0 else " "
 		d._text(Vector2(9, 135), typed + blink, Color("#c03028"))
 		return
 	var info := msg
@@ -695,7 +695,7 @@ func _comp_bar(p: Vector2, w: float, comp: Array, nums: bool) -> void:
 	d.draw_rect(Rect2(p, Vector2(w, 4)), d.C_FRAME_MID)
 	if tot == 0:
 		if nums:
-			d._draw_tiny(p + Vector2(w + 5, 0), "0 0 0", d.C_INK)
+			d.imagenes._draw_tiny(p + Vector2(w + 5, 0), "0 0 0", d.C_INK)
 		return
 	var x := p.x
 	for k in 3:
@@ -704,17 +704,17 @@ func _comp_bar(p: Vector2, w: float, comp: Array, nums: bool) -> void:
 			d.draw_rect(Rect2(x, p.y, ww, 4), C_BAR[k])
 		x += ww
 	if nums:
-		d._draw_tiny(p + Vector2(w + 5, 0), "%d %d %d" % comp, d.C_INK)
+		d.imagenes._draw_tiny(p + Vector2(w + 5, 0), "%d %d %d" % comp, d.C_INK)
 
 
 ## El panel de la derecha de la lista de mazos: carta, cantidad, en qué Mundiales es legal,
 ## composición y descripción.
 func _draw_deck_panel(r: Rect2, deck_name_shown: String, deck: Array, desc: String) -> void:
-	var cover: String = d._deck_cover(deck_name_shown) if deck_name_shown != "" else ""
+	var cover: String = d.titulo._deck_cover(deck_name_shown) if deck_name_shown != "" else ""
 	var ir := Rect2(r.position.x + 6, r.position.y + 6, 40, 40)
 	d.draw_rect(ir.grow(1), d.C_INK)
 	if cover != "":
-		d._draw_card_image(ir, cover)
+		d.imagenes._draw_card_image(ir, cover)
 	var tx := ir.end.x + 5
 	d._text_fit(Vector2(tx, r.position.y + 5), deck_name_shown, d.C_TEXT, r.end.x - tx - 4)
 	var info := _deck_info(deck)
@@ -723,21 +723,21 @@ func _draw_deck_panel(r: Rect2, deck_name_shown: String, deck: Array, desc: Stri
 	var worlds := legal_worlds(deck)
 	if info["errs"].is_empty() and not worlds.is_empty():
 		# "LEGAL" y abajo los Mundiales donde se puede jugar, de a dos años por renglón
-		d._draw_tiny(Vector2(tx, r.position.y + 28), "LEGAL", C_OK)
-		d._draw_tiny(Vector2(tx, r.position.y + 35), "WORLDS", C_OK)
+		d.imagenes._draw_tiny(Vector2(tx, r.position.y + 28), "LEGAL", C_OK)
+		d.imagenes._draw_tiny(Vector2(tx, r.position.y + 35), "WORLDS", C_OK)
 		for k in worlds.size():
-			d._draw_tiny(Vector2(tx + (k % 2) * 20, r.position.y + 42 + (k / 2) * 7), str(worlds[k]), C_OK)
+			d.imagenes._draw_tiny(Vector2(tx + (k % 2) * 20, r.position.y + 42 + (k / 2) * 7), str(worlds[k]), C_OK)
 	elif not info["errs"].is_empty():
-		d._draw_tiny(Vector2(tx, r.position.y + 28), "NOT LEGAL", d.C_HP_LOW)
+		d.imagenes._draw_tiny(Vector2(tx, r.position.y + 28), "NOT LEGAL", d.C_HP_LOW)
 	else:
-		d._draw_tiny(Vector2(tx, r.position.y + 28), "NOT LEGAL", d.C_HP_LOW)
-		d._draw_tiny(Vector2(tx, r.position.y + 35), "ANY WORLDS", d.C_HP_LOW)
+		d.imagenes._draw_tiny(Vector2(tx, r.position.y + 28), "NOT LEGAL", d.C_HP_LOW)
+		d.imagenes._draw_tiny(Vector2(tx, r.position.y + 35), "ANY WORLDS", d.C_HP_LOW)
 	var comp := composition(deck)
 	var by := r.position.y + 66
 	_comp_bar(Vector2(r.position.x + 6, by), r.size.x - 12, comp, false)
 	var labels := ["POKEMON %d" % comp[0], "TRAINER %d" % comp[1], "ENERGY %d" % comp[2]]
 	for k in 3:
-		d._draw_tiny(Vector2(r.position.x + 6, by + 7 + k * 7), labels[k], C_BAR[k].darkened(0.2))
+		d.imagenes._draw_tiny(Vector2(r.position.x + 6, by + 7 + k * 7), labels[k], C_BAR[k].darkened(0.2))
 	var dl: Array = d._wrap(desc, r.size.x - 12)
 	for k in mini(dl.size(), 3):
 		d._text(Vector2(r.position.x + 6, by + 29 + k * 10), str(dl[k]), d.C_DIM)
@@ -805,7 +805,7 @@ func _draw_list() -> void:
 		d.draw_rect(Rect2(0, 0, d.W, d.H), Color(0, 0, 0, 0.35))
 		d._frame(w)
 		d._text(Vector2(w.position.x + 8, w.position.y + 5), "Deck name (Enter saves · Esc cancels):", d.C_DIM)
-		var blink := "_" if int(Time.get_ticks_msec() / 400) % 2 == 0 else " "
+		var blink := "_" if int(Clock.ms() / 400) % 2 == 0 else " "
 		d._text(Vector2(w.position.x + 8, w.position.y + 18), typed + blink, Color("#c03028"))
 		if msg != "":
 			d._text_fit(Vector2(w.position.x + 8, w.position.y + 28), msg, d.C_HP_LOW, w.size.x - 16)
@@ -860,20 +860,20 @@ func _draw_edit() -> void:
 		if sel:
 			d.draw_rect(Rect2(4, y - 1, list_w - 8, ROW_H), Color("#d8e4f8"))
 		d.draw_rect(Rect2(7, y + 2, 7, 7), d.C_INK)
-		d.draw_rect(Rect2(8, y + 3, 5, 5), d._card_chip_color(id))
+		d.draw_rect(Rect2(8, y + 3, 5, 5), d.paneles._card_chip_color(id))
 		var n: int = counts.get(id, 0)
 		var name_w := list_w - 17 - 58
 		if sel:
 			d._text_scroll(Vector2(17, y), CardDB.card_name(id), d.C_TEXT, name_w, "ed_card")
 		else:
 			d._text_fit(Vector2(17, y), CardDB.card_name(id), d.C_TEXT, name_w)
-		d._draw_tiny(Vector2(list_w - 56, y + 2), id.to_upper(), d.C_DIM)
+		d.imagenes._draw_tiny(Vector2(list_w - 56, y + 2), id.to_upper(), d.C_DIM)
 		if camp != null and not CardDB.is_basic_energy(id):
 			# En la campaña: en el mazo / las que tenés
 			var own := "%d/%d" % [n, camp.owned(id)]
 			d._text(Vector2(list_w - 7 - d._text_w(own), y), own, Color("#c03028") if n > 0 else d.C_DIM)
 			if camp.reverse.get(id, 0) > 0:      # tenés alguna reverse holo
-				var hue := fmod(Time.get_ticks_msec() / 1500.0 + i * 0.1, 1.0)
+				var hue := fmod(Clock.ms() / 1500.0 + i * 0.1, 1.0)
 				d._text(Vector2(list_w - 64, y), "R", Color.from_hsv(hue, 0.75, 0.85))
 		elif n > 0:
 			d._text(Vector2(list_w - 20, y), "×%d" % n, Color("#c03028"))
@@ -891,9 +891,9 @@ func _draw_edit() -> void:
 		var isz := 56.0
 		var ir := Rect2(side.position.x + (side.size.x - isz) / 2.0, side.position.y + 5, isz, isz)
 		d.draw_rect(ir.grow(1), d.C_INK)
-		d._draw_card_image(ir, id_sel, camp != null and camp.reverse.get(id_sel, 0) > 0)
+		d.imagenes._draw_card_image(ir, id_sel)     # sin reverse holo: el brillo queda para los duelos
 		var ty := ir.end.y + 4
-		d._text_fit(Vector2(side.position.x + 6, ty), d._card_kind(id_sel), d.C_TEXT, side.size.x - 10)
+		d._text_fit(Vector2(side.position.x + 6, ty), d.paneles._card_kind(id_sel), d.C_TEXT, side.size.x - 10)
 		if CardDB.is_pokemon(id_sel):
 			var hp := "HP %d · %s" % [CardDB.hp(id_sel), "/".join(CardDB.types(id_sel).map(func(t): return d.TYPE_ES.get(t, t)))]
 			d._text_fit(Vector2(side.position.x + 6, ty + 10), hp, d.C_DIM, side.size.x - 10)
@@ -901,7 +901,7 @@ func _draw_edit() -> void:
 				var ef := "FROM " + CardDB.evolves_from(id_sel).to_upper()
 				if ef.length() * 4 > side.size.x - 10:
 					ef = ef.left(int((side.size.x - 10) / 4) - 1) + "."
-				d._draw_tiny(Vector2(side.position.x + 6, ty + 22), ef, d.C_DIM)
+				d.imagenes._draw_tiny(Vector2(side.position.x + 6, ty + 22), ef, d.C_DIM)
 	# Abajo: la carta (nombre · código · set) y si el mazo es válido
 	d._frame(Rect2(0, 124, d.W, 24))
 	if id_sel != "":
@@ -1268,7 +1268,7 @@ func _draw_filter_panel() -> void:
 	d._text(Vector2(r.position.x + 5, r.position.y + 1), "FILTER  (%s)" % TABS[tab], d.C_LIGHT)
 	var rows := _filter_rows(tab)
 	var f: Dictionary = filters[tab]
-	var blink := int(Time.get_ticks_msec() / 250) % 4 != 0
+	var blink := int(Clock.ms() / 250) % 4 != 0
 	var row_h := 16.0 if rows.size() <= 5 else 15.0
 	for ri in rows.size():
 		var row: Dictionary = rows[ri]
@@ -1298,7 +1298,7 @@ func _draw_filter_panel() -> void:
 						cr = Rect2(c - Vector2(9, 9), Vector2(18, 18))
 						if on:
 							d.draw_arc(c, 8.0, 0, TAU, 24, C_FILTER, 2.0)
-						d._draw_energy_icon(c, 12, Energy.ANY if o == "Any" else o)
+						d.imagenes._draw_energy_icon(c, 12, Energy.ANY if o == "Any" else o)
 						x += 18
 					else:
 						var lbl: String = row.get("labels", opts)[oi]

@@ -520,7 +520,7 @@ static func _mew(d, s: Dictionary, rng: RandomNumberGenerator) -> void:
 					fx_draw(d, "estrellas", 1 + (i + int(af * 12.0)) % 4, p, 0.75 * (1.2 - af), 1.0,
 							0.0, false, Color("#ffd0f0"))
 				else:
-					d._draw_burst(p, 3.0 * (1.0 - af) + 1.0, Color("#fff0f8"), 4)
+					d.anim_ataques._draw_burst(p, 3.0 * (1.0 - af) + 1.0, Color("#fff0f8"), 4)
 
 
 # --- Zangoose: tres zarpazos rojos y una cruz -----------------------------------------
@@ -529,7 +529,7 @@ static func _zangoose(d, s: Dictionary, _rng: RandomNumberGenerator) -> void:
 	var from: Vector2 = s["from"]
 	if not s["hit"]:
 		if s["travel"] > 0.5:     # destello en las garras antes de saltar
-			d._draw_burst(from + Vector2(6, -6), 6.0 * (s["travel"] - 0.5) * 2.0, Color("#ffffff"), 4)
+			d.anim_ataques._draw_burst(from + Vector2(6, -6), 6.0 * (s["travel"] - 0.5) * 2.0, Color("#ffffff"), 4)
 		return
 	var af: float = s["after"]
 	var L = 24.0 * s["pw"] + 6.0
@@ -651,14 +651,14 @@ static func _horn_toss(d, s: Dictionary, rng: RandomNumberGenerator) -> void:
 	if has_fx("explosion") and af < 0.6:
 		fx_draw(d, "explosion", fx_frame("explosion", af / 0.6), to, 0.9 * s["pw"], 1.0, 0.0, false, Color("#c0d0ff"))
 	elif af < 0.5:
-		d._draw_burst(to, (6.0 + af * 16.0) * s["pw"], Color("#ffffff"), 6)
-		d._draw_burst(to, (3.0 + af * 9.0) * s["pw"], Color("#5878e0"), 6)
+		d.anim_ataques._draw_burst(to, (6.0 + af * 16.0) * s["pw"], Color("#ffffff"), 6)
+		d.anim_ataques._draw_burst(to, (3.0 + af * 9.0) * s["pw"], Color("#5878e0"), 6)
 	if af > 0.3:
 		var top = pts[pts.size() - 1]
 		if has_fx("estrellas"):
 			fx_draw(d, "estrellas", 1 + int(af * 14.0) % 3, top, 0.8 * (1.1 - af), 1.0, 0.0, false, Color("#fff080"))
 		else:
-			d._draw_burst(top, 9.0 * (1.0 - af) + 2.0, Color("#f8e048"), 5)
+			d.anim_ataques._draw_burst(top, 9.0 * (1.0 - af) + 2.0, Color("#f8e048"), 5)
 	_flash(d, s, Color("#e0e8ff"), 0.15)
 
 
@@ -817,8 +817,8 @@ static func _blaze_kick(d, s: Dictionary, rng: RandomNumberGenerator) -> void:
 			if af < 0.8:
 				fx_draw(d, "explosion", fx_frame("explosion", af / 0.8), to, 1.2 * s["pw"])
 		else:
-			d._draw_burst(to, (8.0 + af * 18.0) * s["pw"], Color("#f8f0a0", 1.0 - af), 8)
-			d._draw_burst(to, (5.0 + af * 12.0) * s["pw"], Color("#f06020", 1.0 - af), 8)
+			d.anim_ataques._draw_burst(to, (8.0 + af * 18.0) * s["pw"], Color("#f8f0a0", 1.0 - af), 8)
+			d.anim_ataques._draw_burst(to, (5.0 + af * 12.0) * s["pw"], Color("#f06020", 1.0 - af), 8)
 		for i in 10:
 			var ang = rng.randf() * TAU
 			var p = to + Vector2(cos(ang), sin(ang)) * af * rng.randf_range(14, 28)
@@ -845,12 +845,12 @@ static func _vines(d, s: Dictionary, _rng: RandomNumberGenerator) -> void:
 			if has_fx("hoja"):
 				fx_draw(d, "hoja", int(s["t"] * 10.0) + i, pts[i], 0.9, 1.0, 0.0, sgn < 0)
 			else:
-				d._draw_leaf(pts[i], s["t"] * 6.0 + i, Color("#58b838"))
+				d.anim_ataques._draw_leaf(pts[i], s["t"] * 6.0 + i, Color("#58b838"))
 	if s["hit"] and s["after"] < 0.5:
 		if has_fx("zarpazo"):     # el latigazo
 			fx_draw(d, "zarpazo", fx_frame("zarpazo", s["after"] / 0.5), to, 1.1 * s["pw"], 1.0, 0.0, false, Color("#b0ff90"))
 		else:
-			d._draw_burst(to, (6.0 + s["after"] * 14.0) * s["pw"], Color("#e8f8c0"), 6)
+			d.anim_ataques._draw_burst(to, (6.0 + s["after"] * 14.0) * s["pw"], Color("#e8f8c0"), 6)
 
 
 ## Johto: hojas y pétalos que giran alrededor y caen en remolino.
@@ -876,7 +876,7 @@ static func _petals(d, s: Dictionary, rng: RandomNumberGenerator) -> void:
 			fx_draw(d, "hoja", int(ang * 1.5) + i, p, 0.9, 1.0, 0.0, i % 2 == 0,
 					Color.WHITE if i % 2 else Color("#ffff90"))
 		else:
-			d._draw_leaf(p, ang * 2.0, Color("#78d048") if i % 2 else Color("#f8e870"))
+			d.anim_ataques._draw_leaf(p, ang * 2.0, Color("#78d048") if i % 2 else Color("#f8e870"))
 	if s["hit"] and s["after"] > 0.5:
 		for i in 8:
 			var a = rng.randf() * TAU
@@ -1052,8 +1052,8 @@ static func draw_vs(d, v: Dictionary) -> void:
 	if t > 0.16 and t < 0.9:
 		var k = clampf((t - 0.16) / 0.08, 0.0, 1.0)
 		if k < 1.0 or int(t * 20) % 6 != 0:
-			d._draw_burst(Vector2(130, 80), 14.0 + 6.0 * (1.0 - k), Color("#f8e048"), 10)
-			d._draw_burst(Vector2(130, 80), 9.0 + 4.0 * (1.0 - k), Color("#f88828"), 10)
+			d.anim_ataques._draw_burst(Vector2(130, 80), 14.0 + 6.0 * (1.0 - k), Color("#f8e048"), 10)
+			d.anim_ataques._draw_burst(Vector2(130, 80), 9.0 + 4.0 * (1.0 - k), Color("#f88828"), 10)
 		d._text_big(Vector2(130 - d._text_w("VS"), 70), "VS", Color.WHITE)
 	# Frase abajo
 	if t > 0.22 and t < 0.88:
@@ -1067,7 +1067,7 @@ static func _vs_mon(d, pos: Vector2, id: String, c: Color) -> void:
 	var r = Rect2(pos, Vector2(size, size))
 	d.draw_rect(r.grow(2), Color.WHITE)
 	d.draw_rect(r, c.darkened(0.45))
-	var tex: Texture2D = d._art_texture(id, size, size)
+	var tex: Texture2D = d.mesa._art_texture(id, size, size)
 	if tex != null:
 		d.draw_texture_rect(tex, r, false)
 	else:

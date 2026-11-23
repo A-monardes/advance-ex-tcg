@@ -14,7 +14,7 @@ func _run() -> void:
 	var ev := InputEventKey.new()
 	ev.pressed = true
 	ev.keycode = KEY_Z
-	scene._duel_setup_input(KEY_Z, true, Decks.names().size())
+	scene.titulo._duel_setup_input(KEY_Z, true, Decks.names().size())
 	print("msg: ", scene.title_msg, " | mode: ", scene.mode)
 	for i in 6: await process_frame
 	await RenderingServer.frame_post_draw

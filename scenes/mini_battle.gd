@@ -49,6 +49,7 @@ static var _names := {}
 static var _fx_meta := {}    # tira -> su .json (ancla, modo, temblor; o los datos del proyectil)
 
 static var _aura := {}       # fila -> colores del aura de llamas (Pokémon δ), para _put
+static var _dark := {}       # fila -> true si es un Pokémon Dark (sombra violeta y humo), para _put
 static var _sil := {}        # textura -> la misma con cada píxel visible en blanco (silueta)
 static var _species := {}    # especie -> Dictionary de animaciones (vacío si no hay carpeta)
 
@@ -280,6 +281,7 @@ static func _anim(sp: String, name: String) -> Dictionary:
 			var sh := []
 			var ce := []
 			var hd := []
+			var tp := []
 			for c in n:
 				var cell := Rect2i(c * w, r * h, w, h)
 				var s := _points(shimg, cell)
@@ -288,7 +290,8 @@ static func _anim(sp: String, name: String) -> Dictionary:
 				sh.append(s.get("g", Vector2(w / 2.0, bb.end.y - 1)))
 				ce.append(o.get("g", Vector2(bb.get_center())))
 				hd.append(o.get("k", Vector2(bb.get_center().x, bb.position.y + 4)))
-			out[row] = {"r": r, "sh": sh, "ce": ce, "hd": hd}
+				tp.append(Vector2(bb.get_center().x, bb.position.y))
+			out[row] = {"r": r, "sh": sh, "ce": ce, "hd": hd, "tp": tp}
 	d[name] = out
 	return out
 
@@ -551,7 +554,7 @@ static func _put(d, sp: String, name: String, row: int, frame: int, ground: Vect
 		an = _anim(sp, "Idle")
 		frame = 0
 	if an.is_empty():
-		return {"c": ground + Vector2(0, -12), "h": ground + Vector2(0, -20)}
+		return {"c": ground + Vector2(0, -12), "h": ground + Vector2(0, -20), "t": ground + Vector2(0, -28)}
 	var R: Dictionary = an[row]
 	frame = clampi(frame, 0, int(an["n"]) - 1)
 	var idle := _anim(sp, "Idle")
@@ -562,19 +565,99 @@ static func _put(d, sp: String, name: String, row: int, frame: int, ground: Vect
 		anchor += Vector2((an["w"] - idle["w"]) / 2.0, (an["h"] - idle["h"]) / 2.0)
 	var o: Vector2 = (ground - anchor + Vector2(dx, 0)).round()
 	var sh: Vector2 = o + R["sh"][frame]
+	var dark := _dark.has(row)
 	if alpha > 0.3 and sink <= 0.0:
 		var rr: float = [5.0, 7.0, 9.0][clampi(int(an["shadow"]), 0, 2)]
-		_ellipse(d, sh, Vector2(rr, rr * 0.3), Color(0, 0, 0, 0.45 * alpha))
+		if dark:      # los Dark: sombra del piso más grande y violeta casi negra
+			_ellipse(d, sh, Vector2(rr + 4.0, (rr + 4.0) * 0.32), Color(DARK_SHADOW, 0.85 * alpha))
+		else:
+			_ellipse(d, sh, Vector2(rr, rr * 0.3), Color(0, 0, 0, 0.45 * alpha))
 	if visible:
 		var w := float(an["w"])
 		var h := float(an["h"]) - sink
 		if h > 0 and _aura.has(row):
 			draw_aura(d, an["tex"], Rect2(o, Vector2(w, h)), Rect2(frame * w, int(R["r"]) * float(an["h"]), w, h),
 					_aura[row], alpha, o + R["ce"][frame])
+		if h > 0 and dark:
+			draw_dark(d, an["tex"], Rect2(o, Vector2(w, h)), Rect2(frame * w, int(R["r"]) * float(an["h"]), w, h),
+					alpha, o + R["ce"][frame])
 		if h > 0:
 			d.draw_texture_rect_region(an["tex"], Rect2(o, Vector2(w, h)),
 					Rect2(frame * w, int(R["r"]) * float(an["h"]), w, h), Color(1, 1, 1, alpha))
-	return {"c": o + R["ce"][frame], "h": o + R["hd"][frame]}
+	return {"c": o + R["ce"][frame], "h": o + R["hd"][frame], "t": o + R["tp"][frame]}
+
+
+const DARK_SHADOW := Color("#1c0e28")     # violeta casi negro
+const DARK_SMOKE := Color("#70348c")
+const DARK_SMOKE_END := Color("#502664")
+
+
+## ¿Es un Pokémon Dark (Dark Tyranitar, Dark Dragonite...)? Los Rocket's no cuentan.
+static func is_dark(id: String) -> bool:
+	return id != "" and CardDB.is_pokemon(id) and CardDB.card_name(id).begins_with("Dark ")
+
+
+## Pokémon Dark, como en sus ilustraciones: humo violeta que sube desde los costados del cuerpo
+## y una sombra pronunciada (la silueta en violeta casi negro, corrida hacia atrás, con el borde
+## difuso). Va detrás del sprite. dst/src: dónde se dibuja el sprite y qué cuadro.
+static func draw_dark(d, tex: Texture2D, dst: Rect2, src: Rect2, alpha: float, center: Vector2) -> void:
+	if alpha <= 0.05:
+		return
+	var sil := _silhouette(tex)
+	if sil == null:
+		return
+	var t := Clock.ms() / 1000.0
+	# Humo: partículas que nacen a los costados, suben ondulando y se apagan en 4 pasos
+	var half := maxf(6.0, dst.size.x * 0.2)
+	for i in 18:
+		var ph := fmod(t * 0.55 + i * 0.173 + i * i * 0.029, 1.0)
+		var sd := absf(fmod(sin(i * 12.9898) * 43758.5453, 1.0))
+		var side := -1.0 if i % 2 == 0 else 1.0
+		var x := center.x + side * (half * 0.5 + sd * half * 0.9) + sin(t * 4.0 + i * 1.7) * 1.5
+		var y := center.y + 8.0 - sd * 6.0 - ph * 24.0
+		var sz := 3.0 if ph < 0.35 else (2.0 if ph < 0.75 else 1.0)
+		var col: Color = DARK_SMOKE if ph < 0.5 else DARK_SMOKE_END
+		col.a = [0.85, 0.85, 0.6, 0.35][mini(3, int(ph * 4.0))] * alpha
+		d.draw_rect(Rect2(Vector2(roundf(x), roundf(y)), Vector2(sz, sz)), col)
+	# Sombra: el borde difuso (copias corridas 2 y 1 píxel) y la silueta
+	var back := Vector2(3, -2)
+	for L in 2:
+		var g := 2.0 - L
+		for dd in [Vector2(g, 0), Vector2(-g, 0), Vector2(0, g), Vector2(0, -g)]:
+			d.draw_texture_rect_region(sil, Rect2(dst.position + back + dd, dst.size), src, Color(DARK_SHADOW, [0.10, 0.16][L] * alpha))
+	d.draw_texture_rect_region(sil, Rect2(dst.position + back, dst.size), src, Color(DARK_SHADOW, 0.75 * alpha))
+
+
+const LOGO_HOLD := 0.1     # el logo del equipo queda quieto un momento...
+const LOGO_FADE := 0.5     # ...y se desvanece en medio segundo
+
+
+## Team Aqua, Team Magma y Rocket's: el logo del equipo arriba de la cabeza al empezar la
+## pelea; aparece con la mesa oscureciéndose y se desvanece subiendo, en 4 pasos (como un
+## fundido de GBA).
+static func _draw_team_logos(d, a: Dictionary, s: float, apos: Dictionary, dpos: Dictionary) -> void:
+	for pair in [[str(a.get("att_id", "")), apos], [str(a.get("def_id", "")), dpos]]:
+		var pos: Dictionary = pair[1]
+		if pos.has("t"):
+			draw_team_logo(d, pair[0], pos["t"], s - T_IN, T_IN)
+
+
+## El logo de equipo de la carta "id" arriba de "head" (el borde de arriba del sprite). k: segundos desde que la mesa terminó
+## de oscurecerse (negativo: todavía aparece, en "fade_in" segundos).
+static func draw_team_logo(d, id: String, head: Vector2, k: float, fade_in: float) -> void:
+	var tex := TeamLogos.small(TeamLogos.team(id))
+	if tex == null:
+		return
+	var al := clampf(1.0 + k / fade_in, 0.0, 1.0) if k < 0.0 else (1.0 if k < LOGO_HOLD else 1.0 - (k - LOGO_HOLD) / LOGO_FADE)
+	al = roundf(al * 4.0) / 4.0
+	if al <= 0.0:
+		return
+	var rise := 0.0 if k < LOGO_HOLD else minf(3.0, floorf((k - LOGO_HOLD) / LOGO_FADE * 4.0))
+	var o := (head + Vector2(-tex.get_width() / 2.0, -tex.get_height() - LOGO_GAP - rise)).round()
+	d.draw_texture(tex, o, Color(1, 1, 1, al))
+
+
+const LOGO_GAP := 2.0      # entre el borde de arriba del sprite y el logo
 
 
 ## Colores del aura de un Pokémon δ: los de los tipos que gana (vacío si no es δ).
@@ -617,7 +700,7 @@ static func draw_aura(d, tex: Texture2D, dst: Rect2, src: Rect2, cols: Array, al
 	var sil := _silhouette(tex)
 	if sil == null:
 		return
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Clock.ms() / 1000.0
 	# Capas: la de afuera más grande y transparente, la de adentro más clara
 	for L in 3:
 		var grow: float = [4.0, 2.5, 1.2][L]
@@ -700,6 +783,12 @@ static func draw(d, a: Dictionary) -> void:
 		_aura[ra] = ca
 	if not cd.is_empty():
 		_aura[rd] = cd
+	# Pokémon Dark: sombra violeta y humo
+	_dark = {}
+	if is_dark(str(a.get("att_id", ""))):
+		_dark[ra] = true
+	if is_dark(str(a.get("def_id", ""))):
+		_dark[rd] = true
 	var applied: bool = a.get("applied", false)
 	var dmg := int(a.get("dmg", 0))
 	var ko: bool = a.get("ko", false)
@@ -797,6 +886,7 @@ static func draw(d, a: Dictionary) -> void:
 		else:
 			apos = _put(d, asp, "Idle", ra, _idle_frame(asp, s), ga, fade)
 	# --- Efectos ---
+	_draw_team_logos(d, a, s, apos, dpos)
 	a["m_pts"] = {"c": dpos.get("c", gd), "g": gd, "ca": apos.get("c", ga), "ga": ga}
 	# Con categoría por nombre solo viaja su proyectil (si no tiene, nada: Thunder, Psychic...)
 	if a["m_ranged"] and (a.get("m_cat", "") == "" or has_proj(a)):
