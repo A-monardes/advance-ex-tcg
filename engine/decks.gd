@@ -45,6 +45,71 @@ static func is_user(deck_name: String) -> bool:
 	return _user.has(deck_name)
 
 
+## Mazos de la campaña (los primeros 46 mazos del juego): no salen en el duelo libre, los usan
+## los rivales de la campaña. Se pueden editar desde el editor de mazos solo corriendo el
+## juego desde Godot (ver save_preset).
+static func is_campaign(deck_name: String) -> bool:
+	_load()
+	return bool(_decks.get(deck_name, {}).get("campaign", false))
+
+
+static func campaign_names() -> Array:
+	_load()
+	return _decks.keys().filter(func(n): return bool(_decks[n].get("campaign", false)))
+
+
+## ¿Se pueden guardar cambios en los mazos predefinidos? Solo corriendo el juego desde el
+## editor de Godot (en la versión exportada o la web data/decks.json es de solo lectura).
+static func presets_editable() -> bool:
+	return OS.has_feature("editor")
+
+
+## Guarda las cartas de un mazo predefinido en data/decks.json. Reescribe solo la lista
+## "cards" de ese mazo y deja el resto del archivo como está.
+static func save_preset(deck_name: String, cards: Array) -> bool:
+	_load()
+	if not presets_editable() or not _decks.has(deck_name):
+		return false
+	var txt := FileAccess.get_file_as_string(PATH)
+	var i := txt.find("\n  %s: {" % JSON.stringify(deck_name))
+	if i < 0:
+		return false
+	var c0 := txt.find("\"cards\": [", i)
+	var c1 := txt.find("\n    ]", c0)
+	if c0 < 0 or c1 < 0:
+		return false
+	var rows: Array = []
+	var cur := ""
+	for e in cards:
+		var item := "[%s, %d]" % [JSON.stringify(str(e[0])), int(e[1])]
+		var cand := item if cur == "" else cur + ", " + item
+		if cur != "" and ("      " + cand + ",").length() > 80:
+			rows.append(cur)
+			cur = item
+		else:
+			cur = cand
+	if cur != "":
+		rows.append(cur)
+	var body := ",\n".join(rows.map(func(r): return "      " + r))
+	var new_txt := txt.substr(0, c0) + "\"cards\": [\n" + body + txt.substr(c1)
+	var check = JSON.parse_string(new_txt)
+	if not (check is Dictionary and check.has(deck_name)):
+		return false
+	var f := FileAccess.open(PATH, FileAccess.WRITE)
+	if f == null:
+		return false
+	f.store_string(new_txt)
+	f.close()
+	_decks[deck_name]["cards"] = cards.duplicate(true)
+	return true
+
+
+## Formato (temporada, "2003-04"...) de un mazo predefinido; "" si no tiene.
+static func format_of(deck_name: String) -> String:
+	_load()
+	return str(_decks.get(deck_name, {}).get("format", ""))
+
+
 static func description(deck_name: String) -> String:
 	_load()
 	var d: Dictionary = _user.get(deck_name, _decks.get(deck_name, {}))

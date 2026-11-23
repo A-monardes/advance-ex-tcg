@@ -42,3 +42,5 @@ mundo/propios/mundiales/
 
 # Logos de los sets (propios del usuario)
 mundo/propios/sets/
+tools/mazos/mazos_*.json
+tools/mazos/cat_*.txt

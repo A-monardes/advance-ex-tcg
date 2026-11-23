@@ -311,7 +311,7 @@ func _ready() -> void:
 # ===========================================================================
 
 func _start_duel() -> void:
-	var names := Decks.names()
+	var names := deck_names()
 	campaign_rival = ""
 	reverse_ids = {}
 	_begin_duel(Decks.get_deck(names[my_deck]), Decks.get_deck(names[opp_deck]), ai_level,
@@ -1956,6 +1956,28 @@ func _load_settings() -> void:
 		sfx_level = clampi(int(cfg.get_value("sonido", "efectos", 2)), 0, 3)
 		music_level = clampi(int(cfg.get_value("sonido", "musica", 2)), 0, 3)
 	_apply_graphics()
+
+
+## Los mazos para elegir en el formato actual: los predefinidos de esa temporada (los que no
+## dicen formato, si sus cartas son legales; los de la campaña no) y todos los del jugador. Con muchos mazos
+## predefinidos la lista completa no sirve, así que se filtra; se guarda por formato.
+var _deck_names_cache := {}
+
+
+func deck_names() -> Array:
+	var r := format_rules()
+	var key := "%s/%d/%d" % [r.season, format_upto, Decks.user_names().size()]
+	if not _deck_names_cache.has(key):
+		var out: Array = []
+		for nm in Decks.preset_names():
+			if Decks.is_campaign(nm):
+				continue
+			var f := Decks.format_of(nm)
+			if (f == "" or f == r.season) and _deck_legal(nm, r):
+				out.append(nm)
+		out.append_array(Decks.user_names())
+		_deck_names_cache = {key: out}
+	return _deck_names_cache[key]
 
 
 ## ¿Todas las cartas del mazo eran legales en la temporada?

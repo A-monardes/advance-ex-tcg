@@ -50,7 +50,7 @@ static func version() -> String:
 
 
 func _my_deck() -> Array[String]:
-	return Decks.get_deck(Decks.names()[d.my_deck])
+	return Decks.get_deck(d.deck_names()[d.my_deck])
 
 
 # ===========================================================================
@@ -71,7 +71,7 @@ func input(event: InputEventKey) -> void:
 				screen = "menu"
 				d.snd.play("back")
 			return
-	var n: int = Decks.names().size()
+	var n: int = d.deck_names().size()
 	match k:
 		KEY_UP:
 			row = (row + ROWS.size() - 1) % ROWS.size()
@@ -247,7 +247,7 @@ func draw() -> void:
 	if screen == "link":
 		_draw_link(panel)
 		return
-	var names: Array = Decks.names()
+	var names: Array = d.deck_names()
 	var r: RuleSet = d.format_rules()
 	var vals := [names[d.my_deck], r.name, "Doubles (2 vs 2)" if d.doubles_mode else "Singles", server_url, "", ""]
 	for i in ROWS.size():

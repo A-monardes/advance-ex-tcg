@@ -33,7 +33,9 @@ func _run():
 			var g: Game = scene.game
 			if g.phase != "over" and g.actor() == scene.human and scene.coin_anim.is_empty() and scene.evo_anim.is_empty() \
 					and scene.anim.is_empty() and scene.energy_anim.is_empty() and scene.prize_anim.is_empty() and scene.deck_anim.is_empty() \
-					and scene.trainer_anim.is_empty() and scene.ko_anim.is_empty() and scene.banner.is_empty():
+					and scene.trainer_anim.is_empty() and scene.ko_anim.is_empty() and scene.banner.is_empty() \
+					and scene.power_anim.is_empty() and scene.move_anim.is_empty() and scene.check_anim.is_empty() \
+					and scene.bench_fx.is_empty() and scene.vs_anim.is_empty():
 				scene._do(ai.choose(g))
 		print("fin: ", scene.game.phase, " premios elegidos ", picks, " pasos ", steps, " turno ", scene.game.turn_number, " robos ", draws, " barajadas ", shuffles, " ", scene.game.win_reason)
 	quit()

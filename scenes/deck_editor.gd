@@ -31,6 +31,7 @@ var _full_pool: Array = []
 var camp = null             # en la campaña: el estado (solo tus cartas, guarda en la campaña)
 var camp_slot := 0          # campaña: qué lugar de mazo se está editando
 var camp_menu := -1         # campaña: opción marcada en el menú de un mazo (-1 = cerrado)
+var editing_preset := false # editando un mazo de los rivales de la campaña (se guarda en data/decks.json)
 const CAMP_OPTIONS := ["Edit", "Use in duels", "Rename", "Copy to empty slot", "Clear"]
 
 
@@ -93,6 +94,11 @@ func _list_rows() -> Array:
 		rows.append({"kind": "deck", "name": n})
 	rows.append({"kind": "new"})
 	rows.append({"kind": "copy"})
+	# Los mazos de los rivales de la campaña, solo corriendo el juego desde Godot (se guardan en
+	# data/decks.json; en la web ese archivo no se puede cambiar)
+	if Decks.presets_editable():
+		for n in Decks.campaign_names():
+			rows.append({"kind": "preset", "name": n})
 	return rows
 
 
@@ -274,10 +280,15 @@ func _save() -> void:
 		camp.decks[camp_slot]["cartas"] = _entries()
 		camp.save()
 		return
+	if editing_preset:
+		if not Decks.save_preset(deck_name, _entries()):
+			msg = "Could not save the campaign deck."
+		return
 	Decks.save_user(deck_name, _entries())
 
 
-func _start_edit(name: String) -> void:
+func _start_edit(name: String, preset := false) -> void:
+	editing_preset = preset
 	deck_name = name
 	counts = {}
 	for e in Decks.entries(name):
@@ -423,6 +434,8 @@ func _list_input(k: int, accept: bool, back: bool) -> void:
 		match row["kind"]:
 			"deck":
 				_start_edit(row["name"])
+			"preset":
+				_start_edit(row["name"], true)
 			"new":
 				var n := Decks.free_name("My deck")
 				Decks.save_user(n, [])
@@ -664,6 +677,7 @@ func _draw_camp_list() -> void:
 ## Colores de la barra de composición del mazo: Pokémon, Entrenadores y Energías.
 const C_BAR := [Color("#58b048"), Color("#e8b030"), Color("#5080d8")]
 const C_OK := Color("#388850")
+const C_CAMP := Color("#7048a8")      # mazos de los rivales de la campaña
 
 
 ## [Pokémon, Entrenadores, Energías] de una lista de cartas.
@@ -776,6 +790,12 @@ func _draw_list() -> void:
 				# Puntito: verde si se puede jugar en el formato actual, rojo si no
 				d.draw_circle(Vector2(left.end.x - 11, y + 5), 3.0, d.C_INK)
 				d.draw_circle(Vector2(left.end.x - 11, y + 5), 2.0, C_OK if ok else d.C_HP_LOW)
+			"preset":
+				var pn: String = row["name"]
+				if sel:
+					d._text_scroll(Vector2(15, y), "⚑ " + pn, C_CAMP, left.size.x - 32, "edl")
+				else:
+					d._text_fit(Vector2(15, y), "⚑ " + pn, C_CAMP, left.size.x - 32)
 			"new":
 				d._text(Vector2(15, y), "+ New deck", Color("#c03028") if sel else d.C_TEXT)
 			"copy":
@@ -791,7 +811,7 @@ func _draw_list() -> void:
 	d._frame(right)
 	var row: Dictionary = rows[cursor] if cursor < rows.size() else {}
 	match row.get("kind", ""):
-		"deck":
+		"deck", "preset":
 			_draw_deck_panel(right, row["name"], Decks.get_deck(row["name"]), Decks.description(row["name"]))
 		"copy":
 			if not presets.is_empty():
@@ -815,6 +835,8 @@ func _draw_list() -> void:
 		keys = "◀▶ choose deck · Z copy · X back"
 	elif row.get("kind", "") == "new":
 		keys = "Z create · X back"
+	elif row.get("kind", "") == "preset":
+		keys = "Z edit this campaign rival's deck · X back"
 	if confirm_delete:
 		keys = "Delete this deck? Press D again to confirm"
 	d._text_scroll(Vector2(6, 150), keys, d.C_HP_LOW if confirm_delete else d.C_LIGHT, 228, "edkeys")
@@ -826,7 +848,7 @@ func _draw_edit() -> void:
 	var errs: Array = _deck_info(deck)["errs"]
 	# Arriba: nombre, cantidad y la composición siempre a la vista
 	d._frame(Rect2(0, 0, d.W, 18))
-	d._text_fit(Vector2(8, 4), "★ " + deck_name, d.C_TEXT, 84)
+	d._text_fit(Vector2(8, 4), ("⚑ " if editing_preset else "★ ") + deck_name, C_CAMP if editing_preset else d.C_TEXT, 84)
 	var cnt := "%d/60" % total
 	d._text(Vector2(94, 4), cnt, C_OK if errs.is_empty() else (d.C_TEXT if total < 60 else d.C_HP_LOW))
 	_comp_bar(Vector2(126, 7), 58, composition(deck), true)

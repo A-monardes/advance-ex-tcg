@@ -10,7 +10,7 @@ func _init(duel) -> void:
 
 
 func _title_input(k: int, accept: bool) -> void:
-	var n := Decks.names().size()
+	var n: int = d.deck_names().size()
 	d.my_deck = clampi(d.my_deck, 0, n - 1)
 	d.opp_deck = clampi(d.opp_deck, 0, n - 1)
 	d.title_msg = ""
@@ -158,7 +158,7 @@ func _free_popup_input(k: int, accept: bool, n: int) -> void:
 
 
 func _free_start() -> void:
-	var names := Decks.names()
+	var names: Array = d.deck_names()
 	var fmt_rules = d.format_rules()
 	for pair in [[d.my_deck, "Your deck"], [d.opp_deck, "The opponent's deck"]]:
 		var errs = Game.validate_deck(Decks.get_deck(names[pair[0]]), fmt_rules)
@@ -192,7 +192,7 @@ const C_FD_LINE := Color("#b8c0d0")
 
 
 func _draw_duel_setup() -> void:
-	var names := Decks.names()
+	var names: Array = d.deck_names()
 	var r = d.format_rules()
 	d.my_deck = clampi(d.my_deck, 0, names.size() - 1)
 	d.opp_deck = clampi(d.opp_deck, 0, names.size() - 1)
