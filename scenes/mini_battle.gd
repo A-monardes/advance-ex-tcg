@@ -901,6 +901,7 @@ static func draw(d, a: Dictionary) -> void:
 				fx_draw_at(d, a, sfx, sfr)
 		if landed:
 			_draw_hit(d, a, after, dpos["c"])
+			_draw_delta_hit(d, a, after, dpos["c"])
 			_draw_number(d, a, after, dpos["c"])
 		elif not a.get("m_conds", []).is_empty():
 			_draw_status(d, a, after, dpos["c"])
@@ -1182,6 +1183,45 @@ static func _draw_hit(d, a: Dictionary, after: float, c: Vector2) -> void:
 			SpecialFX.fx_draw(d, "zarpazo", SpecialFX.fx_frame("zarpazo", minf(1.0, after / 0.35)), c, 1.0 if big else 0.8, al)
 			if typ == "Dragon":
 				SpecialFX.fx_draw(d, "llama", int(after * 20.0) % 8, c + Vector2(0, 6), 0.5, al)
+
+
+## Tira de efecto de cada tipo para el golpe extra de los δ, con su escala.
+const DELTA_FX := {"Fire": ["ascuas", 0.8, [4, 5, 6, 7, 8, 9, 10]], "Lightning": ["rayo", 0.55, [0, 1, 6, 5]],
+		"Grass": ["hoja", 1.0, []], "Water": ["burbuja_acida", 0.4, []], "Psychic": ["anillo", 0.45, []],
+		"Darkness": ["colmillos", 0.45, []], "Metal": ["estrellas@gris", 0.8, [1, 2, 1, 3]], "Fighting": ["roca", 0.5, []]}
+
+
+## Golpe extra de los Pokémon δ: se suma al efecto normal. Alrededor del impacto aparecen
+## los efectos del tipo que gana el Pokémon (brasas si es Fuego, chispas si es Rayo...);
+## si tiene dos tipos, el segundo suma unos pocos más chicos.
+static func _draw_delta_hit(d, a: Dictionary, after: float, c: Vector2) -> void:
+	var id := str(a.get("att_id", ""))
+	if id == "" or not CardDB.is_delta(id) or after > 0.75:
+		return
+	var types: Array = CardDB.types(id)
+	var k := clampf(after / 0.65, 0.0, 1.0)
+	var al := 1.0 - maxf(0.0, k - 0.6) / 0.4
+	for ti in mini(2, types.size()):
+		var info: Array = DELTA_FX.get(types[ti], [])
+		if info.is_empty() or not SpecialFX.has_fx(str(info[0]).trim_suffix("@gris")):
+			continue
+		var fx_name: String = info[0]
+		var n := 4 if ti == 0 else 2
+		var frames: Array = info[2]
+		var nf := frames.size() if not frames.is_empty() else SpecialFX.fx_count(fx_name)
+		for i in n:
+			var ang := TAU * i / n + (0.4 if ti == 0 else 1.2)
+			var delay := i * 0.05 + ti * 0.08
+			var kk := clampf((after - delay) / 0.55, 0.0, 1.0)
+			if after < delay:
+				continue
+			var pos := c + Vector2(cos(ang), sin(ang) * 0.8) * (8.0 + kk * 16.0)
+			var fr := (int((after - delay) / FX_FRAME) + i) % nf
+			if not frames.is_empty():
+				fr = int(frames[fr])
+			var sc: float = float(info[1]) * (1.0 if ti == 0 else 0.75)
+			SpecialFX.fx_draw(d, fx_name, fr, pos.round(), sc, al, 0.0, false,
+					Color("#e8ecf8") if fx_name.ends_with("@gris") else Color.WHITE)
 
 
 static func _draw_number(d, a: Dictionary, after: float, c: Vector2, amount: int = -1) -> void:

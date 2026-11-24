@@ -465,7 +465,7 @@
     ]
   },
   "Psychic Mimic": {
-    "description": "Alakazam copies the opponent's attacks with Psymimic while Mr. Mime and Wobbuffet stall the damage.",
+    "description": "Alakazam bends spoons and minds alike. Mr. Mime builds invisible walls around the show.",
     "format": "2003-04",
     "cards": [
       ["ecard1-1", 3], ["ecard2-95", 1], ["ecard3-46", 4], ["ecard3-58", 2],
@@ -480,7 +480,7 @@
     ]
   },
   "Haunted Mansion": {
-    "description": "Gengar scrambles damage counters with Chaos Move; Banette, Dusclops and Misdreavus haunt the bench.",
+    "description": "The doors creak open by themselves. Gengar and the ghosts of the old manor want to play.",
     "format": "2003-04",
     "cards": [
       ["ecard1-13", 3], ["ecard1-80", 3], ["ecard3-39", 1], ["ecard3-57", 4],
@@ -494,7 +494,7 @@
     ]
   },
   "Embrace": {
-    "description": "Gardevoir and Gardevoir ex with Kirlia's Link Blast; Xatu and Chimecho back them up, and Wynaut evolves on the spot.",
+    "description": "Gardevoir's gentle embrace hides a terrible power. Kirlia and Xatu read the future in her light.",
     "format": "2003-04",
     "cards": [
       ["ecard3-35", 2], ["ex1-68", 4], ["ex1-7", 2], ["ex2-40", 3],
@@ -508,7 +508,7 @@
     ]
   },
   "Cosmic Duo": {
-    "description": "Lunatone and Solrock draw cards with Cosmic Draw; Grumpig, Hypno and the Mewtwo pair hit with Psychic.",
+    "description": "When sun and moon align, strange stones begin to glow. Even Mew drifts down to watch.",
     "format": "2003-04",
     "cards": [
       ["ecard1-19", 2], ["ecard1-20", 1], ["ecard2-16", 2], ["ecard2-74", 2],
@@ -523,7 +523,7 @@
     ]
   },
   "Thunderbolt": {
-    "description": "Raichu ex fires Mega Thunderbolt; Pikachu, Electabuzz ex and Zapdos keep the pressure on.",
+    "description": "A cheeky spark becomes a raging storm. Raichu and friends charge the air until it crackles.",
     "format": "2003-04",
     "cards": [
       ["ecard2-44", 1], ["ex1-97", 1], ["ex2-20", 2], ["ex2-35", 2],
@@ -538,7 +538,7 @@
     ]
   },
   "Lighthouse": {
-    "description": "Ampharos and Ampharos ex power up with Conductivity; Plusle and Minun cheer on the bench, and Raikou runs ahead.",
+    "description": "Ampharos shines over the stormy sea. Plusle and Minun cheer every ship back to shore.",
     "format": "2003-04",
     "cards": [
       ["ecard1-119", 4], ["ecard1-77", 3], ["ecard2-1", 2], ["ecard3-28", 1],
@@ -552,7 +552,7 @@
     ]
   },
   "Magnetic Field": {
-    "description": "Magneton gathers Energy with Attract Energy, and Electrode blows up for a big swing. Raikou ex finishes.",
+    "description": "Compasses spin wildly near the power plant. Magneton hums and Electrode is ready to blow.",
     "format": "2003-04",
     "cards": [
       ["ecard2-115", 3], ["ecard2-91", 4], ["ecard3-19", 3], ["ex1-30", 2],
@@ -566,7 +566,7 @@
     ]
   },
   "Evolution Prism": {
-    "description": "Eevee evolves into whatever fits the matchup, with Rainbow and Multi Energy for every type. Kecleon and Ditto copy along.",
+    "description": "One small Eevee, a thousand possible futures. Which stone will it touch today?",
     "format": "2003-04",
     "cards": [
       ["ecard2-75", 4], ["ecard3-13", 2], ["ecard3-32", 1], ["ecard3-33", 2],
@@ -582,7 +582,7 @@
     ]
   },
   "Charizard Blaze": {
-    "description": "Charizard burns everything down; Moltres collects Fire Energy, and Magmar with Magby hold the front.",
+    "description": "A wildfire roars across the field. Charizard leads the blaze while Moltres fans the flames.",
     "format": "2003-04",
     "cards": [
       ["ecard1-17", 1], ["ecard1-39", 3], ["ecard1-86", 2], ["ecard2-10", 1],
@@ -596,7 +596,7 @@
     ]
   },
   "Firestarter": {
-    "description": "Blaziken's Firestarter puts Energy back into play; Blaziken ex and Camerupt hit hard while Torkoal fuels them.",
+    "description": "The flame of a young Torchic grows into Blaziken's fiery kick. Camerupt rumbles below.",
     "format": "2003-04",
     "cards": [
       ["ex1-28", 3], ["ex1-3", 2], ["ex1-4", 2], ["ex3-12", 1], ["ex3-69", 3],
@@ -609,7 +609,7 @@
     ]
   },
   "Volcano": {
-    "description": "Typhlosion ex and Arcanine's Energy Recharge keep the flames going; Entei ex and Rapidash charge in.",
+    "description": "Deep in the volcano the old fires wake. Typhlosion and Entei rise from the molten rock.",
     "format": "2003-04",
     "cards": [
       ["ecard1-105", 4], ["ecard1-26", 1], ["ecard1-64", 1], ["ecard2-102", 2],
@@ -622,7 +622,7 @@
     ]
   },
   "Will-o'-the-Wisp": {
-    "description": "Ninetales and Ninetales ex burn the field; Houndoom and Magmar ex add pressure and Magcargo melts the opponent's deck.",
+    "description": "Ghostly lights dance in the night forest. Follow them and Ninetales will be waiting.",
     "format": "2003-04",
     "cards": [
       ["ecard2-14", 2], ["ecard3-18", 1], ["ecard3-66", 3], ["ex1-100", 1],
@@ -636,7 +636,7 @@
     ]
   },
   "Egg Bomb": {
-    "description": "Exeggutor's Super Eggsplosion scales with Energy; Celebi heals, and Sunflora plants more Grass Energy.",
+    "description": "A bundle of strange eggs, warm from the sun. Nobody knows what hatches when they explode.",
     "format": "2003-04",
     "cards": [
       ["ecard2-112", 2], ["ecard2-12", 3], ["ecard2-77", 4], ["ecard3-105", 2],
@@ -651,7 +651,7 @@
     ]
   },
   "Cotton Breeze": {
-    "description": "Jumpluff floats past attacks with Fluff while Parasect and Venomoth sprinkle Special Conditions.",
+    "description": "Fluffy seeds ride the summer wind. Where they land, spores and sleepy powder follow.",
     "format": "2003-04",
     "cards": [
       ["ecard2-17", 3], ["ecard2-27", 1], ["ecard2-60", 3], ["ecard2-83", 4],
@@ -665,7 +665,7 @@
     ]
   },
   "Leaf Storm": {
-    "description": "Shiftry's Fan Away bounces Energy back to hand; Pinsir and Heracross hit hard and Tropius ripens extra cards.",
+    "description": "The forest guardian waves its great leaf fans. Every tree in the woods joins the storm.",
     "format": "2003-04",
     "cards": [
       ["ecard2-101", 2], ["ex2-12", 3], ["ex2-49", 3], ["ex2-76", 4],
@@ -679,7 +679,7 @@
     ]
   },
   "Silver Wind": {
-    "description": "Beautifly and Dustox lead a bug swarm; Masquerain, Volbeat and Illumise flutter around them.",
+    "description": "Wings of dust shimmer in the moonlight. The meadow swarm takes flight together.",
     "format": "2003-04",
     "cards": [
       ["ex1-2", 2], ["ex1-26", 2], ["ex1-43", 2], ["ex1-6", 2], ["ex2-38", 1],
@@ -693,7 +693,7 @@
     ]
   },
   "Toxic Cloud": {
-    "description": "Crobat stacks poison; Weezing, Muk ex and Arbok make sure it never wears off. Seviper waits on the bench.",
+    "description": "A purple haze settles over the swamp. Crobat flits through it while Muk bubbles below.",
     "format": "2003-04",
     "cards": [
       ["ecard1-3", 1], ["ecard1-32", 2], ["ecard2-23", 1], ["ecard3-60", 2],
@@ -706,7 +706,7 @@
     ]
   },
   "Jungle Strike": {
-    "description": "Sceptile and Sceptile ex with Breloom's poison; Roselia speeds things up and Scyther ex slashes.",
+    "description": "Leaves rustle and a blade flashes through the canopy. Sceptile never misses its mark.",
     "format": "2003-04",
     "cards": [
       ["ex1-102", 1], ["ex1-11", 2], ["ex1-69", 2], ["ex2-33", 2],
@@ -720,7 +720,7 @@
     ]
   },
   "Flower Garden": {
-    "description": "Vileplume ex blocks the opponent's items with Block Dust; Bellossom heals with Heal Dance; Victreebel and Swalot trap.",
+    "description": "The prettiest garden in Hoenn hides a poisonous secret. Smell the flowers at your own risk.",
     "format": "2003-04",
     "cards": [
       ["ecard1-31", 1], ["ecard2-42", 1], ["ecard2-65", 1], ["ecard2-68", 2],
@@ -734,7 +734,7 @@
     ]
   },
   "Overgrowth": {
-    "description": "Venusaur and Meganium hold the line with Leech Seed and Sleep Powder; Ariados slows everything down.",
+    "description": "Ancient vines wake across the old ruins. Venusaur and Meganium tend the wild garden.",
     "format": "2003-04",
     "cards": [
       ["ecard1-100", 3], ["ecard1-53", 2], ["ecard1-67", 2], ["ecard1-71", 2],
@@ -748,7 +748,7 @@
     ]
   },
   "Bug Collection": {
-    "description": "Ninjask's Loose Shell sets up Shedinja's Wonder Guard; Butterfree, Beedrill, Ledian and Forretress fill the net.",
+    "description": "A young collector's prize jar, buzzing with life. Shedinja watches from its empty shell.",
     "format": "2003-04",
     "cards": [
       ["ecard1-5", 1], ["ecard1-87", 1], ["ecard1-96", 2], ["ecard3-114", 2],
@@ -762,7 +762,7 @@
     ]
   },
   "Poison Kingdom": {
-    "description": "Nidoking's Earth Rage and Nidoqueen's Evolution Helper rule together; Cacturne punishes any poison.",
+    "description": "A king and queen rule the thorny wastes. Their desert court is armed with stingers.",
     "format": "2003-04",
     "cards": [
       ["ecard2-24", 2], ["ecard2-55", 2], ["ecard2-96", 3], ["ecard3-22", 2],
@@ -776,7 +776,7 @@
     ]
   },
   "Hoenn Fossils": {
-    "description": "Lileep and Anorith come back from fossils into Cradily ex and Armaldo; Relicanth keeps the rest asleep.",
+    "description": "Mr. Stone's lab brings ancient life back from stone. The old seas are full again.",
     "format": "2003-04",
     "cards": [
       ["ex2-1", 2], ["ex2-13", 2], ["ex2-28", 2], ["ex2-3", 2], ["ex2-43", 2],
@@ -789,7 +789,7 @@
     ]
   },
   "Kanto Fossils": {
-    "description": "Mysterious Fossil and Buried Fossil open the way to Kabutops ex, Omastar and Aerodactyl ex's Primal Lock.",
+    "description": "From the depths of Mt. Moon, shells and claws stir. Aerodactyl screeches across the sky.",
     "format": "2003-04",
     "cards": [
       ["ecard3-1", 1], ["ecard3-14", 1], ["ecard3-4", 1], ["ecard3-47", 1],
@@ -803,7 +803,7 @@
     ]
   },
   "Chaos Flash": {
-    "description": "Golduck locks the opponent with Chaos Flash while Kingler, Crawdaunt and Seaking hit from the water.",
+    "description": "Golduck's eyes glow in the stream. Crabs and fish gather around the strange light.",
     "format": "2003-04",
     "cards": [
       ["ecard1-115", 2], ["ecard1-15", 2], ["ecard2-104", 4], ["ecard2-78", 2],
@@ -817,7 +817,7 @@
     ]
   },
   "Deep Dive": {
-    "description": "Wailord ex walls everything with 200 HP; Pelipper, Corsola and Luvdisc pull cards and Energy along.",
+    "description": "Far below the waves sings the great Wailord. Its song calls the whole sea to battle.",
     "format": "2003-04",
     "cards": [
       ["ex1-14", 1], ["ex1-48", 4], ["ex1-77", 3], ["ex2-100", 2],
@@ -832,7 +832,7 @@
     ]
   },
   "Sea Dragon": {
-    "description": "Kingdra and Kingdra ex soak and blast; Octillery, Qwilfish and Mantine harass from the bench.",
+    "description": "A whirlpool forms where the sea dragon sleeps. Kingdra rises when the tide turns.",
     "format": "2003-04",
     "cards": [
       ["ecard1-127", 1], ["ecard2-105", 2], ["ecard2-148", 2], ["ecard2-26", 2],
@@ -846,7 +846,7 @@
     ]
   },
   "Rain Dance": {
-    "description": "Milotic heals the team with Healing Shower; Ludicolo's Rain Dish and Azumarill's Bubble Turn keep it going.",
+    "description": "When Ludicolo dances, the rain begins. Milotic glides through the puddles like a rainbow.",
     "format": "2003-04",
     "cards": [
       ["ecard2-4", 2], ["ecard2-53", 2], ["ex2-31", 1], ["ex2-45", 2],
@@ -859,7 +859,7 @@
     ]
   },
   "Permafrost": {
-    "description": "Glalie and Walrein freeze the field; Regice ex, Articuno and Piloswine keep the opponent iced over.",
+    "description": "A blizzard howls from the frozen cave. Regice wakes and the whole field turns to ice.",
     "format": "2003-04",
     "cards": [
       ["ecard3-107", 2], ["ecard3-4", 1], ["ecard3-43", 1], ["ex3-44", 3],
@@ -872,7 +872,7 @@
     ]
   },
   "Seafoam Islands": {
-    "description": "Starmie, Dewgong and Cloyster from Kanto's seas; Lapras and Lapras ex ferry Energy while Jynx and Smoochum sing.",
+    "description": "Icy caves rise from the foaming sea. Lapras ferries travelers past Dewgong and Cloyster.",
     "format": "2003-04",
     "cards": [
       ["ecard1-129", 2], ["ecard1-8", 1], ["ecard1-83", 2], ["ecard2-61", 1],
@@ -887,7 +887,7 @@
     ]
   },
   "Major Tsunami": {
-    "description": "Feraligatr's Major Tsunami pulls the opponent's Active away; Quagsire and Whiscash dig in under Rain Castform.",
+    "description": "The river bursts its banks with a roar. Feraligatr rides the wave all the way to shore.",
     "format": "2003-04",
     "cards": [
       ["ecard1-12", 3], ["ecard1-74", 2], ["ecard2-30", 2], ["ecard2-66", 2],
@@ -901,7 +901,7 @@
     ]
   },
   "Hydro Cannon": {
-    "description": "Blastoise and the Poliwag family: Politoed's Energy Splash and Poliwrath's Strange Spiral, with Tentacruel stinging.",
+    "description": "Blastoise braces its shell and aims its cannons. Poliwrath swims in from the falls.",
     "format": "2003-04",
     "cards": [
       ["ecard1-125", 3], ["ecard1-36", 2], ["ecard1-89", 2], ["ecard1-92", 2],
@@ -914,7 +914,7 @@
     ]
   },
   "Raging Sea": {
-    "description": "Gyarados rises from Magikarp; Sharpedo and Huntail cut through, and Gorebyss charges Energy.",
+    "description": "A calm sea turns violent in an instant. Gyarados rises and the sharks smell blood.",
     "format": "2003-04",
     "cards": [
       ["ex1-22", 2], ["ex1-51", 3], ["ex3-32", 3], ["ex3-60", 4], ["ex5-18", 1],
@@ -927,7 +927,7 @@
     ]
   },
   "Legendary Waters": {
-    "description": "Kyogre ex leads the Legendary beasts of the sea: Suicune, Suicune ex and Lugia.",
+    "description": "The ocean's ancient master stirs. Kyogre surfaces and Suicune purifies its path.",
     "format": "2003-04",
     "cards": [
       ["ecard2-108", 3], ["ecard2-149", 1], ["ecard2-33", 2], ["ecard2-34", 1],
@@ -941,7 +941,7 @@
     ]
   },
   "Mud Wave": {
-    "description": "Swampert and Swampert ex wash over everything; Marshtomp's Natural Cure keeps them clean, Lanturn conducts power.",
+    "description": "Swampert rides the muddy tide from the marsh. Lanturn lights the way in the murky water.",
     "format": "2003-04",
     "cards": [
       ["ecard2-20", 2], ["ex1-23", 2], ["ex1-41", 3], ["ex3-65", 4],
@@ -955,7 +955,7 @@
     ]
   },
   "Dragon Dance": {
-    "description": "Dragonite ex calls for power; Salamence, Altaria and Rayquaza ex make a full dragon roster.",
+    "description": "Dragons of every color gather on the sky pillar. Their roars shake the clouds.",
     "format": "2003-04",
     "cards": [
       ["ecard1-107", 3], ["ecard1-9", 1], ["ex3-14", 2], ["ex3-19", 2],
@@ -968,7 +968,7 @@
     ]
   },
   "Eon Twins": {
-    "description": "Latios ex, Latias ex and the Crystal-type birds Lugia's friends Ho-oh and Celebi strike with any Energy.",
+    "description": "Two dragons that can turn invisible soar over Southern Isle. Legends follow in their wake.",
     "format": "2003-04",
     "cards": [
       ["ecard2-149", 1], ["ecard3-145", 1], ["ecard3-149", 1], ["ex2-18", 1],
@@ -983,7 +983,7 @@
     ]
   },
   "Lazy Day": {
-    "description": "Slaking's Critical Move hits for 100; Zangoose, Kecleon and Snorlax round out the normal team. Spinda keeps the opponent dizzy.",
+    "description": "Slaking naps all day and wakes up stronger than anyone. Its friends just let it sleep.",
     "format": "2003-04",
     "cards": [
       ["ecard3-100", 1], ["ex1-12", 3], ["ex1-45", 4], ["ex2-14", 2],
@@ -997,7 +997,7 @@
     ]
   },
   "Sandstorm": {
-    "description": "Flygon guards with Sand Guard; Sandslash, Marowak and Gligar make a ground squad.",
+    "description": "Desert winds hide the dragon of the dunes. Flygon's wings sing in the sandstorm.",
     "format": "2003-04",
     "cards": [
       ["ecard2-54", 1], ["ecard3-59", 1], ["ex2-21", 2], ["ex2-75", 2],
@@ -1011,7 +1011,7 @@
     ]
   },
   "Sky High": {
-    "description": "Dodrio's Fast Feet and Swellow's Drive Off control the battle; Fearow, Pidgeot and Farfetch'd fly in.",
+    "description": "Feathers fill the sky above the route. The fastest birds race to strike first.",
     "format": "2003-04",
     "cards": [
       ["ecard1-11", 1], ["ecard1-123", 2], ["ecard1-130", 2], ["ecard1-23", 1],
@@ -1025,7 +1025,7 @@
     ]
   },
   "Lucky Eggs": {
-    "description": "Chansey ex and Blissey heal and hit back; Miltank, Kangaskhan, Lickitung and Granbull are the bulky friends.",
+    "description": "The nurses of the Pokémon Center have a kind heart and a strong right hook.",
     "format": "2003-04",
     "cards": [
       ["ecard2-6", 2], ["ecard2-69", 3], ["ecard2-88", 1], ["ecard2-90", 1],
@@ -1040,7 +1040,7 @@
     ]
   },
   "Moonlight": {
-    "description": "Wigglytuff ex sings everyone to sleep; Clefable, Togetic and Delcatty support, and Cleffa and Igglybuff evolve fast.",
+    "description": "On full moon nights, the fairies of Mt. Moon sing and dance. Their lullabies are irresistible.",
     "format": "2003-04",
     "cards": [
       ["ecard1-101", 2], ["ecard1-7", 2], ["ecard2-114", 2], ["ecard2-39", 1],
@@ -1055,7 +1055,7 @@
     ]
   },
   "City Pests": {
-    "description": "Linoone and Persian dig up cards; Raticate, Furret, Ursaring and Aipom swarm the bench.",
+    "description": "Back alleys are full of scrappy critters. Whatever you dropped, Linoone already found it.",
     "format": "2003-04",
     "cards": [
       ["ecard1-128", 2], ["ecard2-107", 2], ["ecard2-48", 1], ["ecard2-67", 1],
@@ -1070,7 +1070,7 @@
     ]
   },
   "Hyper Voice": {
-    "description": "Exploud roars with Hyper Voice; Porygon2, Noctowl, Castform and Smeargle keep the team flexible.",
+    "description": "Exploud turns up the volume. The quiet ones in the band are full of surprises.",
     "format": "2003-04",
     "cards": [
       ["ecard1-133", 1], ["ecard2-103", 2], ["ecard2-109", 1], ["ecard2-28", 1],
@@ -1086,7 +1086,7 @@
     ]
   },
   "Overzealous": {
-    "description": "Machamp hits harder the more damaged it is; Hariyama and Primeape fight alongside.",
+    "description": "Four arms, one goal. Machamp and the fighters of the dojo never back down.",
     "format": "2003-04",
     "cards": [
       ["ecard2-29", 1], ["ecard2-92", 2], ["ecard3-74", 4], ["ex1-57", 3],
@@ -1099,7 +1099,7 @@
     ]
   },
   "Martial Arts Dojo": {
-    "description": "Hitmonchan, Hitmonchan ex, Hitmonlee and Hitmontop, with Medicham and baby Tyrogue in the corner.",
+    "description": "The masters of punch, kick and spin meet in the ring. Medicham meditates by the door.",
     "format": "2003-04",
     "cards": [
       ["ecard1-81", 2], ["ecard2-63", 1], ["ecard2-81", 2], ["ecard2-82", 2],
@@ -1113,7 +1113,7 @@
     ]
   },
   "Rock Slide": {
-    "description": "Golem ex and Golem roll over the opponent; Rhydon, Sudowoodo and Nosepass guard the quarry.",
+    "description": "Boulders roll down the mountain pass. Golem leads the avalanche straight at you.",
     "format": "2003-04",
     "cards": [
       ["ecard1-14", 2], ["ecard2-36", 1], ["ex1-18", 1], ["ex3-30", 3],
@@ -1126,7 +1126,7 @@
     ]
   },
   "Earthquake": {
-    "description": "Donphan, Dugtrio and Groudon ex shake the ground; Regirock ex heals with Healing Stone.",
+    "description": "The ground cracks open as Groudon awakens. Donphan and Dugtrio make it tremble.",
     "format": "2003-04",
     "cards": [
       ["ecard1-10", 2], ["ecard1-106", 2], ["ecard2-7", 3], ["ex1-62", 4],
@@ -1140,7 +1140,7 @@
     ]
   },
   "Iron Wall": {
-    "description": "Aggron and Aggron ex with Registeel ex; Skarmory, Scizor and Mawile cut in with Metal Energy.",
+    "description": "Aggron guards its mountain with a body of steel. Skarmory and Scizor patrol the peaks.",
     "format": "2003-04",
     "cards": [
       ["ecard2-32", 2], ["ecard2-57", 2], ["ex1-1", 1], ["ex1-37", 3],
@@ -1155,7 +1155,7 @@
     ]
   },
   "Meteor Mash": {
-    "description": "Metagross and Metagross ex use Beldum's Magnetic Call; Jirachi wishes and Steelix holds the line.",
+    "description": "A comet's iron heart beats inside Metagross. Jirachi grants one wish before it sleeps.",
     "format": "2003-04",
     "cards": [
       ["ecard2-35", 2], ["ecard2-98", 2], ["ex5-11", 2], ["ex5-21", 3],
@@ -1169,7 +1169,7 @@
     ]
   },
   "Dark Aura": {
-    "description": "Tyranitar turns all Energy into Darkness; Sneasel ex and Murkrow take cards while it grows.",
+    "description": "Mountains crumble where Tyranitar walks. Its larva dig through rock to follow.",
     "format": "2003-04",
     "cards": [
       ["ecard1-116", 2], ["ecard1-29", 3], ["ecard1-90", 1], ["ecard2-110", 2],
@@ -1183,7 +1183,7 @@
     ]
   },
   "Night Howl": {
-    "description": "Mightyena's Intimidating Fang and Absol's Bad News; Sableye and Dark Celebi lurk.",
+    "description": "Mightyena howl when the moon rises. Absol appears whenever disaster is near.",
     "format": "2003-04",
     "cards": [
       ["ex1-10", 3], ["ex1-64", 4], ["ex2-10", 2], ["ex2-47", 2], ["ex3-1", 2],
@@ -1197,7 +1197,7 @@
     ]
   },
   "Magma Strike": {
-    "description": "Team Magma's Aggron, Groudon and Mightyena with Magma Energy; Maxie and Magma Ball bring them in.",
+    "description": "Team Magma marches to expand the land. Their Groudon is the heart of the plan.",
     "format": "2003-04",
     "cards": [
       ["ex4-23", 1], ["ex4-36", 2], ["ex4-37", 2], ["ex4-58", 3], ["ex4-66", 3],
@@ -1210,7 +1210,7 @@
     ]
   },
   "Magma Eruption": {
-    "description": "Team Magma's Camerupt overheats, Houndoom roasts and Claydol and Rhydon crush, with Torkoal blowing hot air.",
+    "description": "Magma's volcano base rumbles with smoke and fire. Camerupt is ready to erupt.",
     "format": "2003-04",
     "cards": [
       ["ex4-10", 3], ["ex4-12", 1], ["ex4-19", 3], ["ex4-22", 1], ["ex4-33", 2],
@@ -1223,7 +1223,7 @@
     ]
   },
   "Aqua Assault": {
-    "description": "Team Aqua's Kyogre, Walrein and Sharpedo with Aqua Energy; Archie and Aqua Ball bring them in.",
+    "description": "Team Aqua sets sail to expand the seas. Their Kyogre leads the raid from the deep.",
     "format": "2003-04",
     "cards": [
       ["ex4-15", 1], ["ex4-16", 2], ["ex4-25", 3], ["ex4-3", 2], ["ex4-5", 2],
@@ -1236,7 +1236,7 @@
     ]
   },
   "Aqua Ambush": {
-    "description": "Team Aqua's Manectric shifts power, Lanturn lights the way and Cacturne and Crawdaunt poison; Seviper calls the family.",
+    "description": "Team Aqua's sneakiest agents hide in the shallows. A flash of lightning springs the trap.",
     "format": "2003-04",
     "cards": [
       ["ex4-1", 1], ["ex4-14", 1], ["ex4-17", 1], ["ex4-24", 1], ["ex4-26", 2],
@@ -1249,7 +1249,7 @@
     ]
   },
   "Poltergeist": {
-    "description": "Gengar ex haunts with Poltergeist; Dusclops ex, Banette and Misdreavus lurk in the shadows.",
+    "description": "Lights flicker and the cards start to move on their own. Gengar ex has come out to play.",
     "format": "2004-05",
     "cards": [
       ["ex5-1", 1], ["ex5-72", 2], ["ex6-108", 2], ["ex6-34", 3], ["ex6-63", 4],
@@ -1262,7 +1262,7 @@
     ]
   },
   "Psychic Link": {
-    "description": "Gardevoir and Gardevoir ex with Kirlia's Link Blast; Xatu and Chimecho back them up, and Wynaut evolves on the spot.",
+    "description": "Kirlia and Gardevoir share a single mind. Xatu sees what they plan before it happens.",
     "format": "2004-05",
     "cards": [
       ["ex1-68", 4], ["ex2-40", 3], ["ex2-54", 1], ["ex2-96", 1], ["ex8-29", 2],
@@ -1275,7 +1275,7 @@
     ]
   },
   "Moon and Sun": {
-    "description": "Lunatone and Solrock draw cards; Grumpig, Hypno and Mewtwo ex hit with Psychic while Wobbuffet stalls.",
+    "description": "Lunatone and Solrock circle each other like the sky itself. Mewtwo ex watches from afar.",
     "format": "2004-05",
     "cards": [
       ["ex1-101", 1], ["ex2-13", 2], ["ex2-26", 2], ["ex2-8", 2], ["ex3-16", 1],
@@ -1288,7 +1288,7 @@
     ]
   },
   "Space Virus": {
-    "description": "Deoxys and Deoxys ex change Forme at will under Space Center; Mr. Mime ex and Starmie guard the way.",
+    "description": "A meteor fell and something crawled out. Deoxys changes its shape to fit any battle.",
     "format": "2004-05",
     "cards": [
       ["ex5-49", 2], ["ex5-75", 2], ["ex6-110", 1], ["ex8-16", 4],
@@ -1301,7 +1301,7 @@
     ]
   },
   "Big Eggsplosion": {
-    "description": "Exeggutor swaps cards with Psychic Exchange and blows up with Big Eggsplosion; Slowbro naps through damage.",
+    "description": "Exeggutor's heads all think something different. Slowbro doesn't think at all.",
     "format": "2004-05",
     "cards": [
       ["ex2-26", 1], ["ex6-14", 2], ["ex6-33", 4], ["ex6-5", 3], ["ex7-76", 3],
@@ -1314,7 +1314,7 @@
     ]
   },
   "Eevee Party": {
-    "description": "Eevee evolves into whatever fits the matchup, with Rainbow and Multi Energy for every type. Kecleon and Ditto copy along.",
+    "description": "Every Eeveelution is invited and nobody wants to miss the fun. Ditto came in disguise.",
     "format": "2004-05",
     "cards": [
       ["ex2-16", 1], ["ex2-18", 1], ["ex2-24", 1], ["ex2-25", 2], ["ex2-5", 2],
@@ -1328,7 +1328,7 @@
     ]
   },
   "Mega Thunder": {
-    "description": "Raichu ex fires Mega Thunderbolt; Electabuzz ex and Zapdos ex keep the pressure on.",
+    "description": "Storm clouds gather over the power plant. Raichu ex and Zapdos ex ride the lightning.",
     "format": "2004-05",
     "cards": [
       ["ex1-97", 1], ["ex2-20", 2], ["ex2-35", 2], ["ex2-36", 1], ["ex2-72", 4],
@@ -1341,7 +1341,7 @@
     ]
   },
   "Conductivity": {
-    "description": "Ampharos ex powers up with Conductivity; Plusle and Minun cheer on the bench, Lanturn lights the way and Raikou ex runs ahead.",
+    "description": "Ampharos ex shines brighter with every spark. The lighthouse calls Raikou ex home.",
     "format": "2004-05",
     "cards": [
       ["ex3-27", 3], ["ex3-64", 4], ["ex3-89", 2], ["ex4-92", 1], ["ex5-38", 1],
@@ -1354,7 +1354,7 @@
     ]
   },
   "Energy Bomb": {
-    "description": "Magneton gathers Energy, Electrode ex blows up for a big swing, and Manectric ex finishes.",
+    "description": "The old power plant hums with danger. One wrong step and Electrode ex goes boom.",
     "format": "2004-05",
     "cards": [
       ["ex1-30", 3], ["ex3-35", 3], ["ex3-63", 4], ["ex5-5", 1], ["ex6-107", 1],
@@ -1367,7 +1367,7 @@
     ]
   },
   "Burn Down": {
-    "description": "Charizard ex powers up with Energy Flame and burns everything down with Burn Down; Moltres ex and Magmar hold the front.",
+    "description": "Charizard ex spreads its wings and the sky turns orange. Nothing is left standing.",
     "format": "2004-05",
     "cards": [
       ["ex3-100", 1], ["ex3-98", 4], ["ex3-99", 3], ["ex6-105", 2],
@@ -1380,7 +1380,7 @@
     ]
   },
   "Blaze Kick": {
-    "description": "Blaziken's Firestarter puts Energy back into play; Camerupt ex erupts, Torchic ★ springs back and Torkoal fuels them.",
+    "description": "Blaziken's legs burst into flame. Camerupt ex and Torkoal fuel the fire.",
     "format": "2004-05",
     "cards": [
       ["ex1-28", 3], ["ex1-4", 1], ["ex3-77", 4], ["ex4-89", 1], ["ex5-26", 1],
@@ -1393,7 +1393,7 @@
     ]
   },
   "Fire Spin": {
-    "description": "Typhlosion ex and Arcanine's Energy Recharge keep the flames going; Entei ex and Rapidash charge in.",
+    "description": "The legendary dog of the volcano runs free. Typhlosion ex and Arcanine follow its trail.",
     "format": "2004-05",
     "cards": [
       ["ex2-15", 2], ["ex2-51", 3], ["ex2-59", 4], ["ex2-65", 3], ["ex2-99", 2],
@@ -1405,7 +1405,7 @@
     ]
   },
   "Nine Tails": {
-    "description": "Ninetales and Ninetales ex burn the field; Houndoom and Magmar ex add pressure and Magcargo ex melts the opponent's deck.",
+    "description": "A thousand-year-old fox with nine burning tails. Curse it and you'll regret it forever.",
     "format": "2004-05",
     "cards": [
       ["ex1-100", 1], ["ex3-34", 2], ["ex3-95", 1], ["ex5-22", 2],
@@ -1418,7 +1418,7 @@
     ]
   },
   "Energy Trans": {
-    "description": "Venusaur ex moves Energy freely with Energy Trans; Parasect and Tangela slow the opponent down.",
+    "description": "Venusaur ex soaks up the sun from its giant flower. The whole jungle blooms around it.",
     "format": "2004-05",
     "cards": [
       ["ex5-55", 2], ["ex6-112", 2], ["ex6-30", 2], ["ex6-35", 3],
@@ -1431,7 +1431,7 @@
     ]
   },
   "Spore Cloud": {
-    "description": "Jumpluff floats past attacks while Venomoth and Ledian sprinkle Special Conditions; Yanma zips in.",
+    "description": "The meadow fills with drifting cotton and dust. Anyone who breathes it falls asleep.",
     "format": "2004-05",
     "cards": [
       ["ex6-49", 2], ["ex6-84", 3], ["ex7-11", 3], ["ex7-23", 1], ["ex7-28", 1],
@@ -1444,7 +1444,7 @@
     ]
   },
   "Fan Away": {
-    "description": "Shiftry's Fan Away bounces Energy back to hand; Pinsir and Heracross hit hard and Tropius ripens extra cards.",
+    "description": "Shiftry's leaf fans whip up a hurricane. Everything in the forest is swept away.",
     "format": "2004-05",
     "cards": [
       ["ex2-49", 3], ["ex2-76", 4], ["ex5-13", 2], ["ex5-7", 2], ["ex8-25", 3],
@@ -1457,7 +1457,7 @@
     ]
   },
   "Wing Dust": {
-    "description": "Beautifly and Dustox lead a bug swarm; Masquerain, Volbeat and Illumise flutter around them.",
+    "description": "Beautifly and Dustox scatter their dust under the moon. The meadow sparkles and stings.",
     "format": "2004-05",
     "cards": [
       ["ex1-26", 2], ["ex1-43", 2], ["ex1-6", 2], ["ex2-38", 1], ["ex2-53", 1],
@@ -1470,7 +1470,7 @@
     ]
   },
   "Venom Wing": {
-    "description": "Crobat ex stacks poison; Weezing, Muk ex and Arbok make sure it never wears off. Seviper waits on the bench.",
+    "description": "Crobat ex swoops out of the cave. Its poisonous friends are never far behind.",
     "format": "2004-05",
     "cards": [
       ["ex1-54", 2], ["ex2-29", 1], ["ex2-64", 2], ["ex3-57", 2], ["ex3-96", 1],
@@ -1483,7 +1483,7 @@
     ]
   },
   "Forest Blade": {
-    "description": "Sceptile and Sceptile ex with Breloom's poison; Treecko ★ springs back, Roselia speeds things up and Scyther ex slashes.",
+    "description": "The forest is Sceptile's kingdom. Its leaf blades flash faster than the eye can follow.",
     "format": "2004-05",
     "cards": [
       ["ex1-102", 1], ["ex3-31", 3], ["ex3-80", 4], ["ex3-9", 1], ["ex4-93", 1],
@@ -1496,7 +1496,7 @@
     ]
   },
   "Block Dust": {
-    "description": "Vileplume ex blocks the opponent's items; Bellossom heals; Victreebel and Swalot trap.",
+    "description": "Vileplume ex shakes its petals and the air fills with stinging pollen.",
     "format": "2004-05",
     "cards": [
       ["ex5-100", 1], ["ex5-16", 1], ["ex5-35", 3], ["ex5-50", 1],
@@ -1509,7 +1509,7 @@
     ]
   },
   "Wonder Guard": {
-    "description": "Ninjask's Loose Shell sets up Shedinja's Wonder Guard; Butterfree, Beedrill, Forretress and Scyther fill the net.",
+    "description": "Nincada sheds its shell and something new moves inside. Shedinja feels no pain.",
     "format": "2004-05",
     "cards": [
       ["ex3-28", 1], ["ex3-67", 4], ["ex3-71", 2], ["ex6-1", 1], ["ex6-2", 1],
@@ -1522,7 +1522,7 @@
     ]
   },
   "Royal Poison": {
-    "description": "Nidoking and Nidoqueen rule together; Cacturne ex punishes any poison.",
+    "description": "Nidoking and Nidoqueen rule with horns and venom. Cacturne ex guards the desert gate.",
     "format": "2004-05",
     "cards": [
       ["ex2-2", 1], ["ex2-57", 3], ["ex6-40", 2], ["ex6-41", 2], ["ex6-70", 3],
@@ -1535,7 +1535,7 @@
     ]
   },
   "Ancient Claws": {
-    "description": "Lileep and Anorith come back from fossils into Cradily ex and Armaldo ex; Relicanth keeps the rest asleep.",
+    "description": "Living fossils climb out of the past. Armaldo ex and Cradily ex rule the old reefs.",
     "format": "2004-05",
     "cards": [
       ["ex2-1", 1], ["ex2-13", 2], ["ex2-28", 2], ["ex2-3", 2], ["ex2-43", 2],
@@ -1548,7 +1548,7 @@
     ]
   },
   "Primal Lock": {
-    "description": "Mysterious Fossil opens the way to Kabutops ex, Omastar and Aerodactyl ex's Primal Lock; Lapras ex ferries the Energy.",
+    "description": "Aerodactyl ex's ancient roar freezes modern Pokémon in fear. The fossil age returns.",
     "format": "2004-05",
     "cards": [
       ["ex1-99", 1], ["ex2-19", 2], ["ex2-39", 2], ["ex2-70", 2], ["ex2-94", 1],
@@ -1561,7 +1561,7 @@
     ]
   },
   "Crab Hammer": {
-    "description": "Golduck locks the opponent while Kingler, Crawdaunt and Seaking hit from the water.",
+    "description": "The beach belongs to the crabs. Kingler and Crawdaunt pinch anyone who comes near.",
     "format": "2004-05",
     "cards": [
       ["ex1-55", 2], ["ex1-99", 1], ["ex2-17", 3], ["ex6-26", 2], ["ex6-66", 3],
@@ -1574,7 +1574,7 @@
     ]
   },
   "Whale Song": {
-    "description": "Wailord ex walls everything with 200 HP; Pelipper, Corsola and Luvdisc pull cards and Energy along.",
+    "description": "Wailord ex is the biggest Pokémon of all. Its song echoes across the whole ocean.",
     "format": "2004-05",
     "cards": [
       ["ex1-14", 1], ["ex1-48", 4], ["ex1-77", 3], ["ex2-100", 2],
@@ -1587,7 +1587,7 @@
     ]
   },
   "Dragon Whirlpool": {
-    "description": "Kingdra and Kingdra ex soak and blast; Dark Octillery, Qwilfish and Mantine harass from the bench.",
+    "description": "Kingdra stirs up whirlpools from the ocean floor. Octillery ink clouds the water.",
     "format": "2004-05",
     "cards": [
       ["ex3-39", 3], ["ex3-92", 1], ["ex7-12", 2], ["ex7-27", 1], ["ex7-45", 1],
@@ -1600,7 +1600,7 @@
     ]
   },
   "Reflect Energy": {
-    "description": "Milotic ex reflects Energy; Ludicolo's Rain Dish and Azumarill's Bubble Turn keep it going under Rain Castform.",
+    "description": "Milotic ex reflects the light like a living rainbow. The rain dancers follow its lead.",
     "format": "2004-05",
     "cards": [
       ["ex2-31", 1], ["ex2-66", 3], ["ex5-12", 2], ["ex5-23", 1], ["ex7-1", 2],
@@ -1613,7 +1613,7 @@
     ]
   },
   "Ice Age": {
-    "description": "Glalie and Walrein freeze the field; Regice ex, Articuno ex and Piloswine keep the opponent iced over.",
+    "description": "The glaciers return. Regice ex and Articuno ex bring an endless winter.",
     "format": "2004-05",
     "cards": [
       ["ex3-44", 3], ["ex5-15", 2], ["ex5-25", 1], ["ex5-34", 2], ["ex5-47", 2],
@@ -1627,7 +1627,7 @@
     ]
   },
   "Kanto Shores": {
-    "description": "Starmie, Dewgong and Cloyster from Kanto's seas; Delibird brings presents and Totodile bites.",
+    "description": "Starfish, seals and shells wash up on Kanto's beaches. The tide brings them all to battle.",
     "format": "2004-05",
     "cards": [
       ["ex5-49", 2], ["ex5-75", 3], ["ex5-79", 1], ["ex6-20", 2], ["ex6-3", 2],
@@ -1640,7 +1640,7 @@
     ]
   },
   "Hydro Pump": {
-    "description": "Blastoise ex's Energy Rain floods the field; Poliwrath spirals and Tentacruel stings.",
+    "description": "Blastoise ex opens fire and the whole field is flooded. Poliwrath swims through it all.",
     "format": "2004-05",
     "cards": [
       ["ex4-46", 4], ["ex5-51", 1], ["ex5-77", 2], ["ex6-104", 2],
@@ -1652,7 +1652,7 @@
     ]
   },
   "Red Tide": {
-    "description": "Gyarados ex rises from Magikarp; Sharpedo ex and Huntail cut through, and Gorebyss charges Energy.",
+    "description": "A red Gyarados was seen in the lake. The sharks are restless too.",
     "format": "2004-05",
     "cards": [
       ["ex1-22", 1], ["ex1-51", 3], ["ex3-60", 4], ["ex5-18", 1], ["ex5-19", 1],
@@ -1665,7 +1665,7 @@
     ]
   },
   "Tidal Legends": {
-    "description": "Kyogre ex leads the Legendary beasts of the sea with Kyogre and Suicune ex; Lapras ex rides along.",
+    "description": "Kyogre's rains flood the land and Suicune sweeps across the waves. The legends are awake.",
     "format": "2004-05",
     "cards": [
       ["ex1-99", 1], ["ex4-94", 1], ["ex5-94", 2], ["ex7-1", 1], ["ex7-68", 2],
@@ -1678,7 +1678,7 @@
     ]
   },
   "Muddy Water": {
-    "description": "Swampert and Swampert ex wash over everything; Mudkip ★ springs back and Quagsire and Whiscash dig in.",
+    "description": "Swampert churns the marsh into a muddy flood. Quagsire and Whiscash dig in.",
     "format": "2004-05",
     "cards": [
       ["ex3-51", 2], ["ex3-65", 4], ["ex4-95", 1], ["ex7-107", 1],
@@ -1691,7 +1691,7 @@
     ]
   },
   "Dragon Wave": {
-    "description": "Dragonite ex calls for power; Altaria ex sings and Rayquaza ex spirals up.",
+    "description": "Dragonite ex soars above the clouds with Rayquaza ex. Altaria sings to the storm.",
     "format": "2004-05",
     "cards": [
       ["ex3-14", 3], ["ex3-2", 1], ["ex3-90", 2], ["ex3-97", 1], ["ex7-53", 4],
@@ -1704,7 +1704,7 @@
     ]
   },
   "Dragon Lift": {
-    "description": "Salamence ex shoots Bright Flame with Dragon Lift; Rayquaza and Rayquaza ★ fly alongside.",
+    "description": "Salamence ex finally has wings. Rayquaza descends from the sky to fly beside it.",
     "format": "2004-05",
     "cards": [
       ["ex3-19", 1], ["ex3-23", 4], ["ex8-103", 2], ["ex8-107", 1],
@@ -1717,7 +1717,7 @@
     ]
   },
   "Eon Flight": {
-    "description": "Latios ex, Latias ex and the shining Latios ★ strike with any Energy; Kecleon shifts colors to match.",
+    "description": "Latios and Latias streak across the sky faster than jets. The twins never fly alone.",
     "format": "2004-05",
     "cards": [
       ["ex2-18", 2], ["ex3-93", 2], ["ex3-94", 2], ["ex8-106", 1], ["np-14", 2],
@@ -1730,7 +1730,7 @@
     ]
   },
   "Slack Off": {
-    "description": "Slaking's Critical Move hits for 100; Zangoose and Snorlax round out the normal team. Spinda keeps the opponent dizzy.",
+    "description": "Slaking is the laziest champion in Hoenn. When it finally gets up, everyone runs.",
     "format": "2004-05",
     "cards": [
       ["ex1-12", 1], ["ex1-45", 4], ["ex1-47", 1], ["ex2-14", 2], ["ex2-18", 1],
@@ -1743,7 +1743,7 @@
     ]
   },
   "Sand Guard": {
-    "description": "Flygon guards with Sand Guard and blows Dragonbreath from the Sand Pit; Tropius shelters the desert.",
+    "description": "A singing wind blows across the desert. Flygon guards the oasis from its sandstorm.",
     "format": "2004-05",
     "cards": [
       ["ex3-15", 2], ["ex3-22", 1], ["ex3-46", 2], ["ex3-78", 4], ["ex8-27", 2],
@@ -1756,7 +1756,7 @@
     ]
   },
   "Drive Off": {
-    "description": "Dodrio's Fast Feet and Swellow's Drive Off control the battle; Fearow, Pidgeot and Farfetch'd fly in.",
+    "description": "The birds of the route chase away anyone who enters their sky. Dodrio runs, Swellow dives.",
     "format": "2004-05",
     "cards": [
       ["ex5-33", 2], ["ex5-60", 3], ["ex6-10", 1], ["ex6-23", 1], ["ex6-24", 1],
@@ -1769,7 +1769,7 @@
     ]
   },
   "Egg Surprise": {
-    "description": "Chansey ex heals and hits back; Kangaskhan, Lickitung and Tauros are the bulky friends, and Latias ★ shines a Healing Light.",
+    "description": "Every Chansey carries a special egg. You never know what kindness it will bring.",
     "format": "2004-05",
     "cards": [
       ["ex1-96", 2], ["ex6-16", 2], ["ex6-19", 3], ["ex6-37", 2], ["ex6-6", 2],
@@ -1782,7 +1782,7 @@
     ]
   },
   "Sleepy Song": {
-    "description": "Wigglytuff ex sings everyone to sleep; Clefable ex waves its Metronome under Mt. Moon, and Togetic and Delcatty support.",
+    "description": "Wigglytuff ex sings the sweetest lullaby. Clefable ex waves a finger and magic happens.",
     "format": "2004-05",
     "cards": [
       ["ex1-29", 2], ["ex1-71", 2], ["ex4-41", 3], ["ex5-101", 1],
@@ -1796,7 +1796,7 @@
     ]
   },
   "Pickup Crew": {
-    "description": "Linoone and Persian dig up cards; Raticate, Furret and Dunsparce swarm the bench.",
+    "description": "A scrappy gang of city critters that never leave home empty-handed.",
     "format": "2004-05",
     "cards": [
       ["ex1-38", 2], ["ex1-79", 3], ["ex2-60", 1], ["ex4-42", 3], ["ex6-44", 2],
@@ -1809,7 +1809,7 @@
     ]
   },
   "Uproar": {
-    "description": "Exploud roars with Hyper Voice; Porygon, Ditto and Castform keep the team flexible.",
+    "description": "Exploud's band is louder than a thunderstorm. Ditto and Kecleon do the backup voices.",
     "format": "2004-05",
     "cards": [
       ["ex2-18", 1], ["ex2-60", 1], ["ex5-30", 2], ["ex5-82", 4], ["ex6-4", 1],
@@ -1822,7 +1822,7 @@
     ]
   },
   "Cross Chop": {
-    "description": "Machamp hits harder the more damaged it is; Hariyama ex and Primeape fight alongside.",
+    "description": "Machamp throws a thousand punches a minute. Hariyama ex catches what it misses.",
     "format": "2004-05",
     "cards": [
       ["ex1-57", 3], ["ex1-8", 1], ["ex5-41", 3], ["ex5-64", 4], ["ex5-9", 3],
@@ -1835,7 +1835,7 @@
     ]
   },
   "Pure Power": {
-    "description": "Medicham ex meditates on the bench while Hitmonchan ex jabs; Nosepass holds the corner.",
+    "description": "Medicham ex meditates on the mountaintop until its power overflows.",
     "format": "2004-05",
     "cards": [
       ["ex1-98", 2], ["ex5-42", 2], ["ex5-66", 4], ["ex8-42", 2], ["ex9-95", 2],
@@ -1848,7 +1848,7 @@
     ]
   },
   "Rock Tumble": {
-    "description": "Golem ex and Golem roll over the opponent; Rhydon guards the quarry.",
+    "description": "Golem ex curls up and rolls down the mountain. Rhydon smashes what's left.",
     "format": "2004-05",
     "cards": [
       ["ex3-30", 3], ["ex3-5", 2], ["ex3-56", 4], ["ex3-91", 1], ["ex5-46", 2],
@@ -1860,7 +1860,7 @@
     ]
   },
   "Magnitude": {
-    "description": "Donphan, Dugtrio and Groudon ex shake the ground; Regirock ex heals with Healing Stone and Claydol draws.",
+    "description": "Groudon ex raises the land from the sea. The whole field shakes with every step.",
     "format": "2004-05",
     "cards": [
       ["ex1-62", 4], ["ex5-93", 1], ["ex5-98", 1], ["ex6-22", 2], ["ex6-61", 2],
@@ -1873,7 +1873,7 @@
     ]
   },
   "Steel Fortress": {
-    "description": "Aggron and Aggron ex with Registeel ex; Skarmory, Forretress and Mawile cut in with Metal Energy.",
+    "description": "Aggron ex and Registeel ex stand like a wall of iron. Skarmory circles the fortress.",
     "format": "2004-05",
     "cards": [
       ["ex1-1", 1], ["ex1-37", 3], ["ex2-56", 4], ["ex2-9", 1], ["ex2-95", 1],
@@ -1887,7 +1887,7 @@
     ]
   },
   "Comet Punch": {
-    "description": "Metagross and Metagross ex use Beldum's Magnetic Call; Jirachi wishes and Steelix holds the line.",
+    "description": "Beldum fell from the stars and became Metagross ex. Its fists hit like meteors.",
     "format": "2004-05",
     "cards": [
       ["ex2-23", 1], ["ex5-29", 4], ["ex5-95", 1], ["ex6-42", 2], ["ex8-11", 2],
@@ -1900,7 +1900,7 @@
     ]
   },
   "Sand Damage": {
-    "description": "Dark Tyranitar and Tyranitar ex crush through; Larvitar evolves into whichever fits.",
+    "description": "Tyranitar ex wakes in a storm of sand. Even the shadows of Team Rocket follow it.",
     "format": "2004-05",
     "cards": [
       ["ex7-20", 3], ["ex7-41", 2], ["ex7-62", 4], ["pop1-17", 1],
@@ -1913,7 +1913,7 @@
     ]
   },
   "Bad News": {
-    "description": "Mightyena and Absol's Bad News; Sneasel ex, Sableye, Murkrow and Dark Celebi lurk.",
+    "description": "When Absol appears, disaster follows. Mightyena's pack hunts in the dark.",
     "format": "2004-05",
     "cards": [
       ["ex1-10", 3], ["ex1-103", 1], ["ex1-64", 4], ["ex3-1", 2], ["ex5-4", 1],
@@ -1926,7 +1926,7 @@
     ]
   },
   "Rocket's Poison Gas": {
-    "description": "Dark Crobat's Black Beam and Dark Weezing's Methane Leak poison everything; Dark Muk, Arbok and Ariados keep it sticky.",
+    "description": "Team Rocket's lab leaks something nasty. Dark Crobat and Dark Weezing lead the gas attack.",
     "format": "2004-05",
     "cards": [
       ["ex1-54", 3], ["ex2-64", 2], ["ex3-57", 2], ["ex7-16", 1], ["ex7-29", 2],
@@ -1939,7 +1939,7 @@
     ]
   },
   "Rocket's Power Plant": {
-    "description": "Dark Ampharos and Dark Electrode charge up, Dark Magneton binds, and Rocket's Zapdos ex and Raikou ex strike.",
+    "description": "Team Rocket hijacked the power plant. Dark Ampharos lights their secret base.",
     "format": "2004-05",
     "cards": [
       ["ex3-63", 2], ["ex3-64", 3], ["ex6-85", 3], ["ex7-106", 1], ["ex7-2", 2],
@@ -1952,7 +1952,7 @@
     ]
   },
   "Rocket's Tidal Wave": {
-    "description": "Dark Gyarados's Dark Scale and Dark Golduck's shield; Dark Slowking schemes and Rocket's Suicune ex and Articuno ex freeze the field.",
+    "description": "Team Rocket stole the legends of the sea. Dark Gyarados guards their submarine.",
     "format": "2004-05",
     "cards": [
       ["ex3-60", 3], ["ex7-105", 1], ["ex7-35", 2], ["ex7-36", 2],
@@ -1965,7 +1965,7 @@
     ]
   },
   "Rocket's Furnace": {
-    "description": "Dark Houndoom breathes fire, Dark Magcargo presses Energy and Rocket's Moltres ex and Entei ex rain ash.",
+    "description": "Team Rocket's secret forge burns with stolen fire. Dark Houndoom guards the gate.",
     "format": "2004-05",
     "cards": [
       ["ex4-12", 1], ["ex7-100", 1], ["ex7-37", 3], ["ex7-38", 2],
@@ -1978,7 +1978,7 @@
     ]
   },
   "Rocket's Quarry": {
-    "description": "Dark Marowak, Dark Sandslash and Dark Steelix dig in beside their plain cousins; Rocket's Hitmonchan ex strikes back.",
+    "description": "Deep in the mine, Team Rocket digs for treasure. Dark Steelix bores through the rock.",
     "format": "2004-05",
     "cards": [
       ["ex2-21", 1], ["ex2-75", 3], ["ex4-40", 3], ["ex6-42", 3], ["ex6-7", 1],
@@ -1991,7 +1991,7 @@
     ]
   },
   "Rocket's Dragons": {
-    "description": "Dark Dragonite rises on Evolutionary Light; Dark Hypno and Dark Raticate keep the opponent drowsy.",
+    "description": "Team Rocket's darkest experiment woke Dark Dragonite. Dark Hypno keeps it under control.",
     "format": "2004-05",
     "cards": [
       ["ex6-32", 3], ["ex7-15", 2], ["ex7-17", 1], ["ex7-31", 3], ["ex7-53", 4],
@@ -2004,7 +2004,7 @@
     ]
   },
   "Rocket's Elite": {
-    "description": "Rocket's Mewtwo ex, Snorlax ex and Scizor ex lead the grunts; Rocket's Sneasel ex, Wobbuffet and Meowth steal the show.",
+    "description": "The boss's prized collection of stolen Pokémon. Rocket's Mewtwo ex leads the elite.",
     "format": "2004-05",
     "cards": [
       ["ex7-101", 2], ["ex7-102", 2], ["ex7-103", 1], ["ex7-104", 1],
@@ -2018,7 +2018,7 @@
     ]
   },
   "Magma Hideout": {
-    "description": "Team Magma's Aggron, Groudon and Mightyena with Magma Energy; Maxie and Magma Ball bring them in.",
+    "description": "Deep inside the volcano, Team Magma plots to raise the land. Groudon waits for the signal.",
     "format": "2004-05",
     "cards": [
       ["ex4-23", 1], ["ex4-36", 2], ["ex4-37", 2], ["ex4-58", 3], ["ex4-66", 3],
@@ -2031,7 +2031,7 @@
     ]
   },
   "Overheat": {
-    "description": "Team Magma's Camerupt overheats, Houndoom roasts and Claydol and Rhydon crush, with Torkoal blowing hot air.",
+    "description": "Magma's furnaces run hotter every day. Camerupt and Houndoom guard the lava pits.",
     "format": "2004-05",
     "cards": [
       ["ex4-10", 3], ["ex4-12", 1], ["ex4-19", 3], ["ex4-22", 1], ["ex4-33", 2],
@@ -2043,7 +2043,7 @@
     ]
   },
   "Aqua Hideout": {
-    "description": "Team Aqua's Kyogre, Walrein and Sharpedo with Aqua Energy; Cacturne and Seviper poison, and Archie and Aqua Ball bring them in.",
+    "description": "Team Aqua's secret cave opens to the sea. Kyogre waits below the dock.",
     "format": "2004-05",
     "cards": [
       ["ex4-1", 1], ["ex4-15", 1], ["ex4-16", 2], ["ex4-17", 1], ["ex4-24", 1],
@@ -2056,7 +2056,7 @@
     ]
   },
   "Power Shift": {
-    "description": "Team Aqua's Manectric shifts power and Lanturn lights the way while Crawdaunt poisons; Raikou ex and Zapdos ex were hired as muscle.",
+    "description": "Team Aqua's lightning squad charges up in the dark. Raikou ex and Zapdos ex joined for the pay.",
     "format": "2004-05",
     "cards": [
       ["ex4-14", 2], ["ex4-26", 2], ["ex4-28", 2], ["ex4-4", 3], ["ex4-49", 3],
@@ -2068,7 +2068,7 @@
     ]
   },
   "Shadow Curse": {
-    "description": "Gengar curses with Shadow Curse and Gengar ex haunts with Poltergeist; Banette ex and Dusclops ex lurk in the shadows.",
+    "description": "Something moves behind you in the mirror. Gengar and Banette ex love a good scare.",
     "format": "2005-06",
     "cards": [
       ["ex12-40", 1], ["ex12-5", 1], ["ex12-63", 2], ["ex12-85", 1],
@@ -2082,7 +2082,7 @@
     ]
   },
   "Heal Dance": {
-    "description": "Gardevoir heals with Heal Dance while Kirlia and Xatu hit; Wynaut evolves on the spot and Chimecho rings in support.",
+    "description": "Gardevoir dances in the moonlight and every wound closes. Xatu keeps watch.",
     "format": "2005-06",
     "cards": [
       ["ex12-71", 1], ["ex8-29", 2], ["ex8-66", 2], ["ex9-12", 2],
@@ -2095,7 +2095,7 @@
     ]
   },
   "Eclipse": {
-    "description": "Lunatone and Solrock guide the way; Grumpig and Hypno put the opponent to sleep while Wobbuffet stalls.",
+    "description": "When the moon covers the sun, Grumpig and Hypno lull the world to sleep.",
     "format": "2005-06",
     "cards": [
       ["ex11-23", 2], ["ex12-16", 1], ["ex12-25", 2], ["ex12-28", 2],
@@ -2109,7 +2109,7 @@
     ]
   },
   "Forme Change": {
-    "description": "Deoxys and Deoxys ex change Forme at will under Space Center; Starmie and Deoxys δ guard the way.",
+    "description": "Deoxys shifts between attack, defense and speed like a living cipher from space.",
     "format": "2005-06",
     "cards": [
       ["ex11-85", 3], ["ex13-3", 1], ["ex5-49", 2], ["ex8-16", 3],
@@ -2122,7 +2122,7 @@
     ]
   },
   "Psychic Exchange": {
-    "description": "Exeggutor swaps cards with Psychic Exchange and blows up; Slowbro and Slowking nap through damage and shift prizes.",
+    "description": "Exeggutor trades thoughts with its heads. Slowking wears a crown of pure wisdom.",
     "format": "2005-06",
     "cards": [
       ["ex10-13", 2], ["ex11-28", 2], ["ex6-33", 4], ["ex6-5", 3],
@@ -2135,7 +2135,7 @@
     ]
   },
   "Genetic Code": {
-    "description": "Mew ex sees everything with Psychic Vision; Mew, Mewtwo ★, Celebi ex and the Unown keep the bench mysterious.",
+    "description": "Mew sleeps inside every Pokémon's genes. Celebi ex and the Unown keep the secret of life.",
     "format": "2005-06",
     "cards": [
       ["ex10-29", 1], ["ex10-K", 4], ["ex12-10", 2], ["ex13-100", 2],
@@ -2149,7 +2149,7 @@
     ]
   },
   "Prism Burst": {
-    "description": "Eevee evolves into Vaporeon ex, Flareon ex, Jolteon ex, Espeon ex or Umbreon ex to fit the matchup; Ho-Oh ex and Lugia ex feed on the same rainbow of Energy.",
+    "description": "Five Eeveelutions shine in five colors. Ho-Oh ex and Lugia ex answer the rainbow's call.",
     "format": "2005-06",
     "cards": [
       ["ex10-102", 1], ["ex10-104", 1], ["ex10-105", 1], ["ex10-112", 1],
@@ -2164,7 +2164,7 @@
     ]
   },
   "Pika Bolt": {
-    "description": "Raichu ex fires Pika Bolt; Pikachu ★ springs back, Pichu Bros. cheer and Zapdos ex and Raikou keep the pressure on.",
+    "description": "Pikachu's cheeks spark with joy. Raichu ex and Pikachu ★ light up the whole field.",
     "format": "2005-06",
     "cards": [
       ["ex10-22", 2], ["ex10-23", 1], ["ex13-104", 1], ["ex6-116", 1],
@@ -2178,7 +2178,7 @@
     ]
   },
   "Energy Connect": {
-    "description": "Ampharos connects Energy across the bench; Plusle and Minun cheer and Lanturn lights the way.",
+    "description": "Ampharos links every light in the valley. Raikou ★ runs across the storm.",
     "format": "2005-06",
     "cards": [
       ["ex10-1", 2], ["ex10-114", 1], ["ex10-40", 2], ["ex10-56", 3],
@@ -2191,7 +2191,7 @@
     ]
   },
   "Reactive Recharge": {
-    "description": "Magneton recharges, Electrode ex blows up for a big swing, and Manectric ex finishes.",
+    "description": "Magneton keeps the circuits buzzing. Electrode ex is a ticking bomb.",
     "format": "2005-06",
     "cards": [
       ["ex12-22", 3], ["ex12-68", 3], ["ex13-46", 2], ["ex5-5", 2],
@@ -2204,7 +2204,7 @@
     ]
   },
   "Energy Flame": {
-    "description": "Charizard ex powers up with Energy Flame and burns everything down; Moltres ex and Magmar hold the front.",
+    "description": "Charizard ex feeds on fire and grows stronger. Moltres ex burns across the sky.",
     "format": "2005-06",
     "cards": [
       ["ex12-21", 2], ["ex12-58", 1], ["ex6-105", 2], ["ex6-58", 4],
@@ -2217,7 +2217,7 @@
     ]
   },
   "Eruption": {
-    "description": "Blaziken kicks hard and Camerupt ex erupts; Torchic ★ springs back and Torkoal cries for help.",
+    "description": "Camerupt ex's humps rumble with magma. Blaziken leaps out of the smoke.",
     "format": "2005-06",
     "cards": [
       ["ex12-27", 1], ["ex13-20", 3], ["ex13-36", 1], ["ex13-83", 4],
@@ -2230,7 +2230,7 @@
     ]
   },
   "Bursting Up": {
-    "description": "Typhlosion's Burning Aura and Typhlosion ex's Bursting Up; Arcanine ex charges in with Flame Swirl.",
+    "description": "Typhlosion ex bursts from the flames. Arcanine ex and Entei ★ gallop beside it.",
     "format": "2005-06",
     "cards": [
       ["ex10-110", 1], ["ex10-113", 1], ["ex10-17", 1], ["ex10-45", 3],
@@ -2243,7 +2243,7 @@
     ]
   },
   "Fox Fire": {
-    "description": "Ninetales and Ninetales ex burn the field; Houndoom and Magcargo add pressure.",
+    "description": "Ninetales lights ghostly flames in the night forest. Houndoom answers with a howl.",
     "format": "2005-06",
     "cards": [
       ["ex10-41", 2], ["ex10-7", 2], ["ex12-21", 1], ["ex5-22", 2],
@@ -2256,7 +2256,7 @@
     ]
   },
   "Hard Plant": {
-    "description": "Venusaur ex moves Energy freely with Energy Trans and Venusaur hits with Hard Plant; Parasect and Tangela slow the opponent.",
+    "description": "Venusaur's roots crack stone and lift whole forests. The jungle grows where it walks.",
     "format": "2005-06",
     "cards": [
       ["ex12-44", 2], ["ex6-112", 2], ["ex6-35", 3], ["ex6-43", 1],
@@ -2269,7 +2269,7 @@
     ]
   },
   "Johto Garden": {
-    "description": "Meganium's Healing Aroma and Meganium ex's Nurture and Heal; Sunflora dances, Celebi slices and Shuckle holds tight.",
+    "description": "Meganium's flowers heal the tired land. Celebi wanders by from the future.",
     "format": "2005-06",
     "cards": [
       ["ex10-106", 1], ["ex10-16", 2], ["ex10-35", 3], ["ex10-47", 1],
@@ -2282,7 +2282,7 @@
     ]
   },
   "Miracle Powder": {
-    "description": "Jumpluff floats past attacks while Venomoth and Ledian sprinkle Special Conditions; Yanma zips in.",
+    "description": "Jumpluff drifts on the wind, scattering sleepy powder. Venomoth flutters behind.",
     "format": "2005-06",
     "cards": [
       ["ex6-49", 2], ["ex6-84", 3], ["ex7-11", 3], ["ex7-23", 1], ["ex7-28", 1],
@@ -2295,7 +2295,7 @@
     ]
   },
   "Stadium Power": {
-    "description": "Shiftry draws power from the Stadium; Pinsir and Heracross hit hard and Tropius ripens extra cards under Power Tree.",
+    "description": "Shiftry rules the old forest stadium. Its leaf fans whip up storms under the Power Tree.",
     "format": "2005-06",
     "cards": [
       ["ex12-41", 3], ["ex5-13", 2], ["ex5-7", 2], ["ex8-25", 3], ["ex8-27", 1],
@@ -2308,7 +2308,7 @@
     ]
   },
   "Dust Storm": {
-    "description": "Dustox ex blows Silver Wind and Beautifly lures the opponent; Masquerain, Volbeat and Illumise flutter around them.",
+    "description": "Dustox ex blows a silver wind across the meadow. Beautifly sparkles in the light.",
     "format": "2005-06",
     "cards": [
       ["ex11-45", 1], ["ex11-56", 1], ["ex12-30", 2], ["ex12-70", 4],
@@ -2321,7 +2321,7 @@
     ]
   },
   "Triple Poison": {
-    "description": "Crobat ex stacks poison; Weezing, Muk and Ariados make sure it never wears off. Seviper waits on the bench.",
+    "description": "Crobat ex dives through a cloud of toxins. Weezing and Muk make sure it never clears.",
     "format": "2005-06",
     "cards": [
       ["ex10-2", 1], ["ex11-33", 2], ["ex12-11", 1], ["ex12-54", 2],
@@ -2334,7 +2334,7 @@
     ]
   },
   "Green Essence": {
-    "description": "Sceptile's Green Essence and Breloom's poison; Treecko ★ springs back, Roselia sweetens the air and Scyther slashes.",
+    "description": "Sceptile draws strength from the oldest trees. Breloom springs from the forest floor.",
     "format": "2005-06",
     "cards": [
       ["ex12-42", 1], ["ex6-29", 1], ["ex7-109", 1], ["ex8-3", 2],
@@ -2347,7 +2347,7 @@
     ]
   },
   "Full Bloom": {
-    "description": "Vileplume ex blocks the opponent's items; Bellossom dances, and Victreebel and Swalot trap.",
+    "description": "Vileplume ex opens its giant flower. Pollen fills the air and items stop working.",
     "format": "2005-06",
     "cards": [
       ["ex10-3", 2], ["ex12-13", 1], ["ex5-100", 1], ["ex5-35", 3],
@@ -2360,7 +2360,7 @@
     ]
   },
   "Swords Dance": {
-    "description": "Ninjask's Swords Dance and Shedinja's Extra Curse; Butterfree, Beedrill, Forretress and Scyther fill the net.",
+    "description": "Ninjask moves so fast it leaves a ghost behind. Shedinja watches from the shell.",
     "format": "2005-06",
     "cards": [
       ["ex10-6", 1], ["ex10-66", 2], ["ex11-87", 2], ["ex6-1", 1], ["ex6-2", 1],
@@ -2374,7 +2374,7 @@
     ]
   },
   "Family Bonds": {
-    "description": "Nidoking and Nidoqueen rule together with Family Bonds; Cacturne ex punishes any poison.",
+    "description": "Nidoking and Nidoqueen guard their family with horns and poison. Cacturne ex lurks in the sand.",
     "format": "2005-06",
     "cards": [
       ["ex6-40", 2], ["ex6-41", 2], ["ex6-70", 3], ["ex6-71", 3], ["ex6-8", 2],
@@ -2387,7 +2387,7 @@
     ]
   },
   "Root and Claw": {
-    "description": "Anorith and Lileep come back from fossils into Armaldo ex, Armaldo δ and Cradily; Relicanth lifts the water.",
+    "description": "Anorith and Lileep wake from fossils millions of years old. Armaldo ex leads the ancient tide.",
     "format": "2005-06",
     "cards": [
       ["ex12-25", 2], ["ex12-29", 4], ["ex12-3", 1], ["ex12-56", 2],
@@ -2400,7 +2400,7 @@
     ]
   },
   "Fossil Excavation": {
-    "description": "Mysterious Fossil and Holon Fossil open the way to Kabutops, Omastar and Aerodactyl; Lapras navigates while Articuno ex and Regirock ex guard the dig.",
+    "description": "Mysterious and Holon fossils wake from the dig. Kabutops and Omastar rule the old seas.",
     "format": "2005-06",
     "cards": [
       ["ex12-1", 2], ["ex12-23", 2], ["ex12-36", 3], ["ex12-60", 3],
@@ -2413,7 +2413,7 @@
     ]
   },
   "Splash Back": {
-    "description": "Dark Golduck shields itself while Kingler, Crawdaunt ex and Seaking hit from the water.",
+    "description": "Kingler and Crawdaunt ex pinch from the reef. Dark Golduck stares from the depths.",
     "format": "2005-06",
     "cards": [
       ["ex13-99", 1], ["ex6-26", 2], ["ex6-66", 3], ["ex7-35", 2],
@@ -2426,7 +2426,7 @@
     ]
   },
   "Reactive Lift": {
-    "description": "Wailord lifts the team with Reactive Lift; Pelipper, Corsola, Luvdisc and Mantine pull cards and Energy along.",
+    "description": "Wailord rises from the deep like an island. Pelipper and Luvdisc ride on its back.",
     "format": "2005-06",
     "cards": [
       ["ex12-14", 3], ["ex12-69", 4], ["ex5-32", 1], ["ex7-45", 1],
@@ -2439,7 +2439,7 @@
     ]
   },
   "Suction Cups": {
-    "description": "Kingdra soaks and blasts; Octillery's Super Suction Cups, Qwilfish and Mantine harass from the bench.",
+    "description": "Kingdra rises from the ocean floor. Octillery's tentacles grab anything that moves.",
     "format": "2005-06",
     "cards": [
       ["ex10-10", 2], ["ex7-12", 3], ["ex7-27", 1], ["ex7-48", 3],
@@ -2452,7 +2452,7 @@
     ]
   },
   "Swing Dance": {
-    "description": "Milotic ex reflects Energy; Ludicolo's Swing Dance and Azumarill's Froth keep it going under Rain Castform.",
+    "description": "Ludicolo swings and the rain falls. Milotic ex glides through the puddles like a rainbow.",
     "format": "2005-06",
     "cards": [
       ["ex11-20", 1], ["ex11-26", 1], ["ex11-76", 2], ["ex5-12", 2],
@@ -2465,7 +2465,7 @@
     ]
   },
   "Icy Aura": {
-    "description": "Walrein ex's Icy Aura and Glalie's Ice Wall; the Regice trio, Articuno ex and Piloswine keep the opponent iced over.",
+    "description": "Walrein ex brings a blizzard. The three Regice guard the frozen cave.",
     "format": "2005-06",
     "cards": [
       ["ex12-43", 2], ["ex12-65", 3], ["ex12-89", 1], ["ex12-90", 1],
@@ -2479,7 +2479,7 @@
     ]
   },
   "Aurora Beam": {
-    "description": "Starmie, Dewgong and Cloyster from Kanto's seas; Jynx and Smoochum sing, Delibird brings presents and Suicune ★ blows a Cross Wind.",
+    "description": "The Kanto coast glimmers with aurora light. Suicune ★ runs across the icy waves.",
     "format": "2005-06",
     "cards": [
       ["ex10-115", 1], ["ex10-28", 1], ["ex10-31", 1], ["ex11-85", 3],
@@ -2493,7 +2493,7 @@
     ]
   },
   "Energy Rain": {
-    "description": "Blastoise ex's Energy Rain floods the field; Poliwrath and Politoed ex bounce in and Tentacruel stings.",
+    "description": "Blastoise ex aims its cannons at the sky and the rain never stops.",
     "format": "2005-06",
     "cards": [
       ["ex10-107", 1], ["ex10-11", 1], ["ex10-68", 2], ["ex12-45", 1],
@@ -2506,7 +2506,7 @@
     ]
   },
   "Twister": {
-    "description": "Gyarados ex rises from Magikarp; Sharpedo ex and Huntail cut through, and Gorebyss boosts the team.",
+    "description": "Gyarados ex rises from the storm. Sharpedo ex and Huntail strike from below.",
     "format": "2005-06",
     "cards": [
       ["ex12-17", 1], ["ex12-18", 1], ["ex5-58", 3], ["ex6-109", 1],
@@ -2519,7 +2519,7 @@
     ]
   },
   "Mark of Antiquity": {
-    "description": "Kyogre ex leads with Mark of Antiquity; Kyogre ★ and Kyogre crash the waves and Lapras navigates.",
+    "description": "Kyogre ex wakes in the depths. The ancient markings on its body glow with power.",
     "format": "2005-06",
     "cards": [
       ["ex11-112", 1], ["ex11-76", 2], ["ex12-8", 2], ["ex5-94", 2],
@@ -2533,7 +2533,7 @@
     ]
   },
   "Water Cyclone": {
-    "description": "Swampert spins Water Cyclone; Mudkip ★ springs back and Quagsire and Whiscash dig in.",
+    "description": "Swampert spins a whirlpool through the marsh. Mudkip ★ splashes back for more.",
     "format": "2005-06",
     "cards": [
       ["ex7-107", 1], ["ex7-26", 2], ["ex7-81", 3], ["ex8-28", 1],
@@ -2546,7 +2546,7 @@
     ]
   },
   "Intimidating Fang": {
-    "description": "Feraligatr's Intimidating Fang and Feraligatr ex's Tsunami; Croconaw bites and Sudowoodo copies.",
+    "description": "Feraligatr's jaws snap the river shut. Croconaw grins from the reeds.",
     "format": "2005-06",
     "cards": [
       ["ex10-103", 1], ["ex10-15", 1], ["ex10-38", 3], ["ex10-4", 2],
@@ -2559,7 +2559,7 @@
     ]
   },
   "Bright Flame": {
-    "description": "Salamence ex shoots Bright Flame with Dragon Lift; Rayquaza ex boosts and Altaria ex spreads mist.",
+    "description": "Salamence ex flies at last. Rayquaza ★ shines in the clouds above.",
     "format": "2005-06",
     "cards": [
       ["ex8-1", 1], ["ex8-102", 1], ["ex8-103", 2], ["ex8-107", 1],
@@ -2572,7 +2572,7 @@
     ]
   },
   "Shining Star": {
-    "description": "The shining Latios ★ strikes with any Energy alongside Rayquaza and Altaria; Kecleon shifts colors.",
+    "description": "Latios ★ glows like a falling star. Rayquaza and Altaria fly at its side.",
     "format": "2005-06",
     "cards": [
       ["ex11-8", 1], ["ex12-37", 1], ["ex5-30", 2], ["ex8-1", 2],
@@ -2586,7 +2586,7 @@
     ]
   },
   "Lazy Aura": {
-    "description": "Slaking's Lazy Aura shuts down Poké-Powers; Zangoose and Snorlax round out the normal team. Spinda and Miltank keep it going.",
+    "description": "Slaking is so lazy that its rivals forget their own powers. Then it hits for 100.",
     "format": "2005-06",
     "cards": [
       ["ex10-42", 1], ["ex12-26", 1], ["ex6-15", 1], ["ex8-15", 3],
@@ -2600,7 +2600,7 @@
     ]
   },
   "Emerge Charge": {
-    "description": "Flygon ex's Emerge Charge powers up; Sandshrew, Marowak and Gligar make a ground squad.",
+    "description": "Flygon ex bursts from the sand with a roar. The desert squad follows its lead.",
     "format": "2005-06",
     "cards": [
       ["ex10-57", 1], ["ex12-46", 3], ["ex12-67", 4], ["ex12-87", 2],
@@ -2613,7 +2613,7 @@
     ]
   },
   "Quick Search": {
-    "description": "Dodrio's Fast Feet and Swellow's Nosedive; Pidgeot's Quick Search finds the right card and Farfetch'd hoards the rest.",
+    "description": "Pidgeot spots its target from the clouds. Dodrio and Swellow race to strike first.",
     "format": "2005-06",
     "cards": [
       ["ex5-33", 3], ["ex5-60", 4], ["ex6-10", 2], ["ex6-23", 1], ["ex6-45", 2],
@@ -2625,7 +2625,7 @@
     ]
   },
   "Blissful Support": {
-    "description": "Blissey ex supports the bench with Blissful Support; Kangaskhan, Lickitung, Tauros and Granbull are the bulky friends.",
+    "description": "Blissey ex cares for every Pokémon on the bench. Latias ★ shines a healing light.",
     "format": "2005-06",
     "cards": [
       ["ex10-101", 2], ["ex10-39", 1], ["ex10-74", 2], ["ex6-19", 4],
@@ -2639,7 +2639,7 @@
     ]
   },
   "Metronome": {
-    "description": "Clefable ex waves its Metronome under Mt. Moon; Wigglytuff ex sings, and Togetic and Delcatty support.",
+    "description": "Clefable ex wiggles its finger and anything can happen. The fairies of Mt. Moon cheer.",
     "format": "2005-06",
     "cards": [
       ["ex10-21", 1], ["ex10-36", 1], ["ex12-4", 2], ["ex12-64", 2],
@@ -2653,7 +2653,7 @@
     ]
   },
   "Thick Skin": {
-    "description": "Raticate picks up cards and Persian claws; Ursaring, Furret, Fearow, Aipom and Dunsparce swarm the bench.",
+    "description": "The city's toughest critters live in the back alleys. Persian rules the rooftops.",
     "format": "2005-06",
     "cards": [
       ["ex10-18", 1], ["ex10-34", 1], ["ex10-77", 1], ["ex12-31", 1],
@@ -2667,7 +2667,7 @@
     ]
   },
   "Mega Throw": {
-    "description": "Exploud roars with Hyper Voice; Porygon2, Ditto, Smeargle, Noctowl and Stantler keep the team flexible.",
+    "description": "Exploud's voice shakes the walls. Its band of odd Pokémon backs every note.",
     "format": "2005-06",
     "cards": [
       ["ex10-12", 1], ["ex10-32", 1], ["ex10-43", 1], ["ex10-48", 1],
@@ -2681,7 +2681,7 @@
     ]
   },
   "Brick Smash": {
-    "description": "Machamp hits harder the more damaged it is; Hariyama ex and Primeape fight alongside.",
+    "description": "Machamp breaks bricks with a single chop. Hariyama ex stomps into the ring.",
     "format": "2005-06",
     "cards": [
       ["ex11-44", 1], ["ex5-41", 3], ["ex5-64", 4], ["ex5-9", 3], ["ex6-28", 1],
@@ -2694,7 +2694,7 @@
     ]
   },
   "Hitmon Dojo": {
-    "description": "Medicham ex's Wise Aura and the Tyrogue family: Hitmonchan, Hitmonlee and Hitmontop take turns in the ring.",
+    "description": "Hitmonchan, Hitmonlee and Hitmontop train under the same master. Medicham ex keeps the peace.",
     "format": "2005-06",
     "cards": [
       ["ex10-24", 2], ["ex10-25", 1], ["ex10-26", 2], ["ex10-33", 2],
@@ -2707,7 +2707,7 @@
     ]
   },
   "Rock Hurl": {
-    "description": "Golem and Graveler roll over the opponent; Rhydon diffuses the damage, Sudowoodo guards the quarry and Groudon ★ slashes the ground.",
+    "description": "Golem's avalanche crashes down the slope. Groudon ★ cuts the earth in two.",
     "format": "2005-06",
     "cards": [
       ["ex10-15", 1], ["ex11-111", 1], ["ex12-34", 3], ["ex12-53", 4],
@@ -2720,7 +2720,7 @@
     ]
   },
   "Healing Stone": {
-    "description": "Donphan, Dugtrio, Groudon ex and Groudon shake the ground; Regirock ex heals with Healing Stone and Claydol levitates.",
+    "description": "Regirock ex heals with stones older than humanity. Donphan and Groudon shake the ground.",
     "format": "2005-06",
     "cards": [
       ["ex12-91", 1], ["ex13-28", 1], ["ex13-40", 3], ["ex5-93", 1],
@@ -2733,7 +2733,7 @@
     ]
   },
   "Steel Wing": {
-    "description": "Aggron and Steelix ex with the Registeel trio; Scizor ex, Skarmory and Mawile cut in with Metal Energy.",
+    "description": "Registeel's iron body never rusts. Scizor ex and Steelix ex guard the steel kingdom.",
     "format": "2005-06",
     "cards": [
       ["ex10-108", 1], ["ex10-109", 1], ["ex12-2", 2], ["ex12-92", 1],
@@ -2748,7 +2748,7 @@
     ]
   },
   "Super Connectivity": {
-    "description": "Metagross links up with Super Connectivity; Metagross ex and Metagross ★ punch, and Jirachi wishes.",
+    "description": "Metagross links four minds into one. Metagross ★ shines like a fallen star.",
     "format": "2005-06",
     "cards": [
       ["ex11-113", 1], ["ex5-29", 4], ["ex5-95", 1], ["ex8-11", 2],
@@ -2762,7 +2762,7 @@
     ]
   },
   "Losing Control": {
-    "description": "Tyranitar ex's Losing Control and Dark Tyranitar crush through; Larvitar evolves into whichever fits.",
+    "description": "Tyranitar ex rampages through the mountains. Dark Tyranitar walks in its footprints.",
     "format": "2005-06",
     "cards": [
       ["ex10-111", 2], ["ex10-70", 2], ["ex7-20", 2], ["ex7-41", 2],
@@ -2775,7 +2775,7 @@
     ]
   },
   "Driving Howl": {
-    "description": "Mightyena ex's Driving Howl and Absol's Shining Horn; Sableye, Murkrow and Dark Celebi lurk.",
+    "description": "Mightyena ex's howl drives rivals away. Absol and Sableye wait in the shadows.",
     "format": "2005-06",
     "cards": [
       ["ex12-15", 2], ["ex13-101", 2], ["ex5-4", 1], ["ex8-12", 2],
@@ -2789,7 +2789,7 @@
     ]
   },
   "Rocket's Smog": {
-    "description": "Dark Crobat's Black Beam and Dark Weezing's Methane Leak poison everything; Dark Muk, Arbok and Ariados keep it sticky.",
+    "description": "A green fog seeps from Team Rocket's lab. Dark Crobat and Dark Weezing feed on it.",
     "format": "2005-06",
     "cards": [
       ["ex12-54", 2], ["ex7-16", 1], ["ex7-29", 2], ["ex7-3", 2], ["ex7-30", 1],
@@ -2802,7 +2802,7 @@
     ]
   },
   "Rocket's Generator": {
-    "description": "Dark Ampharos and Dark Electrode charge up, Dark Magneton binds, and Rocket's Zapdos ex and Raikou ex strike.",
+    "description": "Team Rocket powers its base with stolen lightning. Rocket's Raikou ex runs the dynamo.",
     "format": "2005-06",
     "cards": [
       ["ex10-62", 3], ["ex12-68", 3], ["ex6-68", 2], ["ex7-106", 1],
@@ -2815,7 +2815,7 @@
     ]
   },
   "Rocket's Undertow": {
-    "description": "Dark Gyarados's Dark Scale and Dark Octillery's ink; Dark Slowking schemes and Rocket's Suicune ex and Articuno ex freeze the field.",
+    "description": "Team Rocket's submarine prowls the depths. Rocket's Suicune ex guards the hatch.",
     "format": "2005-06",
     "cards": [
       ["ex6-67", 3], ["ex7-105", 1], ["ex7-36", 2], ["ex7-73", 3],
@@ -2829,7 +2829,7 @@
     ]
   },
   "Rocket's Inferno": {
-    "description": "Dark Houndoom breathes fire, Dark Magcargo presses Energy and Rocket's Moltres ex and Entei ex rain ash.",
+    "description": "Team Rocket's forge glows red. Rocket's Entei ex and Moltres ex keep the fires burning.",
     "format": "2005-06",
     "cards": [
       ["ex12-27", 1], ["ex7-100", 1], ["ex7-37", 3], ["ex7-38", 2],
@@ -2842,7 +2842,7 @@
     ]
   },
   "Rocket's Bunker": {
-    "description": "Dark Marowak and Dark Steelix dig in; Rocket's Hitmonchan ex strikes back.",
+    "description": "Team Rocket dug a bunker under the mountain. Dark Steelix guards the tunnels.",
     "format": "2005-06",
     "cards": [
       ["ex6-42", 3], ["ex6-60", 3], ["ex7-10", 2], ["ex7-18", 2], ["ex7-7", 2],
@@ -2855,7 +2855,7 @@
     ]
   },
   "Rocket's Dark Trance": {
-    "description": "Dark Dragonite rises on Evolutionary Light; Dark Hypno and Dark Raticate keep the opponent drowsy.",
+    "description": "Dark Dragonite rises from Team Rocket's darkest lab. Dark Hypno keeps it in a trance.",
     "format": "2005-06",
     "cards": [
       ["ex6-32", 3], ["ex7-15", 2], ["ex7-17", 1], ["ex7-31", 3], ["ex7-53", 4],
@@ -2869,7 +2869,7 @@
     ]
   },
   "Rocket's Night Cry": {
-    "description": "Rocket's Persian ex cries in the night; Rocket's Mewtwo ex, Snorlax ex and Scizor ex lead the grunts.",
+    "description": "When Rocket's Persian ex cries in the night, the boss's finest stolen Pokémon are ready.",
     "format": "2005-06",
     "cards": [
       ["ex10-116", 2], ["ex7-101", 1], ["ex7-102", 2], ["ex7-103", 1],
@@ -2883,7 +2883,7 @@
     ]
   },
   "Delta Dragons": {
-    "description": "Dragonite δ charges the bench with Delta Charge; Salamence δ blasts and Rayquaza δ guards with Delta Guard.",
+    "description": "Strange storms crackle over the Holon region. Dragonite δ and Salamence δ ride the lightning.",
     "format": "2005-06",
     "cards": [
       ["ex11-13", 1], ["ex11-14", 2], ["ex11-3", 2], ["ex11-41", 3],
@@ -2896,7 +2896,7 @@
     ]
   },
   "Holon Flame": {
-    "description": "Tyranitar δ crushes and draws, Kingdra δ curses with Dragon Curse; Mewtwo δ and Gyarados ★ blow up the field.",
+    "description": "In Holon, even sea dragons breathe fire. Tyranitar δ and Kingdra δ burn through the waves.",
     "format": "2005-06",
     "cards": [
       ["ex11-12", 1], ["ex11-16", 2], ["ex11-51", 3], ["ex11-73", 4],
@@ -2909,7 +2909,7 @@
     ]
   },
   "Delta Storm": {
-    "description": "Metagross δ controls the field, Pidgeot δ holds energy in reserve and Gyarados δ's Delta Reactor powers the team.",
+    "description": "Holon's magnetic sky changed everything it touched. Metagross δ and Gyarados δ crackle with power.",
     "format": "2005-06",
     "cards": [
       ["ex11-11", 2], ["ex11-49", 3], ["ex11-59", 4], ["ex13-14", 1],
@@ -2922,7 +2922,7 @@
     ]
   },
   "Delta Prism": {
-    "description": "Eevee δ evolves into the Holon Eeveelutions: Espeon δ heals, Umbreon δ moons and Vaporeon δ, Flareon δ and Jolteon δ search.",
+    "description": "Holon's Eevee evolve in colors nobody has seen before. Each one hides a new secret.",
     "format": "2005-06",
     "cards": [
       ["ex11-17", 1], ["ex11-18", 2], ["ex11-4", 2], ["ex11-5", 2],
@@ -2936,7 +2936,7 @@
     ]
   },
   "Holon Bloom": {
-    "description": "Bellossom δ's Fellowship and Vileplume δ's Poison Pollen; Starmie δ navigates, Azumarill δ rolls and Latios δ dives.",
+    "description": "Holon's flowers grow in the sea and its stars swim. Bellossom δ dances under the waves.",
     "format": "2005-06",
     "cards": [
       ["ex11-15", 2], ["ex11-19", 2], ["ex11-76", 2], ["ex11-85", 3],
@@ -2949,7 +2949,7 @@
     ]
   },
   "Holon Circuit": {
-    "description": "The Holon's Magneton, Electrode and Castform double as Energy; Raichu δ and Persian δ cash in.",
+    "description": "Holon's scientists wired Pokémon into living batteries. Raichu δ runs the whole circuit.",
     "format": "2005-06",
     "cards": [
       ["ex11-21", 2], ["ex11-22", 2], ["ex11-70", 3], ["ex11-71", 3],
@@ -2963,7 +2963,7 @@
     ]
   },
   "Delta Swarm": {
-    "description": "Flygon δ supplies Energy with Delta Supply; Beedrill δ stings and Crobat δ jams radar.",
+    "description": "In Holon, bugs and bats shine with metal. Flygon δ leads the swarm across the dunes.",
     "format": "2005-06",
     "cards": [
       ["ex11-1", 2], ["ex11-2", 2], ["ex11-87", 3], ["ex13-54", 3],
@@ -2975,7 +2975,7 @@
     ]
   },
   "Delta Pack": {
-    "description": "Mightyena δ, Sandslash δ and Marowak δ hunt together; Sharpedo δ and Exeggutor δ split the damage.",
+    "description": "Holon's wild hunters have strange new colors. Mightyena δ leads the pack through the night.",
     "format": "2005-06",
     "cards": [
       ["ex11-10", 2], ["ex11-24", 3], ["ex11-27", 2], ["ex13-41", 1],
@@ -2988,7 +2988,7 @@
     ]
   },
   "Dark Palm": {
-    "description": "Dusknoir sends the opponent's Pokémon back with Dark Palm; Gengar, Banette ex and Mismagius haunt the bench.",
+    "description": "A cold hand reaches out of the dark and drags its prey away. Dusknoir rules the restless spirits.",
     "format": "2006-07",
     "cards": [
       ["dp1-10", 1], ["dp1-2", 2], ["dp1-50", 2], ["dp1-82", 3], ["ex12-40", 2],
@@ -3001,7 +3001,7 @@
     ]
   },
   "Imprison": {
-    "description": "Gardevoir heals with Heal Dance and Gardevoir ex locks Poké-Powers with Imprison; Xatu and Wynaut back them up.",
+    "description": "Gardevoir heals with her dance. Gardevoir ex from Holon locks every power in her cage.",
     "format": "2006-07",
     "cards": [
       ["ex15-93", 1], ["ex16-31", 3], ["ex16-70", 1], ["ex8-29", 2],
@@ -3015,7 +3015,7 @@
     ]
   },
   "Type Shift": {
-    "description": "Claydol ex shifts types at will; Lunatone, Solrock and Grumpig keep the cosmic cycle turning.",
+    "description": "Claydol ex changes the color of the world around it. Lunatone and Solrock spin overhead.",
     "format": "2006-07",
     "cards": [
       ["ex12-16", 1], ["ex12-25", 2], ["ex16-93", 2], ["ex8-32", 2],
@@ -3029,7 +3029,7 @@
     ]
   },
   "Unown Puzzle": {
-    "description": "Unown A, B, C and D spell out their powers while Jirachi ex shines and Alakazam ★ copies attacks.",
+    "description": "The ruins hold a riddle written in Unown. Alakazam ★ is the only one who can read it.",
     "format": "2006-07",
     "cards": [
       ["dp1-65", 1], ["dp1-66", 1], ["dp1-67", 1], ["dp1-68", 1], ["dp1-90", 1],
@@ -3043,7 +3043,7 @@
     ]
   },
   "Forme Shift": {
-    "description": "Deoxys and Deoxys ex change Forme under Space Center; Starmie navigates and Deoxys δ joins the shift.",
+    "description": "A visitor from space shifts its shape to win every fight. Deoxys never shows the same face twice.",
     "format": "2006-07",
     "cards": [
       ["ex11-85", 3], ["ex13-3", 1], ["ex8-16", 3], ["ex8-48", 2],
@@ -3057,7 +3057,7 @@
     ]
   },
   "Ominous Wind": {
-    "description": "Drifblim drifts in with Explosive Smoke, Drapion poisons and Slowking shifts prizes.",
+    "description": "Drifblim drifts away with lost children's balloons. Drapion hides under the sand.",
     "format": "2006-07",
     "cards": [
       ["dp1-23", 2], ["dp1-24", 3], ["dp1-46", 4], ["dp1-99", 3],
@@ -3071,7 +3071,7 @@
     ]
   },
   "Mythical Mew": {
-    "description": "Mew ex sees everything with Psychic Vision; Mewtwo ★, Celebi ex and Lugia keep the bench mysterious.",
+    "description": "Mew plays among the clouds and Celebi travels through time. Mewtwo ★ remembers them both.",
     "format": "2006-07",
     "cards": [
       ["ex10-29", 1], ["ex12-10", 2], ["ex13-100", 2], ["ex13-103", 1],
@@ -3086,7 +3086,7 @@
     ]
   },
   "Evolution Rays": {
-    "description": "Eevee evolves into the ex Eeveelutions; Espeon ★ shines a Purple Ray, and Ho-Oh ex and Lugia ex feed on the same rainbow of Energy.",
+    "description": "Espeon ★ shines a purple ray and Eevee evolves. Ho-Oh ex brings all the colors.",
     "format": "2006-07",
     "cards": [
       ["ex10-102", 1], ["ex10-104", 1], ["ex10-105", 1], ["ex10-112", 1],
@@ -3102,7 +3102,7 @@
     ]
   },
   "Volt Tackle": {
-    "description": "Raichu ex fires Pika Bolt and Electivire unleashes Intense Voltage; Pikachu ★ springs back.",
+    "description": "Electivire roars and the power lines go dark. Pikachu ★ sparkles in the thunder.",
     "format": "2006-07",
     "cards": [
       ["dp1-3", 2], ["ex10-22", 2], ["ex10-23", 1], ["ex13-104", 1],
@@ -3116,7 +3116,7 @@
     ]
   },
   "Gleam Eyes": {
-    "description": "Luxray's Gleam Eyes drags out the target; Pachirisu runs errands while Plusle, Minun and Raikou ★ cheer.",
+    "description": "Luxray sees through walls with its golden eyes. Pachirisu runs errands across the storm.",
     "format": "2006-07",
     "cards": [
       ["dp1-35", 2], ["dp1-52", 3], ["dp1-7", 2], ["dp1-98", 4],
@@ -3129,7 +3129,7 @@
     ]
   },
   "Static Flock": {
-    "description": "Ampharos connects Energy across the bench while Manectric ex disconnects; Rocket's Raikou ex bursts and Jolteon ★'s Yellow Ray finishes.",
+    "description": "Ampharos lights the hills and Manectric ex charges the clouds. Jolteon ★ finishes the storm.",
     "format": "2006-07",
     "cards": [
       ["ex10-1", 2], ["ex10-56", 3], ["ex10-62", 4], ["ex13-46", 2],
@@ -3142,7 +3142,7 @@
     ]
   },
   "Magnetize": {
-    "description": "Magnezone pulls Energy with Magnetize; Magneton recharges and Electrode blows up for a big swing.",
+    "description": "Magnezone floats in from Sinnoh, pulling every magnet in the land. Electrode is ready to blow.",
     "format": "2006-07",
     "cards": [
       ["dp1-8", 2], ["dp1-87", 4], ["ex12-22", 3], ["ex12-68", 3],
@@ -3156,7 +3156,7 @@
     ]
   },
   "Fire Fang": {
-    "description": "Charizard roars back from Charmeleon while Charizard ★ swirls the dark; Moltres ex and Magmar hold the front.",
+    "description": "Charizard returns with a fiery roar. Charizard ★ swirls the dark flames of the frontier.",
     "format": "2006-07",
     "cards": [
       ["ex12-21", 2], ["ex12-58", 1], ["ex14-29", 3], ["ex14-48", 4],
@@ -3170,7 +3170,7 @@
     ]
   },
   "Burn Away": {
-    "description": "Blaziken ex burns everything away; Camerupt ex erupts and Arbok's burning venom smolders.",
+    "description": "Blaziken ex burns everything away. Camerupt ex and Arbok smolder in the ashes.",
     "format": "2006-07",
     "cards": [
       ["ex11-31", 1], ["ex12-27", 1], ["ex13-20", 2], ["ex13-36", 1],
@@ -3184,7 +3184,7 @@
     ]
   },
   "Flame Swirl": {
-    "description": "Typhlosion's Burning Aura and Arcanine ex's Flame Swirl; Entei ★ detonates and Rapidash stomps.",
+    "description": "Arcanine ex gallops through a swirl of fire. Entei ★ shakes the volcano awake.",
     "format": "2006-07",
     "cards": [
       ["dp1-59", 1], ["dp1-94", 2], ["ex10-110", 1], ["ex10-113", 1],
@@ -3197,7 +3197,7 @@
     ]
   },
   "Flare Up": {
-    "description": "Infernape and Infernape LV.X flare up with Burning Head; Ninetales, Houndoom and Flareon ★ keep the heat on.",
+    "description": "Infernape's head burns with fighting spirit. Ninetales and Flareon ★ fan the flames.",
     "format": "2006-07",
     "cards": [
       ["dp1-121", 1], ["dp1-5", 2], ["dp1-56", 3], ["dp1-76", 4],
@@ -3210,7 +3210,7 @@
     ]
   },
   "Forest Murmurs": {
-    "description": "Torterra and Torterra LV.X dash through with Forest Murmurs; Carnivine swallows, Cherrim worries and Celebi ★ travels in time.",
+    "description": "Torterra carries a whole forest on its back. Celebi ★ watches over the trees.",
     "format": "2006-07",
     "cards": [
       ["dp1-103", 4], ["dp1-122", 1], ["dp1-17", 2], ["dp1-21", 2],
@@ -3223,7 +3223,7 @@
     ]
   },
   "Solar Garden": {
-    "description": "Venusaur and Meganium ex nurture the field; Sunflora dances and Shuckle holds tight.",
+    "description": "Venusaur and Meganium ex bathe in the sun. Sunflora dances in the garden.",
     "format": "2006-07",
     "cards": [
       ["ex10-106", 1], ["ex10-16", 1], ["ex10-35", 2], ["ex10-47", 1],
@@ -3236,7 +3236,7 @@
     ]
   },
   "Attack Order": {
-    "description": "Vespiquen calls the swarm with Attack Order; Roserade whips, Ledian punches and Yanma zips in.",
+    "description": "Vespiquen commands her hive with a single buzz. Roserade guards the flower beds.",
     "format": "2006-07",
     "cards": [
       ["dp1-13", 2], ["dp1-28", 1], ["dp1-39", 3], ["dp1-43", 1], ["dp1-79", 4],
@@ -3250,7 +3250,7 @@
     ]
   },
   "Dark Eyes": {
-    "description": "Shiftry ex's Dark Eyes punish every Poké-Power; Shiftry fans away and Cacturne's Spike Storm finishes.",
+    "description": "Shiftry ex's dark eyes punish any trick. The forest whispers when it walks by.",
     "format": "2006-07",
     "cards": [
       ["dp1-57", 3], ["ex14-97", 1], ["ex16-27", 2], ["ex8-25", 2],
@@ -3264,7 +3264,7 @@
     ]
   },
   "Silk Road": {
-    "description": "Dustox ex blows Silver Wind and Dustox spreads toxic dust; Beautifly lures and Masquerain intimidates.",
+    "description": "Dustox ex and Beautifly glide over the silk road. Masquerain flashes its scary eyes.",
     "format": "2006-07",
     "cards": [
       ["dp1-104", 4], ["dp1-25", 1], ["ex11-45", 1], ["ex11-56", 1],
@@ -3278,7 +3278,7 @@
     ]
   },
   "Poison Ring": {
-    "description": "Crobat ex stacks poison; Weezing, Muk and Ariados make sure it never wears off. Seviper waits on the bench.",
+    "description": "Crobat ex circles above the poison ring. Below, Weezing and Muk bubble and hiss.",
     "format": "2006-07",
     "cards": [
       ["ex10-2", 1], ["ex10-75", 2], ["ex11-2", 1], ["ex11-33", 2],
@@ -3292,7 +3292,7 @@
     ]
   },
   "Leaf Blade": {
-    "description": "Sceptile's Green Essence and Sceptile ex's Extra Liquid; Breloom poisons and Scyther slashes.",
+    "description": "Sceptile's leaves are sharper than any sword. Breloom and Scyther fight at its side.",
     "format": "2006-07",
     "cards": [
       ["ex10-46", 2], ["ex14-32", 3], ["ex14-96", 1], ["ex8-3", 2],
@@ -3306,7 +3306,7 @@
     ]
   },
   "Stun Spore Garden": {
-    "description": "Bellossom dances and Vileplume spreads Poison Pollen; Victreebel and Swalot trap.",
+    "description": "Vileplume shakes its petals and the garden goes still. Victreebel waits with open jaws.",
     "format": "2006-07",
     "cards": [
       ["ex10-3", 2], ["ex10-58", 3], ["ex10-64", 4], ["ex12-13", 1],
@@ -3320,7 +3320,7 @@
     ]
   },
   "Loose Shell": {
-    "description": "Ninjask and Shedinja split from Nincada; Beedrill stings and Forretress pops.",
+    "description": "Ninjask sheds its shell in a blur. What it leaves behind is Shedinja.",
     "format": "2006-07",
     "cards": [
       ["ex10-6", 1], ["ex10-66", 2], ["ex11-1", 2], ["ex11-46", 2],
@@ -3334,7 +3334,7 @@
     ]
   },
   "Dark Horn": {
-    "description": "Nidoking δ gores with Dark Horn while Nidoqueen δ sends Invitations; the Nidoran pair grows up together.",
+    "description": "From Holon's dark hills come Nidoking δ and Nidoqueen δ. Their horns shine like black steel.",
     "format": "2006-07",
     "cards": [
       ["ex15-34", 3], ["ex15-35", 3], ["ex15-56", 4], ["ex15-57", 4],
@@ -3347,7 +3347,7 @@
     ]
   },
   "Fossil Charge": {
-    "description": "Lileep and Anorith revive into Cradily, Armaldo and Armaldo ex; Relicanth lifts them from the depths.",
+    "description": "Armaldo and Cradily march out of the past. The ancient reef comes back to life.",
     "format": "2006-07",
     "cards": [
       ["ex12-56", 3], ["ex12-84", 1], ["ex13-30", 2], ["ex16-26", 3],
@@ -3360,7 +3360,7 @@
     ]
   },
   "Ancient Shell": {
-    "description": "Mysterious Fossil, Holon Fossil and Old Rod bring back Kabutops, Omastar and Aerodactyl; Lapras navigates.",
+    "description": "Shells and claws stir in the ancient dig. Aerodactyl screeches from the cave.",
     "format": "2006-07",
     "cards": [
       ["ex12-1", 2], ["ex12-23", 2], ["ex12-36", 3], ["ex12-60", 3],
@@ -3373,7 +3373,7 @@
     ]
   },
   "Brine": {
-    "description": "Empoleon and Empoleon LV.X slice with Ice Blade; Floatzel screws in and Manaphy calls the family.",
+    "description": "Empoleon rules the frozen sea with its steel blades. Floatzel races through the waves.",
     "format": "2006-07",
     "cards": [
       ["dp1-120", 1], ["dp1-26", 2], ["dp1-4", 2], ["dp1-55", 1], ["dp1-58", 3],
@@ -3386,7 +3386,7 @@
     ]
   },
   "Pincer Pond": {
-    "description": "Kingler, Crawdaunt ex and Seaking pinch and splash from the water; Latios ex and Palkia keep watch over the pond.",
+    "description": "The pond belongs to the crabs. Latios ex and Palkia keep watch from above.",
     "format": "2006-07",
     "cards": [
       ["dp1-11", 1], ["dp1-62", 1], ["dp1-84", 2], ["ex12-8", 2],
@@ -3400,7 +3400,7 @@
     ]
   },
   "Whale Watch": {
-    "description": "Wailord lifts the team with Reactive Lift; Pelipper and Luvdisc pull cards and Energy along, and Mew ★ mimics the rest.",
+    "description": "Wailord rises like an island at sea. Mew ★ splashes alongside the giant.",
     "format": "2006-07",
     "cards": [
       ["ex10-37", 1], ["ex12-14", 3], ["ex12-69", 4], ["ex12-8", 1],
@@ -3414,7 +3414,7 @@
     ]
   },
   "Protective Swirl": {
-    "description": "Kingdra ex's Extra Smoke protects it while Protective Swirl hits hard; Octillery holds on with Suction Cups.",
+    "description": "Kingdra ex from Holon hides in its own smoke. Octillery grips the reef.",
     "format": "2006-07",
     "cards": [
       ["ex10-10", 2], ["ex10-71", 3], ["ex13-10", 1], ["ex13-66", 4],
@@ -3427,7 +3427,7 @@
     ]
   },
   "Rain Splash": {
-    "description": "Milotic ex reflects Energy; Ludicolo's Swing Dance and Azumarill's Froth keep it going under Rain Castform.",
+    "description": "Ludicolo dances and the rain falls. Milotic ex reflects every color of the storm.",
     "format": "2006-07",
     "cards": [
       ["dp1-18", 2], ["dp1-88", 2], ["ex11-20", 1], ["ex11-26", 1],
@@ -3440,7 +3440,7 @@
     ]
   },
   "Glacia's Blizzard": {
-    "description": "Walrein ex's Icy Aura and Glalie's Ice Wall under Glacia's Stadium; the Regice trio and Articuno ex freeze the field.",
+    "description": "The Elite Four's ice queen calls a blizzard. Walrein ex and the Regice trio obey.",
     "format": "2006-07",
     "cards": [
       ["ex11-29", 1], ["ex12-43", 2], ["ex12-65", 3], ["ex12-90", 1],
@@ -3454,7 +3454,7 @@
     ]
   },
   "Frozen Kiss": {
-    "description": "Dewgong, Cloyster and Starmie from Kanto's seas; Jynx and Smoochum blow kisses and Suicune ★ blows a Cross Wind.",
+    "description": "Jynx blows a frozen kiss across the bay. Suicune ★ runs over the frozen waves.",
     "format": "2006-07",
     "cards": [
       ["ex10-115", 1], ["ex10-28", 1], ["ex10-31", 1], ["ex11-85", 3],
@@ -3468,7 +3468,7 @@
     ]
   },
   "Ultra Pump": {
-    "description": "Swampert ex recycles Energy and Swampert echoes draws; Quagsire and Whiscash dig in.",
+    "description": "Swampert ex pumps a flood through the marsh. Quagsire smiles at nothing in particular.",
     "format": "2006-07",
     "cards": [
       ["ex10-44", 2], ["ex10-79", 3], ["ex14-24", 3], ["ex14-27", 2],
@@ -3481,7 +3481,7 @@
     ]
   },
   "Smash Turn": {
-    "description": "Blastoise smash-turns in and out; Poliwrath and Politoed ex bounce in and Tentacruel stings.",
+    "description": "Blastoise smashes in and spins out. Politoed ex leads the frogs of the falls.",
     "format": "2006-07",
     "cards": [
       ["ex10-107", 1], ["ex10-11", 1], ["ex10-67", 3], ["ex10-68", 2],
@@ -3494,7 +3494,7 @@
     ]
   },
   "Hydro Fangs": {
-    "description": "Gyarados rises from Magikarp; Sharpedo ex and Huntail cut through and Vaporeon ★ whirls the water.",
+    "description": "Gyarados bares its fangs above the waves. Vaporeon ★ melts into the water.",
     "format": "2006-07",
     "cards": [
       ["ex12-17", 1], ["ex12-18", 1], ["ex12-51", 3], ["ex16-102", 1],
@@ -3508,7 +3508,7 @@
     ]
   },
   "Primal Tide": {
-    "description": "Kyogre ex and Kyogre ★ crash the waves; Palkia rends space and Latios ex links wings.",
+    "description": "Kyogre ex and Palkia meet where space and sea collide. The tide will never be the same.",
     "format": "2006-07",
     "cards": [
       ["dp1-11", 2], ["ex11-112", 1], ["ex12-8", 2], ["ex15-96", 1],
@@ -3522,7 +3522,7 @@
     ]
   },
   "Tsunami Fang": {
-    "description": "Feraligatr's Intimidating Fang and Feraligatr ex's Tsunami; Sudowoodo and Bonsly copy the tears.",
+    "description": "Feraligatr's tsunami crashes onto the shore. Sudowoodo pretends to be a tree.",
     "format": "2006-07",
     "cards": [
       ["dp1-71", 1], ["ex10-103", 1], ["ex10-15", 1], ["ex10-38", 3],
@@ -3536,7 +3536,7 @@
     ]
   },
   "Salamence Sky": {
-    "description": "Salamence ex shoots Bright Flame with Dragon Lift; Altaria ex spreads mist, Rayquaza ★ shines and Blissey ex supports from the bench.",
+    "description": "Salamence ex rules the sky and Rayquaza ★ shines above. Blissey ex tends the wounded.",
     "format": "2006-07",
     "cards": [
       ["ex10-101", 1], ["ex10-20", 2], ["ex16-2", 2], ["ex16-96", 2],
@@ -3550,7 +3550,7 @@
     ]
   },
   "Eon Duet": {
-    "description": "Latias ex boosts her fellows and Latios ex links wings; the shining Latios ★ strikes with any Energy.",
+    "description": "Latias ex and Latios ex fly in from Holon. Latios ★ leads them home.",
     "format": "2006-07",
     "cards": [
       ["ex11-34", 2], ["ex11-8", 1], ["ex12-37", 1], ["ex13-12", 1],
@@ -3565,7 +3565,7 @@
     ]
   },
   "Slack Attack": {
-    "description": "Slaking's Critical Move hits for 100; Zangoose, Snorlax, Munchlax and Lopunny's Healing Wish round out the normal team.",
+    "description": "Slaking finally gets up and the whole field shakes. Lopunny bounces along beside it.",
     "format": "2006-07",
     "cards": [
       ["dp1-30", 1], ["dp1-33", 1], ["dp1-37", 2], ["dp1-73", 2],
@@ -3579,7 +3579,7 @@
     ]
   },
   "Sand Pit": {
-    "description": "Flygon ex's Emerge Charge powers up; Marowak, Gligar and Sandslash δ make a ground squad, and Latias ★ shines a Healing Light.",
+    "description": "Flygon ex hides in the sand pit of the desert. Latias ★ heals those lost in the dunes.",
     "format": "2006-07",
     "cards": [
       ["ex10-57", 1], ["ex11-10", 2], ["ex11-27", 1], ["ex11-60", 3],
@@ -3593,7 +3593,7 @@
     ]
   },
   "Brave Bird": {
-    "description": "Staraptor's Brave Heart and Dodrio's Fast Feet; Pidgeot searches and Chatot copies the first move.",
+    "description": "Staraptor dives with a brave heart. Dodrio and Pidgeot race across the sky.",
     "format": "2006-07",
     "cards": [
       ["dp1-101", 4], ["dp1-16", 3], ["dp1-64", 3], ["dp1-74", 1],
@@ -3606,7 +3606,7 @@
     ]
   },
   "Moon Kick": {
-    "description": "Clefable's Extra Comet Punch and Wigglytuff's Expand; Delcatty ex constrains the opponent's hand and Granbull bares its fangs.",
+    "description": "The fairies of Mt. Moon dance under the stars. Clefable and Delcatty ex lead the waltz.",
     "format": "2006-07",
     "cards": [
       ["dp1-77", 3], ["ex10-21", 1], ["ex10-36", 2], ["ex10-39", 1],
@@ -3621,7 +3621,7 @@
     ]
   },
   "High Hat": {
-    "description": "Purugly's High Hat and Persian's claws; Linoone, Furret, Ursaring, Aipom and Dunsparce swarm the bench.",
+    "description": "Purugly rules the back alleys with a stern look. The city crew follows its every whim.",
     "format": "2006-07",
     "cards": [
       ["dp1-36", 3], ["dp1-83", 4], ["ex10-18", 1], ["ex10-34", 1],
@@ -3635,7 +3635,7 @@
     ]
   },
   "Scavenge": {
-    "description": "Bibarel scavenges the discard pile while Exploud ex makes Extra Noise; Porygon2, Ditto, Fearow, Swellow and Noctowl keep the team flexible.",
+    "description": "Bibarel collects everything that washes downstream. Its odd friends join the treasure hunt.",
     "format": "2006-07",
     "cards": [
       ["dp1-20", 3], ["dp1-34", 1], ["dp1-70", 4], ["dp1-85", 1],
@@ -3650,7 +3650,7 @@
     ]
   },
   "Aura Sphere": {
-    "description": "Lucario fires Aura Sphere while Medicham ex meditates; the Hitmon trio take turns in the ring.",
+    "description": "Lucario reads the aura of every rival. The Hitmon masters spar in its dojo.",
     "format": "2006-07",
     "cards": [
       ["dp1-32", 2], ["dp1-6", 3], ["dp1-61", 4], ["ex10-24", 1],
@@ -3664,7 +3664,7 @@
     ]
   },
   "Dynamic Punch": {
-    "description": "Machamp hits harder the more damaged it is; Hariyama ex and Primeape fight alongside.",
+    "description": "Machamp's four arms swing like a storm. Hariyama ex stands firm in the ring.",
     "format": "2006-07",
     "cards": [
       ["dp1-31", 3], ["ex11-44", 1], ["ex13-50", 1], ["ex13-70", 2],
@@ -3677,7 +3677,7 @@
     ]
   },
   "Earth Fissure": {
-    "description": "Rhyperior wrecks rocks with Earth Fissure; Golem rolls, Hippowdon ejects sand and Groudon ★ slashes the ground.",
+    "description": "Rhyperior cracks the earth with its drill. Groudon ★ rises from the fissure.",
     "format": "2006-07",
     "cards": [
       ["dp1-12", 2], ["dp1-29", 1], ["dp1-51", 2], ["dp1-60", 3], ["dp1-95", 4],
@@ -3690,7 +3690,7 @@
     ]
   },
   "Ground Slash": {
-    "description": "Donphan and Dugtrio shake the ground; Regirock ex heals with Healing Stone and Groudon ex crushes.",
+    "description": "Donphan rolls across the plains and the ground shakes. Regirock ex guards the ancient stones.",
     "format": "2006-07",
     "cards": [
       ["ex12-91", 1], ["ex13-28", 1], ["ex13-40", 3], ["ex14-5", 1],
@@ -3704,7 +3704,7 @@
     ]
   },
   "Metal Gravity": {
-    "description": "Aggron ex's Intimidating Armor and Skarmory ex's Metal Gravity; the Registeel trio and Dialga hold the line.",
+    "description": "Skarmory ex and Aggron ex hold the iron mountain. Dialga watches the flow of time.",
     "format": "2006-07",
     "cards": [
       ["dp1-1", 1], ["ex12-2", 1], ["ex12-92", 1], ["ex13-29", 1],
@@ -3719,7 +3719,7 @@
     ]
   },
   "Steel Slash": {
-    "description": "Steelix's Metal Slash and Scizor ex's Steel Wing; Dialga bellows through time.",
+    "description": "Steelix coils through the mountain's iron veins. Scizor ex cuts with steel wings.",
     "format": "2006-07",
     "cards": [
       ["dp1-1", 1], ["dp1-38", 3], ["dp1-92", 4], ["ex10-108", 2],
@@ -3733,7 +3733,7 @@
     ]
   },
   "Meteor Fist": {
-    "description": "Metagross links up with Super Connectivity; Metagross ★ punches and Jirachi ex shines its Star Light.",
+    "description": "Metagross punches like a falling star. Jirachi ex grants a wish every thousand years.",
     "format": "2006-07",
     "cards": [
       ["ex11-113", 1], ["ex14-94", 1], ["ex16-35", 3], ["ex16-95", 1],
@@ -3747,7 +3747,7 @@
     ]
   },
   "Shatter": {
-    "description": "Tyranitar ex shatters the field with Losing Control; Pupitar rolls in from Larvitar.",
+    "description": "Tyranitar ex rampages and mountains shatter. Even Holon's Tyranitar δ joins the fury.",
     "format": "2006-07",
     "cards": [
       ["ex10-111", 2], ["ex10-61", 4], ["ex11-16", 1], ["ex15-58", 3],
@@ -3761,7 +3761,7 @@
     ]
   },
   "Cursed Eyes": {
-    "description": "Absol ex curses the opponent's Pokémon with Cursed Eyes; Mightyena ex howls, Weavile plots, Skuntank gasses and Umbreon ★ casts a Dark Ray.",
+    "description": "Absol ex appears before the storm. Weavile and Skuntank prowl under Umbreon ★'s dark ray.",
     "format": "2006-07",
     "cards": [
       ["dp1-100", 2], ["dp1-102", 2], ["dp1-15", 1], ["dp1-40", 1],
@@ -3776,7 +3776,7 @@
     ]
   },
   "Delta Charge": {
-    "description": "Dragonite δ charges the bench with Delta Charge; Salamence δ blasts and Rayquaza ex δ crackles.",
+    "description": "Strange storms crackle over the Holon region. Dragonite δ and Salamence δ ride the lightning.",
     "format": "2006-07",
     "cards": [
       ["ex11-14", 2], ["ex11-3", 2], ["ex11-41", 3], ["ex11-53", 2],
@@ -3789,7 +3789,7 @@
     ]
   },
   "Dragon Roar": {
-    "description": "Dragonite ex δ roars through the jungle with Grass dragons; Snorlax δ and Quagsire δ hold the line.",
+    "description": "In Holon's jungles, Dragonite ex δ roars among the trees. Even Snorlax δ grows leaves.",
     "format": "2006-07",
     "cards": [
       ["ex15-10", 1], ["ex15-21", 2], ["ex15-23", 1], ["ex15-28", 3],
@@ -3802,7 +3802,7 @@
     ]
   },
   "Holon Inferno": {
-    "description": "Tyranitar δ crushes and draws, Kingdra δ curses with Dragon Curse; Mewtwo δ and Gyarados ★ blow up the field.",
+    "description": "Holon's seas boil with dragon fire. Tyranitar δ and Kingdra δ rise from the flames.",
     "format": "2006-07",
     "cards": [
       ["ex11-12", 1], ["ex11-16", 2], ["ex11-51", 3], ["ex11-73", 4],
@@ -3815,7 +3815,7 @@
     ]
   },
   "Delta Thunder": {
-    "description": "Metagross δ controls the field, Pidgeot δ holds Energy in reserve and Gyarados δ's Delta Reactor powers the team.",
+    "description": "Holon's magnetic storms charge every feather and fin. Metagross δ commands the thunder.",
     "format": "2006-07",
     "cards": [
       ["ex11-11", 2], ["ex11-49", 3], ["ex11-59", 4], ["ex13-14", 1],
@@ -3829,7 +3829,7 @@
     ]
   },
   "Peal of Thunder": {
-    "description": "Charizard δ rings the Peal of Thunder; Feraligatr δ, Pelipper δ, Mantine δ and Gligar δ crackle alongside.",
+    "description": "Charizard δ crackles with lightning over Holon. Feraligatr δ thunders from the river.",
     "format": "2006-07",
     "cards": [
       ["ex14-18", 1], ["ex14-30", 3], ["ex14-4", 2], ["ex14-49", 4],
@@ -3843,7 +3843,7 @@
     ]
   },
   "Holon Eevees": {
-    "description": "Eevee δ evolves into the Holon Eeveelutions: Espeon δ heals, Umbreon δ moons and Vaporeon δ, Flareon δ and Jolteon δ search.",
+    "description": "Holon's Eevee shine with metal and strange colors. Each evolution is a new mystery.",
     "format": "2006-07",
     "cards": [
       ["ex11-17", 1], ["ex11-18", 2], ["ex11-4", 2], ["ex11-5", 2],
@@ -3857,7 +3857,7 @@
     ]
   },
   "Delta Bouquet": {
-    "description": "Bellossom δ's Fellowship and Vileplume δ's Poison Pollen; Starmie δ navigates, Azumarill δ rolls and Latios δ dives.",
+    "description": "In Holon, flowers bloom underwater. Bellossom δ and Starmie δ dance with the tide.",
     "format": "2006-07",
     "cards": [
       ["dp1-88", 2], ["ex11-15", 2], ["ex11-19", 2], ["ex11-85", 3],
@@ -3871,7 +3871,7 @@
     ]
   },
   "Holon Dynamo": {
-    "description": "The Holon's Magneton, Electrode and Castform double as Energy; Raichu δ and Persian δ cash in.",
+    "description": "Holon's scientists wired Pokémon into living batteries. Raichu δ runs the whole circuit.",
     "format": "2006-07",
     "cards": [
       ["ex11-21", 2], ["ex11-22", 2], ["ex11-70", 3], ["ex11-71", 3],
@@ -3886,7 +3886,7 @@
     ]
   },
   "Psychic Mirage": {
-    "description": "Flygon ex δ, Ninetales δ and Typhlosion δ burn with psychic flames from Holon's frontier.",
+    "description": "Holon's desert hides psychic flames. Flygon ex δ and Ninetales δ shimmer like a mirage.",
     "format": "2006-07",
     "cards": [
       ["ex15-12", 1], ["ex15-24", 3], ["ex15-36", 1], ["ex15-45", 2],
@@ -3900,7 +3900,7 @@
     ]
   },
   "Delta Hunters": {
-    "description": "Mightyena δ, Sandslash δ and Marowak δ hunt together; Sharpedo δ and Exeggutor δ split the damage.",
+    "description": "Holon's wild hunters have strange new colors. Mightyena δ leads the pack through the night.",
     "format": "2006-07",
     "cards": [
       ["ex11-10", 2], ["ex11-24", 2], ["ex11-27", 1], ["ex11-60", 2],
@@ -3914,7 +3914,7 @@
     ]
   },
   "Dragon Frontiers": {
-    "description": "Gardevoir ex δ and Meganium δ burn bright from Holon's frontier; Heracross δ and Pinsir δ join the fight.",
+    "description": "At Holon's frontier, even gentle Gardevoir δ burns with fire. Meganium δ blooms in flames.",
     "format": "2006-07",
     "cards": [
       ["ex15-26", 2], ["ex15-3", 1], ["ex15-33", 3], ["ex15-4", 2],
