@@ -119,6 +119,31 @@ body {
 	color: #a0b0d0;
 }
 
+/* Torchic de Pokémon Pinball abajo de la barra (carga/torchic.png: 5 cuadros de 32x46,
+   carga/notas.png: 2 globitos de 17x16 (la colita abajo a la derecha, hacia el pico). Son archivos propios: van sueltos en la página. */
+#torchic {
+	position: relative;
+	width: 96px;
+	height: 138px;
+	margin-top: 4vh;
+	background-repeat: no-repeat;
+	background-size: 480px 138px;
+	image-rendering: pixelated;
+	visibility: hidden;
+}
+
+#torchic-nota {
+	position: absolute;
+	left: -42px;               /* del lado del pico (mira a la izquierda), con la colita hacia él */
+	top: -6px;
+	width: 51px;
+	height: 48px;
+	background-repeat: no-repeat;
+	background-size: 102px 48px;
+	image-rendering: pixelated;
+	visibility: hidden;
+}
+
 #status-notice {
 	background-color: #5b3943;
 	border-radius: 0.5rem;
@@ -153,12 +178,13 @@ body {
 				<div id="bar-pct">0%</div>
 				<div id="bar-tip">Shuffling the deck...</div>
 			</div>
+			<div id="torchic"><div id="torchic-nota"></div></div>
 			<div id="status-notice"></div>
 		</div>
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"mainPack":"index-1fce217.pck","args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index-1fce217.pck":70989920,"index.wasm":35376909},"focusCanvas":true,"gdextensionLibs":[]};
+const GODOT_CONFIG = {"mainPack":"index-71aab2c.pck","args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index-71aab2c.pck":71535280,"index.wasm":35376909},"focusCanvas":true,"gdextensionLibs":[]};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -249,6 +275,43 @@ const engine = new Engine(GODOT_CONFIG);
 			tipIdx = (tipIdx + 1) % tips.length;
 			barTip.textContent = tips[tipIdx];
 		}, 1600);
+		// Torchic: los dos primeros cuadros en bucle y, de vez en cuando, canta (cuadros 3 a 5
+		// con un globito de nota). Si faltan las imágenes no aparece.
+		let torchicTimer = 0;
+		const torchic = document.getElementById('torchic');
+		const nota = document.getElementById('torchic-nota');
+		const pic = new Image();
+		pic.onload = () => {
+			torchic.style.backgroundImage = 'url(carga/torchic.png)';
+			nota.style.backgroundImage = 'url(carga/notas.png)';
+			torchic.style.visibility = 'visible';
+			const sing = [2, 3, 4, 4, 3, 4, 4, 3, 2];
+			let step = 0;
+			let singing = -1;
+			let nextSing = 6 + Math.floor(Math.random() * 8);
+			torchicTimer = setInterval(() => {
+				let f;
+				if (singing >= 0) {
+					f = sing[singing];
+					nota.style.visibility = 'visible';
+					nota.style.backgroundPosition = (singing % 2 ? -51 : 0) + 'px 0';
+					singing++;
+					if (singing >= sing.length) {
+						singing = -1;
+						nextSing = 6 + Math.floor(Math.random() * 8);
+					}
+				} else {
+					nota.style.visibility = 'hidden';
+					f = (step >> 1) % 2;      // cada cuadro dura dos pasos (350 ms)
+					step++;
+					if (step % 4 === 0 && --nextSing <= 0) {
+						singing = 0;
+					}
+				}
+				torchic.style.backgroundPosition = (-96 * f) + 'px 0';
+			}, 175);
+		};
+		pic.src = 'carga/torchic.png';
 		engine.startGame({
 			'onProgress': function (current, total) {
 				if (current > 0 && total > 0) {
@@ -260,6 +323,7 @@ const engine = new Engine(GODOT_CONFIG);
 			},
 		}).then(() => {
 			clearInterval(tipTimer);
+			clearInterval(torchicTimer);
 			setStatusMode('hidden');
 		}, displayFailureNotice);
 	}
