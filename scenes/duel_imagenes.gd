@@ -745,7 +745,7 @@ func _draw_card_image(r: Rect2, id: String, rev: bool = false) -> void:
 	_round_box(r, _card_bg(id).darkened(0.45))
 	if tex != null:
 		d.draw_texture_rect(tex, r, false)
-		if d.mode != "editor":     # en el editor de mazos el brillo distrae: solo en los duelos
+		if not d.mode in ["editor", "title"]:     # en el editor y al elegir mazo el brillo distrae
 			_draw_holo(r, id, r.size.x < 20, d._cosmos.get("c|%s|%d" % [id, sz], {}))
 	else:
 		_draw_card_icon(r.grow(-r.size.x * 0.17), id)

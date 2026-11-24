@@ -467,14 +467,18 @@ func _fd_deck_window(names: Array, r: RuleSet) -> void:
 			d._text(Vector2(win.position.x + lw - 4, win.position.y + 16 + (FD_LIST_ROWS - 1) * 11), "▼", d.C_DIM)
 	# A la derecha: la carta del mazo elegido y si se puede usar en el formato
 	var sel: String = names[d.popup_cursor]
-	var px = win.position.x + lw + 10
+	# (la imagen ocupa todo el alto de la lista; abajo, si se puede usar en el formato)
+	var side := Rect2(win.position.x + lw + 6, win.position.y + 15, win.end.x - 5 - (win.position.x + lw + 6), 0)
+	var isz := 56.0
+	var ir := Rect2(roundf(side.get_center().x - isz / 2.0), side.position.y, isz, isz)
 	var cover = _deck_cover(sel)
 	if cover != "":
-		var ir = Rect2(px + 4, win.position.y + 18, 40, 40)
 		d.draw_rect(ir.grow(1), d.C_INK)
 		d.imagenes._draw_card_image(ir, cover)
 	var legal_sel = d._deck_legal(sel, r)
-	d.imagenes._draw_tiny(Vector2(px, win.position.y + 64), "LEGAL" if legal_sel else "NOT LEGAL", Color("#388850") if legal_sel else d.C_HP_LOW)
+	var lt: String = "LEGAL" if legal_sel else "NOT LEGAL"
+	d.imagenes._draw_tiny(Vector2(roundf(ir.get_center().x - (lt.length() * 4 - 1) / 2.0), ir.end.y + 4), lt,
+			Color("#388850") if legal_sel else d.C_HP_LOW)
 	# Abajo, a todo lo ancho: la descripción del mazo
 	var dy = win.position.y + 17 + FD_LIST_ROWS * 11 + 3
 	d.draw_rect(Rect2(win.position.x + 4, dy - 2, win.size.x - 8, 1), C_FD_LINE)
