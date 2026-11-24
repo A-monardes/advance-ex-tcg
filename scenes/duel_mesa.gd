@@ -4,6 +4,8 @@ extends RefCounted
 
 var d       # la pantalla de duelo (duel.gd)
 
+const SpecialFX := preload("res://scenes/special_fx.gd")
+
 
 func _init(duel) -> void:
 	d = duel
@@ -26,6 +28,69 @@ func _draw_table() -> void:
 		d.draw_texture(cur if cur != null else d._table_tex, Vector2.ZERO, Color(1, 1, 1, k))
 	else:
 		d.draw_texture(cur if cur != null else d._table_tex, Vector2.ZERO)
+
+
+# ---------------------------------------------------------------------------
+# Entrada del Estadio: al jugarlo sube desde abajo un paisaje (pasto, olas, arena...)
+# y se desvanece enseguida. En los interiores entra un marco desde los costados.
+# ---------------------------------------------------------------------------
+
+const STADIUM_ENTRY := {
+	"Apricorn Forest": "entrada_pasto", "Pokémon Park": "entrada_pasto", "Giant Stump": "entrada_pasto",
+	"Power Tree": "entrada_pasto", "Full Flame": "entrada_pasto", "Holon Ruins": "entrada_pasto",
+	"Low Pressure System": "entrada_viento", "High Pressure System": "entrada_viento",
+	"Magnetic Storm": "entrada_viento", "Holon Circle": "entrada_viento",
+	"Undersea Ruins": "entrada_burbujas", "Underground Lake": "entrada_burbujas", "Holon Lake": "entrada_burbujas",
+	"Team Aqua Hideout": "entrada_burbujas", "Island Cave": "entrada_burbujas",
+	"Crystal Beach": "entrada_ola", "Meteor Falls": "entrada_ola",
+	"Desert Ruins": "entrada_arena", "Ancient Ruins": "entrada_arena",
+	"Mt. Moon": "entrada_rocas", "Team Magma Hideout": "entrada_rocas", "Cursed Stone": "entrada_rocas",
+	"Strange Cave": "entrada_rocas", "Holon Legacy": "entrada_rocas",
+	# Interiores: un marco que sube por los costados de la mesa
+	"Battle Frontier": "marco_pokeball", "Championship Arena": "marco_pokeball", "Speed Stadium": "marco_pokeball",
+	"Drake's Stadium": "marco_pokeball", "Glacia's Stadium": "marco_pokeball", "Phoebe's Stadium": "marco_pokeball",
+	"Sidney's Stadium": "marco_pokeball",
+	"Power Plant": "marco_ciudad", "Space Center": "marco_ciudad", "Holon Research Tower": "marco_ciudad",
+	"Rocket's Hideout": "marco_rocket", "Rocket's Tricky Gym": "marco_rocket",
+	"Ancient Tomb": "marco_roca", "Mystery Zone": "marco_roca", "Mirage Stadium": "marco_nubes",
+}
+const ENTRY_RISE := 0.3
+const ENTRY_HOLD := 0.25
+const ENTRY_FADE := 0.45
+var _entry_card := ""      # el Estadio en juego (para notar cuando entra uno nuevo)
+var _entry_fx := ""
+var _entry_t0 := -10.0
+
+
+func _draw_stadium_entry() -> void:
+	if d.game == null or d.mode != "duel":
+		return
+	var card: String = d.game.stadium
+	if card != _entry_card:
+		_entry_card = card
+		_entry_fx = STADIUM_ENTRY.get(CardDB.card_name(card), "") if card != "" else ""
+		_entry_t0 = Clock.ms() / 1000.0
+	if _entry_fx == "":
+		return
+	var t := Clock.ms() / 1000.0 - _entry_t0
+	if t > ENTRY_RISE + ENTRY_HOLD + ENTRY_FADE:
+		return
+	var tex = SpecialFX.fx(_entry_fx)
+	if tex == null:
+		return
+	var h: float = minf(tex.get_height(), float(d.BOX_Y))     # los marcos cubren todo el alto
+	var k := clampf(t / ENTRY_RISE, 0.0, 1.0)
+	var y: float = d.BOX_Y - h * (1.0 - pow(1.0 - k, 3.0))
+	var a := 1.0 - clampf((t - ENTRY_RISE - ENTRY_HOLD) / ENTRY_FADE, 0.0, 1.0)
+	var cut: float = (tex.get_width() - d.W) / 2.0
+	if _entry_fx.begins_with("marco_"):
+		# Los marcos entran desde los costados: cada mitad desde su lado
+		var hw: float = d.W / 2.0
+		var dx := roundf(48.0 * (1.0 - k) * (1.0 - k))      # el marco mide unos 40 píxeles de ancho
+		d.draw_texture_rect_region(tex, Rect2(-dx, 0, hw, h), Rect2(cut, 0, hw, h), Color(1, 1, 1, a))
+		d.draw_texture_rect_region(tex, Rect2(hw + dx, 0, hw, h), Rect2(cut + hw, 0, hw, h), Color(1, 1, 1, a))
+		return
+	d.draw_texture_rect_region(tex, Rect2(0, roundf(y), d.W, h), Rect2(cut, 0, d.W, h), Color(1, 1, 1, a))
 
 
 # ---------------------------------------------------------------------------

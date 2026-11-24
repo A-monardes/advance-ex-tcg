@@ -4,6 +4,8 @@ extends RefCounted
 
 var d       # la pantalla de duelo (duel.gd)
 
+const SpecialFX := preload("res://scenes/special_fx.gd")
+
 
 func _init(duel) -> void:
 	d = duel
@@ -153,24 +155,46 @@ func _collect_checkup() -> void:
 				if e2["mon"] == m:
 					total += int(e2["dmg"])
 			d.hp_hold[m] = clampi(m.hp_left(), 0, m.max_hp()) + total
+		# El daño del Estadio se ve de una vez para todos los Pokémon a los que les toca
+		if e["kind"] == "stadium" and not d.check_anim.is_empty():
+			var last: Dictionary = d.check_anim[-1]
+			if last["kind"] == "stadium" and last["src"] == e["src"] and float(last["t"]) == 0.0:
+				last["hits"].append(e)
+				continue
 		var dd_: Dictionary = e.duplicate()
 		dd_["t"] = 0.0
+		if e["kind"] == "stadium":
+			dd_["hits"] = [e]
 		d.check_anim.append(dd_)
 
 
 const CHECK_TIME := 1.1
+const STADIUM_CHECK_TIME := 1.8
+
+## Cómo se ve el daño de cada Estadio: color, efecto sobre cada Pokémon, partículas que
+## cruzan la mesa (o "" si no hay) y sonido.
+const STADIUM_FX := {
+	"Desert Ruins": {"col": "#e0b060", "txt": "#fff0c8", "hit": "gx_arena", "storm": "clima_arena", "snd": "hit_Fighting"},
+	"Cursed Stone": {"col": "#9050c8", "txt": "#f0d8ff", "hit": "gx_maldicion", "storm": "", "snd": "hit_Psychic"},
+	"Team Magma Hideout": {"col": "#e86030", "txt": "#ffe0c0", "hit": "gx_ascuas", "storm": "", "snd": "hit_Fire"},
+}
 
 
 func _update_check(delta: float) -> void:
 	var c: Dictionary = d.check_anim[0]
+	var stadium: bool = c["kind"] == "stadium"
 	if float(c["t"]) == 0.0:
-		var m: PokemonInPlay = c["mon"]
-		if d.hp_hold.has(m):
-			d.hp_hold[m] = int(d.hp_hold[m]) - int(c["dmg"])
-			if int(d.hp_hold[m]) <= m.hp_left():
-				d.hp_hold.erase(m)
-		d.snd.play("hit_Psychic" if c["kind"] == "poison" else "hit_Fire")
-	c["t"] = float(c["t"]) + delta / CHECK_TIME
+		for e in (c["hits"] if stadium else [c]):
+			var m: PokemonInPlay = e["mon"]
+			if d.hp_hold.has(m):
+				d.hp_hold[m] = int(d.hp_hold[m]) - int(e["dmg"])
+				if int(d.hp_hold[m]) <= m.hp_left():
+					d.hp_hold.erase(m)
+		if stadium:
+			d.snd.play(STADIUM_FX.get(c["src"], {}).get("snd", "hit_Colorless"))
+		else:
+			d.snd.play("hit_Psychic" if c["kind"] == "poison" else "hit_Fire")
+	c["t"] = float(c["t"]) + delta / (STADIUM_CHECK_TIME if stadium else CHECK_TIME)
 	if float(c["t"]) >= 1.0:
 		d.check_anim.pop_front()
 		if d.check_anim.is_empty():
@@ -178,32 +202,96 @@ func _update_check(delta: float) -> void:
 			d._rebuild_menu()
 
 
+## Rectángulo del Pokémon en la mesa (Activo o Banca).
+func _check_rect(pl: PlayerState, m: PokemonInPlay) -> Rect2:
+	if d._dbl():
+		if pl.active == m or pl.active2 == m:
+			return d.mesa._dbl_card_rect(pl.index, 1 if pl.active2 == m else 0)
+	elif pl.active == m:
+		return d._card_rect(pl.index)
+	var i := pl.bench.find(m)
+	return d._bench_rect(pl.index, maxi(0, i))
+
+
 ## El Activo titila del color del estado y sube el número ("-10" violeta o naranja).
 func _draw_check() -> void:
 	if d.check_anim.is_empty() or not d.anim.is_empty() or not d.coin_anim.is_empty() or not d.evo_anim.is_empty():
 		return
 	var c: Dictionary = d.check_anim[0]
+	if c["kind"] == "stadium":
+		_draw_stadium_check(c)
+		return
 	var m: PokemonInPlay = c["mon"]
 	var pl: PlayerState = d.game.players[c["p"]]
-	var r := Rect2()
-	if d._dbl():
-		r = d.mesa._dbl_card_rect(pl.index, 1 if pl.active2 == m else 0)
-	else:
-		r = d._card_rect(pl.index)
+	var r := _check_rect(pl, m)
 	var t: float = c["t"]
 	var col := Color("#b058e0") if c["kind"] == "poison" else Color("#f87830")
 	if t < 0.45 and int(t * 18.0) % 2 == 0:
 		d.draw_rect(r, Color(col, 0.45))
-	var txt = "-%d" % int(c["dmg"])
+	var tc := Color("#fcd0ff") if c["kind"] == "poison" else Color("#ffe8a8")
+	_draw_check_number(r, t, int(c["dmg"]), col, tc)
+
+
+func _draw_check_number(r: Rect2, t: float, dmg: int, col: Color, tc: Color) -> void:
+	var txt = "-%d" % dmg
 	var sc := 1.5 + (sin(clampf(t * 5.0, 0.0, 1.0) * PI) * 0.5 if t < 0.2 else 0.0)
 	var w: float = d._text_w(txt) * sc
 	var p = r.get_center() + Vector2(-w / 2.0, -4.0 - minf(t, 0.6) * 14.0)
-	var tc := Color("#fcd0ff") if c["kind"] == "poison" else Color("#ffe8a8")
 	tc.a = clampf((1.0 - t) * 4.0, 0.0, 1.0)
 	d.draw_rect(Rect2(p.round() + Vector2(-3, 0), Vector2(w + 6, 12.0 * sc)), Color(col.darkened(0.6), 0.8 * tc.a))
 	d.draw_set_transform(d._base_off + p.round(), 0, Vector2(sc, sc))
 	d._text(Vector2.ZERO, txt, tc)
 	d.draw_set_transform(d._base_off)
+
+
+## Daño del Estadio: la mesa se tiñe de su color (la arena de Desert Ruins la cruza en
+## ráfagas), el cartel del Estadio salta y cada Pokémon dañado recibe su efecto y su número.
+func _draw_stadium_check(c: Dictionary) -> void:
+	var t: float = c["t"]
+	var fxd: Dictionary = STADIUM_FX.get(c["src"], {"col": "#c0c0c0", "txt": "#ffffff", "hit": "", "storm": ""})
+	var col := Color(fxd["col"])
+	var env := clampf(t / 0.15, 0.0, 1.0) * clampf((1.0 - t) / 0.25, 0.0, 1.0)
+	var table := Rect2(0, 0, d.W, d.BOX_Y)
+	d.draw_rect(table, Color(col, 0.15 * env))
+	var storm: String = fxd["storm"]
+	if storm != "":
+		# Pantalla de clima de Mystery Dungeon: dos capas de arena que cruzan la mesa a
+		# distinta velocidad (la clara, más rápida, por arriba)
+		for layer in [[storm, 90.0, 0.9], [storm + "_luz", 170.0, 0.8]]:
+			var tex = SpecialFX.fx(layer[0])
+			if tex == null:
+				continue
+			var tw: float = tex.get_width()
+			var th: float = minf(tex.get_height(), float(d.BOX_Y))
+			var off := fposmod(t * STADIUM_CHECK_TIME * float(layer[1]), tw)
+			var x := -off
+			while x < d.W:
+				d.draw_texture_rect_region(tex, Rect2(x, 0, tw, d.BOX_Y), Rect2(0, 0, tw, th), Color(1, 1, 1, float(layer[2]) * env))
+				x += tw
+	# El cartel del Estadio salta y brilla
+	if not d._stadium_layout.is_empty():
+		var tr: Rect2 = d._stadium_layout["rect"]
+		var pulse := 0.5 + 0.5 * sin(t * TAU * 3.0)
+		d.draw_rect(tr.grow(2), Color(col.lightened(0.4), 0.8 * env * pulse), false, 2.0)
+	var tc := Color(fxd["txt"])
+	var hit: String = fxd["hit"]
+	for e in c["hits"]:
+		var pl: PlayerState = d.game.players[e["p"]]
+		var m: PokemonInPlay = e["mon"]
+		if not pl.all_in_play().has(m):
+			continue
+		var r := _check_rect(pl, m)
+		var kt := clampf((t - 0.2) / 0.8, 0.0, 1.0)
+		if kt <= 0.0:
+			continue
+		if kt < 0.4 and int(kt * 18.0) % 2 == 0:
+			d.draw_rect(r, Color(col, 0.5))
+		if hit != "" and SpecialFX.has_fx(hit) and kt < 0.7:
+			var sc := clampf(r.size.y / 32.0, 0.6, 1.4)
+			SpecialFX.fx_draw(d, hit, SpecialFX.fx_frame(hit, kt / 0.7), r.get_center(), sc, 1.0)
+		_draw_check_number(r, kt, int(e["dmg"]), col, tc)
+
+
 # ===========================================================================
 # Fuera de combate
 # ===========================================================================

@@ -22,6 +22,7 @@ mundo/propios/pmd/
 mundo/propios/titulo/
 mundo/propios/estadios/
 mundo/propios/intro/
+mundo/propios/marcos_pantalla/
 
 # Sonidos y música propios (rips)
 sonidos/*.ogg

@@ -60,6 +60,16 @@ func _draw_textbox() -> void:
 		return
 	if not d.check_anim.is_empty() and d.anim.is_empty() and d.coin_anim.is_empty() and d.evo_anim.is_empty():
 		var ck: Dictionary = d.check_anim[0]
+		if ck["kind"] == "stadium":
+			var why := {"Desert Ruins": "The desert sands wear down Pokémon-ex with 100 HP or more!",
+					"Cursed Stone": "The Cursed Stone hurts Pokémon with Poké-Powers!",
+					"Team Magma Hideout": "Team Magma Hideout hurts the Basic Pokémon just played!"}
+			var hurt: Array = []
+			for e in ck["hits"]:
+				hurt.append("%s%s -%d" % ["" if e["p"] == d.human else "Foe ", e["mon"].display_name(), int(e["dmg"])])
+			d._text_scroll(Vector2(x, y), "%s: %s" % [ck["src"], why.get(ck["src"], "the Stadium does damage!")], d.C_TEXT, tw, "chk")
+			d._text_scroll(Vector2(x, y + d.LINE), ", ".join(hurt), d.C_DIM, tw, "chk2")
+			return
 		var whose = "" if ck["p"] == d.human else "Foe "
 		d._text_scroll(Vector2(x, y), "%s%s is hurt by %s!" % [whose, ck["mon"].display_name(), "poison" if ck["kind"] == "poison" else "its burn"], d.C_TEXT, tw, "chk")
 		d._text(Vector2(x, y + d.LINE), "%d damage (%s)" % [ck["dmg"], "Poisoned" if ck["kind"] == "poison" else "Burned"], d.C_DIM)

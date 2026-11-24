@@ -304,6 +304,60 @@ func _ready() -> void:
 	add_child(arte)
 	arte.listo.connect(imagenes._on_arte_listo)
 	RenderingServer.set_default_clear_color(C_BG)
+	_setup_border.call_deferred()
+
+
+# ===========================================================================
+# Marco alrededor de la pantalla (scenes/marco_pantalla.gd)
+# ===========================================================================
+# Solo cuando el duelo es la escena principal (en las pruebas la pantalla queda de 240x160).
+
+var border_on := true          # opción "Border": la pantalla va en el medio de 320x224
+var _border: Node2D = null
+
+
+func _setup_border() -> void:
+	if get_tree() == null or get_tree().current_scene != self:
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 50
+	add_child(layer)
+	_border = load("res://scenes/marco_pantalla.gd").new()
+	_border.d = self
+	layer.add_child(_border)
+	_apply_border()
+
+
+func _apply_border() -> void:
+	if _border == null:
+		return
+	_border.visible = border_on
+	position = _border.OFF if border_on else Vector2.ZERO
+	var size := Vector2i(_border.FW, _border.FH) if border_on else Vector2i(W, H)
+	get_window().content_scale_size = size
+	_fit_window(size)
+
+
+## En la computadora, la ventana más grande que entra en la pantalla (en múltiplos enteros).
+func _fit_window(size: Vector2i) -> void:
+	if OS.has_feature("web") or DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED:
+		return
+	var scr := DisplayServer.window_get_current_screen()
+	var usable := DisplayServer.screen_get_usable_rect(scr)
+	var k := maxi(1, mini(mini((usable.size.x - 32) / size.x, (usable.size.y - 64) / size.y), 4))
+	var win := get_window()
+	win.size = size * k
+	win.position = usable.position + (usable.size - win.size) / 2
+
+
+## F11: pantalla completa (en la web la maneja el navegador).
+func _toggle_fullscreen() -> void:
+	if OS.has_feature("web"):
+		return
+	var full := DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
+	if full:
+		_fit_window(get_window().content_scale_size)
 
 
 # ===========================================================================
@@ -884,6 +938,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not _trans.is_empty():
 		return
 	var k: int = event.keycode
+	if k == KEY_F11 and not event.echo:
+		_toggle_fullscreen()
+		return
 	var accept := k in [KEY_Z, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
 	var back := k in [KEY_X, KEY_ESCAPE, KEY_BACKSPACE]
 	if mode == "duel" and not rival_intro.is_empty():
@@ -893,8 +950,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mode == "title":
 		if title_attract:
 			if (accept or k == KEY_ESCAPE) and not event.echo:
-				title_attract = false
 				snd.play("accept")
+				_go(func(): title_attract = false, "iris")
 			return
 		if title_view == "online":
 			online.input(event)
@@ -1222,6 +1279,7 @@ func _draw_screen() -> void:
 			_outline(_card_rect(pl.index), C_LINE if pl == me else Color("#c87060"))
 	anim_ataques._draw_moves()
 	anim_ataques._draw_anim()
+	mesa._draw_stadium_entry()
 	anim_pokemon._draw_check()
 	anim_pokemon._draw_bench_fx()
 	anim_pokemon._draw_ko()
@@ -1582,9 +1640,63 @@ func _page_hint(pos: Vector2, t: String) -> void:
 	_text(pos, t, Color.WHITE if _ui_tex("fondo") != null else C_DIM)
 
 
-## Recuadro de texto: el de Rubí/Zafiro (marco.png) o, sin él, el marco azul de siempre.
+## Marco de texto de cada fondo de mesa (ui/marcos/, de Rubí/Zafiro/Esmeralda y RojoFuego/
+## VerdeHoja). La clave es el nombre del archivo del fondo sin el número; la Clásica y los
+## fondos que no están acá usan el marco de siempre (marco.png).
+const FRAME_BY_TABLE := {"bosque": "rse_19", "sabana": "frlg_04", "desierto": "rse_14",
+		"ciudad": "rse_16", "risco": "frlg_07", "volcan": "frlg_03", "nieve": "rse_11",
+		"cueva": "rse_17", "playa": "frlg_06", "fondo marino": "frlg_05", "rio": "rse_06",
+		"cielo": "rse_09", "lunares": "frlg_09", "maquina": "rse_04", "baldosas": "frlg_08",
+		"estrellas": "rse_12", "liso": "frlg_02", "nostalgia": "rse_02", "pika": "rse_18",
+		"johto": "rse_08", "kimono": "rse_07", "torchic": "rse_05", "dusclops": "rse_01",
+		"zigzagoon": "rse_10", "whiscash": "frlg_01", "azumarill": "rse_13"}
+var _frame_for := -1           # table_style para el que se eligió _frame_name
+var _frame_name := "marco"
+
+
+func _table_frame() -> String:
+	if _frame_for != table_style:
+		_frame_for = table_style
+		_frame_name = "marco"
+		if table_style > 0 and table_style < table_styles.size():
+			var base: String = String(table_styles[table_style][1]).get_file()
+			base = base.trim_suffix(".import").trim_suffix(".remap").get_basename()
+			var rx := RegEx.new()
+			rx.compile("^\\d+_")
+			base = rx.sub(base, "").replace("_", " ")
+			if FRAME_BY_TABLE.has(base) and _ui_tex("marcos/" + FRAME_BY_TABLE[base]) != null:
+				_frame_name = "marcos/" + FRAME_BY_TABLE[base]
+	return _frame_name
+
+
+var _inset_cache := {}
+
+
+## Píxeles de borde de un marco: desde el costado izquierdo hasta el blanco del centro.
+func _frame_inset(name: String, tex: Texture2D) -> float:
+	if not _inset_cache.has(name):
+		var img := tex.get_image()
+		var y := img.get_height() / 2
+		var x := img.get_width() / 2
+		var c := img.get_pixel(x, y)
+		while x > 0 and img.get_pixel(x - 1, y) == c:
+			x -= 1
+		_inset_cache[name] = float(x)
+	return _inset_cache[name]
+
+
+## Recuadro de texto: el del fondo de mesa elegido, el de Rubí/Zafiro (marco.png) o, sin
+## ninguno, el marco azul de siempre.
 func _frame(r: Rect2) -> void:
-	var tex := _ui_tex("marco")
+	var name := _table_frame()
+	var tex := _ui_tex(name)
+	if tex != null and name != "marco" and r.size.x >= 16 and r.size.y >= 16:
+		# Los bordes gruesos se corren hacia afuera para que el blanco de adentro quede donde
+		# estaba el del marco de siempre (5 px) y el texto no toque el borde.
+		var sz := tex.get_size()
+		_nine(tex, r.grow(maxf(0.0, _frame_inset(name, tex) - 5.0)), minf(8.0, floorf(sz.x / 2.0) - 2.0))
+		return
+	tex = _ui_tex("marco")
 	if tex != null and r.size.x >= 15 and r.size.y >= 15:
 		_nine(tex, r, 7)
 		return
@@ -1947,6 +2059,7 @@ func _load_settings() -> void:
 			battle_mode = clampi(int(cfg.get_value("graficos", "batallas_modo", 1)), 0, 1)   # la vieja "Full" pasa a Mini
 		else:     # opción vieja (On/Off)
 			battle_mode = 1 if bool(cfg.get_value("graficos", "batallas", true)) else 0
+		border_on = bool(cfg.get_value("graficos", "marco", true))
 		ai_level = clampi(int(cfg.get_value("juego", "dificultad", 3)), 1, 5)
 		var sid := str(cfg.get_value("juego", "temporada", RuleSet.SEASONS[0]["id"]))
 		for i in RuleSet.SEASONS.size():
@@ -1990,6 +2103,7 @@ func _save_settings() -> void:
 	cfg.set_value("graficos", "mesa", table_styles[table_style][0])
 	cfg.set_value("graficos", "animaciones", anim_speed)
 	cfg.set_value("graficos", "batallas_modo", battle_mode)
+	cfg.set_value("graficos", "marco", border_on)
 	cfg.set_value("juego", "dificultad", ai_level)
 	cfg.set_value("juego", "temporada", RuleSet.SEASONS[season_idx]["id"])
 	cfg.set_value("juego", "temporada_hasta", format_upto)
@@ -2261,7 +2375,7 @@ const TRANS_TIME := 0.45
 ##   "bands"   franjas que se cierran y se abren (la de siempre)
 ##   "door"    fundido a negro, como al cruzar una puerta (con su sonido)
 ##   "battle"  entrada a un duelo: destellos blancos y franjas que se cruzan desde los costados
-const TRANS_STYLES := {"bands": [TRANS_TIME, 0.5], "door": [0.5, 0.5], "battle": [1.25, 0.72]}
+const TRANS_STYLES := {"bands": [TRANS_TIME, 0.5], "door": [0.5, 0.5], "battle": [1.25, 0.72], "iris": [1.0, 0.5]}
 
 
 func _go(then: Callable, style: String = "bands") -> void:
@@ -2285,11 +2399,48 @@ func _update_trans(delta_real: float) -> void:
 		_trans = {}
 
 
+## Negro afuera de un círculo de radio r, con un borde de grises que se esfuma hacia adentro.
+## Se dibuja por renglones para que quede en píxeles enteros.
+const IRIS_RIM := [Color("#383838"), Color("#606060"), Color("#888888"), Color("#b0b0b0")]
+
+
+func _draw_iris(c: Vector2, r: float) -> void:
+	var rings: Array = [[INF, C_INK]]       # [radio exterior, color], de afuera hacia adentro
+	var step := minf(3.0, r / 4.0)          # al cerrarse del todo no queda gris
+	for i in IRIS_RIM.size():
+		rings.append([r + (IRIS_RIM.size() - i) * step, IRIS_RIM[i]])
+	for y in H:
+		var dy := absf(y + 0.5 - c.y)
+		for j in rings.size():
+			var ro: float = rings[j][0]
+			var ri: float = rings[j + 1][0] if j + 1 < rings.size() else r
+			if ri <= 0.0:
+				ri = 0.0
+			var col: Color = rings[j][1]
+			var hw_in := sqrt(maxf(ri * ri - dy * dy, 0.0)) if dy < ri else 0.0
+			var hw_out := float(W) if is_inf(ro) else (sqrt(maxf(ro * ro - dy * dy, 0.0)) if dy < ro else 0.0)
+			if hw_out <= hw_in:
+				continue
+			var a := roundf(c.x - hw_out)
+			var b := roundf(c.x - hw_in)
+			if b > a:
+				draw_rect(Rect2(a, y, b - a, 1), col)
+			a = roundf(c.x + hw_in)
+			b = roundf(c.x + hw_out)
+			if b > a:
+				draw_rect(Rect2(a, y, b - a, 1), col)
+
+
 func _draw_trans() -> void:
 	if _trans.is_empty():
 		return
 	var t: float = _trans["t"]
 	match _trans.get("style", "bands"):
+		"iris":
+			# Un círculo que se cierra sobre la pantalla y se vuelve a abrir (Pokémon Pinball)
+			var k := t * 2.0 if t < 0.5 else (1.0 - t) * 2.0
+			k = clampf(k * 1.15, 0.0, 1.0)
+			_draw_iris(Vector2(W / 2.0, H / 2.0), (1.0 - k) * 160.0)
 		"door":
 			var a := t * 2.0 if t < 0.5 else (1.0 - t) * 2.0
 			draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, clampf(a * 1.15, 0.0, 1.0)))

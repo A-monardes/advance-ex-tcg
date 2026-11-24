@@ -19,7 +19,7 @@ extends RefCounted
 
 const SIG_TIME := 1.7          # duración del ataque especial (s)
 const SIG_IMPACT := 0.62       # momento del golpe (0..1)
-const VS_TIME := 1.9           # duración del cara a cara (s)
+const VS_TIME := 2.6           # duración del cara a cara (s): da tiempo a la animación de entrada
 
 ## Especie -> animación de ataque
 const SIGNATURE := {
@@ -101,6 +101,34 @@ static func rivalry(name_a: String, name_b: String) -> Dictionary:
 		return {"title": title, "ca": Color(STARTER_COLORS[ea]), "cb": Color(STARTER_COLORS[eb]),
 				"key": "%s|%s" % key}
 	return {}
+
+
+## Marco de pantalla de una rivalidad (scenes/marco_pantalla.gd), o "" si no son rivales.
+## a = tu Pokémon. Kyogre, Groudon, Rayquaza y Zangoose/Seviper: el de Rubí y Zafiro.
+## Los iniciales, el de su región según el tuyo; en Kanto y Johto, la edición de su color
+## (Charmander → Red, Bulbasaur → Green, Squirtle → Blue; Cyndaquil → Gold, Totodile →
+## Silver, Chikorita → la que no tenga el rival). Mew/Mewtwo: Red. Heracross/Pinsir: Gold/Silver.
+static func screen_frame(name_a: String, name_b: String) -> String:
+	if rivalry(name_a, name_b).is_empty():
+		return ""
+	var sa = species(name_a)
+	if sa in ["Kyogre", "Groudon", "Rayquaza", "Zangoose", "Seviper"]:
+		return "oras"
+	if sa in ["Mew", "Mewtwo"]:
+		return "red"
+	if sa == "Heracross":
+		return "gold"
+	if sa == "Pinsir":
+		return "silver"
+	var fa: String = SIGNATURE.get(sa, "")
+	match fa:
+		"fuego1": return "red"
+		"planta1": return "green"
+		"agua1": return "blue"
+		"fuego2": return "gold"
+		"agua2": return "silver"
+		"planta2": return "silver" if SIGNATURE.get(species(name_b), "") == "fuego2" else "gold"
+	return "hoenn" if fa.ends_with("3") else ""
 
 
 # ===========================================================================
@@ -1046,8 +1074,9 @@ static func draw_vs(d, v: Dictionary) -> void:
 	d.draw_rect(Rect2(dx, 126, 240, 2), Color.WHITE)
 	d.draw_line(Vector2(150, 34), Vector2(110, 126), Color(1, 1, 1, slide), 2.0)
 	# Pokémon
-	_vs_mon(d, Vector2(20 - dx, 56), v["a"], ca)
-	_vs_mon(d, Vector2(164 + dx, 42), v["b"], cb)
+	var ms := maxf(0.0, (t - 0.14) * VS_TIME * 1000.0)      # la animación empieza cuando llegan
+	_vs_mon(d, Vector2(20 - dx, 56), v["a"], ca, ms, true)
+	_vs_mon(d, Vector2(164 + dx, 42), v["b"], cb, ms, false)
 	# "VS" con un destello cuando llega
 	if t > 0.16 and t < 0.9:
 		var k = clampf((t - 0.16) / 0.08, 0.0, 1.0)
@@ -1062,9 +1091,62 @@ static func draw_vs(d, v: Dictionary) -> void:
 		d._text(Vector2((240 - d._text_w(title)) / 2.0, 135), title, Color.WHITE)
 
 
-static func _vs_mon(d, pos: Vector2, id: String, c: Color) -> void:
+## Sprite de Esmeralda animado (mundo/propios/batalla/animados/<especie>.png: tira de cuadros,
+## y <especie>.json: {"celda": [64, 64], "cuadros": [índices en orden], "ms": [duración de cada uno]}).
+## Se arman con tools/sprites_animados.py desde los PNG animados de Bulbagarden (Spr_3e_NNN.png).
+## espejo: mirando a la derecha (el tuyo, a la izquierda). {} si no está.
+const ANIM_DIRS := ["res://mundo/propios/batalla/animados", "user://mundo/propios/batalla/animados"]
+static var _anim_cache := {}
+
+
+static func gen3_anim(name: String, espejo: bool) -> Dictionary:
+	var key := "%s|%s" % [name, espejo]
+	if not _anim_cache.has(key):
+		var res := {}
+		for dir in ANIM_DIRS:
+			var p: String = "%s/%s.png" % [dir, name]
+			if res.is_empty() and ImgLoad.exists(p):
+				var img := ImgLoad.load(p)
+				var info = JSON.parse_string(FileAccess.get_file_as_string(p.get_basename() + ".json")) \
+						if FileAccess.file_exists(p.get_basename() + ".json") else null
+				if img != null and not img.is_empty() and info is Dictionary:
+					var cell := Vector2(info["celda"][0], info["celda"][1])
+					var n := int(img.get_width() / cell.x)
+					if espejo:
+						img.flip_x()       # la tira queda al revés: el cuadro i pasa a ser el n-1-i
+					res = {"tex": ImageTexture.create_from_image(img), "cell": cell, "n": n, "flip": espejo,
+							"cuadros": info["cuadros"], "ms": info["ms"]}
+		_anim_cache[key] = res
+	return _anim_cache[key]
+
+
+## Cuadro de la animación a los `ms` milisegundos. Al terminar vuelve al primero, la pose de
+## siempre (el último de los de Bulbagarden a veces es el cuadro alternativo del sprite).
+static func gen3_frame(a: Dictionary, ms: float) -> Rect2:
+	var seq: Array = a["cuadros"]
+	var k: int = seq[0]
+	var acc := 0.0
+	for i in seq.size():
+		acc += float(a["ms"][i])
+		if ms < acc:
+			k = seq[i]
+			break
+	if a["flip"]:
+		k = a["n"] - 1 - k
+	return Rect2(Vector2(k * a["cell"].x, 0), a["cell"])
+
+
+static func _vs_mon(d, pos: Vector2, id: String, c: Color, ms: float = 0.0, espejo: bool = false) -> void:
 	var size = 48
 	var r = Rect2(pos, Vector2(size, size))
+	var an := gen3_anim(species(CardDB.card_name(id)).to_lower(), espejo)
+	if not an.is_empty():
+		# Con sprite de Esmeralda: va suelto, sin recuadro, haciendo su animación de entrada
+		var cell: Vector2 = an["cell"]
+		var sp := Rect2((r.get_center() - cell / 2.0 + Vector2(0, -6)).round(), cell)
+		d.draw_texture_rect_region(an["tex"], sp, gen3_frame(an, ms))
+		_vs_name(d, pos, size, id, pos.y + size + 3)
+		return
 	d.draw_rect(r.grow(2), Color.WHITE)
 	d.draw_rect(r, c.darkened(0.45))
 	var tex: Texture2D = d.mesa._art_texture(id, size, size)
@@ -1073,8 +1155,12 @@ static func _vs_mon(d, pos: Vector2, id: String, c: Color) -> void:
 	else:
 		d.draw_circle(r.get_center(), 14, c.lightened(0.2))
 		d._text(r.get_center() + Vector2(-3, -6), "?", Color.WHITE)
+	_vs_name(d, pos, size, id, pos.y + size + 3)
+
+
+static func _vs_name(d, pos: Vector2, size: float, id: String, y: float) -> void:
 	var name = CardDB.card_name(id)
 	if d._text_w(name) > 72:
 		name = species(name)
 	var nx = pos.x + size / 2.0 - d._text_w(name) / 2.0
-	d._text(Vector2(clampf(nx, pos.x - 18, 236 - d._text_w(name)), pos.y + size + 3), name, Color.WHITE)
+	d._text(Vector2(clampf(nx, pos.x - 18, 236 - d._text_w(name)), y), name, Color.WHITE)

@@ -602,9 +602,30 @@ func _rename_input(event: InputEventKey, k: int) -> void:
 # Dibujo
 # ===========================================================================
 
+const PB_PURPLE := [Color("#a070d8"), Color("#8858c0")]
+
+
+## Encabezado: franja amarilla a rayas con una línea negra abajo (estilo Pinball).
+func _head(r: Rect2) -> void:
+	for y in int(r.size.y):
+		d.draw_rect(Rect2(r.position.x, r.position.y + y, r.size.x, 1), d.titulo.PB_YELLOW[(y / 2) % 2])
+	d.draw_rect(Rect2(r.position.x, r.end.y - 2, r.size.x, 2), d.titulo.PB_INK)
+
+
+## Caja blanca a rayitas de Pinball (un píxel más adentro, para que se vean las rayas del fondo).
+func _box(r: Rect2) -> void:
+	d.titulo._pb_box(r.grow(-1))
+
+
+## Ventanita encima de lo demás: la misma caja con borde negro.
+func _popup(r: Rect2) -> void:
+	d.draw_rect(r, d.titulo.PB_INK)
+	d.titulo._pb_box(r.grow(-1))
+
 func draw() -> void:
-	# Fondo: el diseño de mesa elegido, apagado, como en el título
-	d._menu_bg()
+	# Fondo a rayas violetas, al estilo de los menús de Pokémon Pinball (ver duel_titulo.gd)
+	d.titulo._pb_bg(PB_PURPLE)
+	d.draw_rect(Rect2(0, 147, d.W, 13), d.titulo.PB_INK)     # la ayuda de abajo va sobre negro
 	match screen:
 		"camp_list": _draw_camp_list()
 		"list", "rename":
@@ -618,11 +639,11 @@ func draw() -> void:
 ## Tus mazos de la campaña: un renglón doble por lugar (nombre y si está listo), el que está
 ## en uso marcado, y el menú de opciones al lado del elegido.
 func _draw_camp_list() -> void:
-	d._frame(Rect2(0, 0, d.W, 22))
+	_head(Rect2(0, 0, d.W, 22))
 	d._text(Vector2(9, 5), "YOUR DECKS", d.C_TEXT)
 	var cash := "₽%d" % camp.money
 	d._text(Vector2(d.W - 9 - d._text_w(cash), 5), cash, d.C_DIM)
-	d._frame(Rect2(0, 20, d.W, 100))
+	_box(Rect2(0, 20, d.W, 100))
 	for i: int in camp.DECK_SLOTS:
 		var y: int = 25 + i * 23
 		var sel: bool = i == cursor
@@ -647,7 +668,7 @@ func _draw_camp_list() -> void:
 		for o in CAMP_OPTIONS:
 			w = maxf(w, d._text_w(o))
 		var r := Rect2(d.W - w - 34, 24, w + 30, 10 + CAMP_OPTIONS.size() * 12)
-		d._frame(r)
+		_popup(r)
 		for j in CAMP_OPTIONS.size():
 			var oy := r.position.y + 5 + j * 12
 			d._stripe(Rect2(r.position.x + 3, oy - 1, r.size.x - 6, 12), j)
@@ -658,7 +679,7 @@ func _draw_camp_list() -> void:
 				col = d.C_HP_LOW
 			d._text(Vector2(r.position.x + 15, oy), CAMP_OPTIONS[j], col)
 	# Cuadro de abajo
-	d._frame(Rect2(0, 118, d.W, 42))
+	_box(Rect2(0, 118, d.W, 42))
 	if screen == "rename":
 		d._text(Vector2(9, 122), "Deck name (Enter saves · Esc cancels):", d.C_TEXT)
 		var blink := "_" if int(Clock.ms() / 400) % 2 == 0 else " "
@@ -759,12 +780,12 @@ func _draw_deck_panel(r: Rect2, deck_name_shown: String, deck: Array, desc: Stri
 
 func _draw_list() -> void:
 	var r: RuleSet = d.format_rules()
-	d._frame(Rect2(0, 0, d.W, 18))
+	_head(Rect2(0, 0, d.W, 18))
 	d._text(Vector2(8, 4), "DECK EDITOR", d.C_TEXT)
 	var fmt := "Format: " + (str(RuleSet.SEASONS[d.season_idx]["worlds"]) if d.format_upto < 0 else "Custom " + str(RuleSet.SEASONS[d.season_idx]["id"]))
 	d._text(Vector2(d.W - 8 - d._text_w(fmt), 4), fmt, d.C_DIM)
 	var left := Rect2(0, 16, 132, 132)
-	d._frame(left)
+	_box(left)
 	var rows := _list_rows()
 	var presets := Decks.names()
 	var vis := 10
@@ -808,7 +829,7 @@ func _draw_list() -> void:
 		d._text(Vector2(left.end.x - 13, 21 + (vis - 1) * 12), "▼", d.C_DIM)
 	# Derecha: el mazo elegido
 	var right := Rect2(130, 16, d.W - 130, 132)
-	d._frame(right)
+	_box(right)
 	var row: Dictionary = rows[cursor] if cursor < rows.size() else {}
 	match row.get("kind", ""):
 		"deck", "preset":
@@ -823,7 +844,7 @@ func _draw_list() -> void:
 		# Ventana para escribir el nombre
 		var w := Rect2(20, 58, d.W - 40, 40)
 		d.draw_rect(Rect2(0, 0, d.W, d.H), Color(0, 0, 0, 0.35))
-		d._frame(w)
+		_popup(w)
 		d._text(Vector2(w.position.x + 8, w.position.y + 5), "Deck name (Enter saves · Esc cancels):", d.C_DIM)
 		var blink := "_" if int(Clock.ms() / 400) % 2 == 0 else " "
 		d._text(Vector2(w.position.x + 8, w.position.y + 18), typed + blink, Color("#c03028"))
@@ -847,7 +868,7 @@ func _draw_edit() -> void:
 	var deck := _deck_array()
 	var errs: Array = _deck_info(deck)["errs"]
 	# Arriba: nombre, cantidad y la composición siempre a la vista
-	d._frame(Rect2(0, 0, d.W, 18))
+	_head(Rect2(0, 0, d.W, 18))
 	d._text_fit(Vector2(8, 4), ("⚑ " if editing_preset else "★ ") + deck_name, C_CAMP if editing_preset else d.C_TEXT, 84)
 	var cnt := "%d/60" % total
 	d._text(Vector2(94, 4), cnt, C_OK if errs.is_empty() else (d.C_TEXT if total < 60 else d.C_HP_LOW))
@@ -858,9 +879,9 @@ func _draw_edit() -> void:
 		var label: String = TABS[i] if i != 2 else "Trainer"
 		var w: float = d._text_w(label) + 8
 		var r := Rect2(x, 16, w, 13)
-		d.draw_rect(r, d.C_FRAME_OUT)
-		d.draw_rect(r.grow(-1), d.C_PANEL if i == tab else d.C_FRAME_MID)
-		d._text(Vector2(x + 4, 17), label, d.C_TEXT if i == tab else d.C_LIGHT)
+		d.draw_rect(r, d.titulo.PB_INK)
+		d.draw_rect(r.grow(-1), d.titulo.PB_YELLOW[0] if i == tab else Color("#e0e0e0"))
+		d._text(Vector2(x + 4, 17), label, d.titulo.PB_INK if i == tab else d.C_DIM)
 		x += w + 1
 	var sbox := Rect2(x + 2, 17, d.W - x - 4, 11)
 	d.draw_rect(sbox, d.C_INK)
@@ -872,7 +893,7 @@ func _draw_edit() -> void:
 	# Lista de cartas
 	var cards := _tab_cards()
 	var list := Rect2(0, 28, 152, 98)
-	d._frame(list)
+	_box(list)
 	var list_w := list.size.x
 	for i in range(scroll, mini(scroll + ROWS, cards.size())):
 		var id: String = cards[i]
@@ -907,7 +928,7 @@ func _draw_edit() -> void:
 		d._text(Vector2(list_w - 12, LIST_Y + (ROWS - 1) * ROW_H + 2), "▼", d.C_DIM)
 	# Derecha: la carta grande y sus datos en renglones cortos
 	var side := Rect2(150, 28, d.W - 150, 98)
-	d._frame(side)
+	_box(side)
 	var id_sel: String = cards[cursor] if cursor < cards.size() else ""
 	if id_sel != "":
 		var isz := 56.0
@@ -925,7 +946,7 @@ func _draw_edit() -> void:
 					ef = ef.left(int((side.size.x - 10) / 4) - 1) + "."
 				d.imagenes._draw_tiny(Vector2(side.position.x + 6, ty + 22), ef, d.C_DIM)
 	# Abajo: la carta (nombre · código · set) y si el mazo es válido
-	d._frame(Rect2(0, 124, d.W, 24))
+	_box(Rect2(0, 124, d.W, 24))
 	if id_sel != "":
 		var line := "%s · %s · %s" % [CardDB.card_name(id_sel), id_sel, CardDB.get_card(id_sel).get("set", "")]
 		d._text_scroll(Vector2(6, 127), line, d.C_TEXT, 228, "ed_info")

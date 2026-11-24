@@ -800,7 +800,10 @@ func _close_gallery() -> void:
 ## Cuántos píxeles de pantalla mide cada píxel del juego (escala entera).
 func _screen_scale() -> int:
 	var ws = d.get_window().size
-	return maxi(1, int(minf(ws.x / float(d.W), ws.y / float(d.H))))
+	var cs = d.get_window().content_scale_size      # 240x160, o 320x224 con el marco
+	if cs.x <= 0 or cs.y <= 0:
+		cs = Vector2i(d.W, d.H)
+	return maxi(1, int(minf(ws.x / float(cs.x), ws.y / float(cs.y))))
 
 
 ## Dónde va el arte en la galería y a qué tamaño (en píxeles del juego). Se agranda en

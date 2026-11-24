@@ -263,6 +263,8 @@ func _draw_moving_card(r: Rect2, m: PokemonInPlay, shadow: bool) -> void:
 func _check_vs() -> bool:
 	if not d.animations_on or d.intro != "" or d.game.phase not in ["main", "choice"] or d.game.rules.doubles:
 		return false        # en las batallas dobles no hay cara a cara
+	if d.anim_speed != 0:
+		return false        # solo con la velocidad Normal (en las rápidas queda el marco de la pantalla)
 	var mine: PokemonInPlay = d.game.players[d.human].active
 	var theirs: PokemonInPlay = d.game.players[1 - d.human].active
 	if mine == null or theirs == null:

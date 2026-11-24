@@ -299,6 +299,21 @@ def boton_ok():
     print("ok", img.size)
 
 
+def boton_duelo():
+    """ui/boton_duelo.png: "DUEL!" dorado como el título (las letras medianas de los carteles),
+    con borde oscuro y sombra, sin fondo: el juego lo pone sobre un botón rojo como el del OK."""
+    w, m = palabra("DUEL!", ORO, esp=1, letra=glifo_medio, sesgo=4)
+    mm = Image.new("L", (w.width + 2, w.height + 2), 0)
+    mm.paste(m, (1, 1), m)
+    borde = contorno(mm, 1)
+    img = Image.new("RGBA", (mm.width + 1, mm.height + 1), (0, 0, 0, 0))
+    img.paste(Image.new("RGBA", mm.size, (64, 8, 16, 200)), (1, 1), borde)     # sombra
+    img.paste(Image.new("RGBA", mm.size, TINTA), (0, 0), borde)
+    img.alpha_composite(w, (1, 1))
+    img.save(os.path.join(SALIDA, "boton_duelo.png"))
+    print("duelo", img.size)
+
+
 def carteles():
     """Los carteles del duelo (turno, KO, resultado), con las letras del título."""
     for nombre, texto, paleta in [("turno_tuyo", "YOUR TURN!", ORO), ("turno_rival", "OPPONENT'S TURN", PLATA),
@@ -313,4 +328,5 @@ def carteles():
 if __name__ == "__main__":
     main()
     boton_ok()
+    boton_duelo()
     carteles()

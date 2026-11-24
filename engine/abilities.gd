@@ -2717,6 +2717,13 @@ static func _attach_from_discard(g: Game, me: PlayerState, p: PokemonInPlay, n: 
 static func on_basic_played(g: Game, p: PokemonInPlay) -> void:
 	if g.stadium_name() == "Team Magma Hideout" and not p.name_has("Team Magma") and not p.is_fossil():
 		p.damage += 10
+		_stadium_hit(g, g.owner_of(p), p, 10)
+
+
+## Daño que hace el Estadio: queda en el registro y la mesa lo muestra con su efecto.
+static func _stadium_hit(g: Game, pl: PlayerState, p: PokemonInPlay, dmg: int) -> void:
+	g.log_msg("  %s: %d damage to %s." % [g.stadium_name(), dmg, p.display_name()])
+	g.checkup_log.append({"p": pl.index, "mon": p, "kind": "stadium", "src": g.stadium_name(), "dmg": dmg})
 
 
 ## Moneda(s) para despertarse: Relicanth obliga a sacar dos caras.
@@ -2799,6 +2806,7 @@ static func between_turns(g: Game) -> void:
 								g.shuffle(pl.deck))
 			if g.stadium_name() == "Desert Ruins" and p.is_ex() and p.max_hp() >= 100:
 				p.damage += 10
+				_stadium_hit(g, pl, p, 10)
 			if body(g, p, "Dark Healer") and Energy.count_type(p, "Darkness") > 0 and p.damage > 0 and fired(g, p, "Dark Healer"):
 				p.damage -= 10
 			if pl.is_active(p) and p.rotation == "asleep" and body(g, p, "Rest Up") and p.damage > 0 and fired(g, p, "Rest Up"):
@@ -2838,6 +2846,7 @@ static func between_turns(g: Game) -> void:
 			for x in pl.all_in_play():
 				if x.abilities().any(func(ab): return ab["kind"] == "Poké-Power"):
 					x.damage += 10
+					_stadium_hit(g, pl, x, 10)
 	# Poké-Bodies del Activo que actúan entre turnos
 	for pl in g.players:
 		var opp := g.other(pl)

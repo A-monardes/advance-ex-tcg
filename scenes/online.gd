@@ -241,9 +241,12 @@ func keys_text() -> String:
 
 
 func draw() -> void:
-	var panel := Rect2(0, 44, d.W, 100)
-	d._frame(panel)
-	d._text(Vector2(9, 48), "ONLINE DUEL", d.C_DIM)
+	# Estilo Pokémon Pinball (ver duel_titulo.gd): rayas azules, barra de título y una caja
+	var t = d.titulo
+	t._pb_bg(t.PB_BLUE)
+	t._pb_title(8, "ONLINE DUEL")
+	var panel := Rect2(6, 22, d.W - 12, 120)
+	t._pb_box(panel, "LINK" if screen == "link" else "GAME", true)
 	if screen == "link":
 		_draw_link(panel)
 		return
@@ -251,13 +254,12 @@ func draw() -> void:
 	var r: RuleSet = d.format_rules()
 	var vals := [names[d.my_deck], r.name, "Doubles (2 vs 2)" if d.doubles_mode else "Singles", server_url, "", ""]
 	for i in ROWS.size():
-		var y := 61 + i * 12 + (3 if i >= 4 else 0)
+		var y := 37 + i * 12 + (4 if i >= 4 else 0)
 		var sel: bool = i == row and screen == "menu"
-		d._stripe(Rect2(4, y - 1, d.W - 8, 12), i)
 		if sel:
-			d._text(Vector2(8, y), "▶", d.C_TEXT)
+			t._pb_corners(Rect2(11, y - 1, d.W - 22, 11))
 		if i < 4:
-			d._text(Vector2(17, y), ROWS[i], d.C_DIM)
+			d._text(Vector2(15, y), ROWS[i], d.C_DIM)
 			var v: String = vals[i]
 			if screen == "server" and i == 3:
 				v = typed + ("_" if int(_t * 2.5) % 2 == 0 else " ")
@@ -270,11 +272,11 @@ func draw() -> void:
 			var label: String = ROWS[i]
 			if i == 5 and screen == "code":
 				label = "Code: " + typed + ("_" if int(_t * 2.5) % 2 == 0 else " ")
-			d._text(Vector2(17, y), label, Color("#c03028") if sel or (i == 5 and screen == "code") else d.C_TEXT)
+			d._text(Vector2(15, y), label, Color("#c03028") if sel or (i == 5 and screen == "code") else d.C_TEXT)
 	if msg != "":
-		d._text_scroll(Vector2(9, 131), msg, d.C_HP_LOW, 222, "onlmsg")
+		d._text_scroll(Vector2(12, 128), msg, d.C_HP_LOW, 216, "onlmsg")
 	elif row == 1:
-		d._text_fit(Vector2(9, 131), "The game uses the format of the player who creates it.", d.C_DIM, 222)
+		d._text_fit(Vector2(12, 128), "The game uses the format of the player who creates it.", d.C_DIM, 222)
 
 
 func _draw_link(panel: Rect2) -> void:
@@ -291,7 +293,7 @@ func _draw_link(panel: Rect2) -> void:
 		_:
 			lines = [link.error if link != null and link.error != "" else "Something went wrong.", "", "Z / X: back"]
 	for i in lines.size():
-		d._text_fit(Vector2(9, 62 + i * 12), lines[i], d.C_TEXT, 222)
+		d._text_fit(Vector2(12, 38 + i * 12), lines[i], d.C_TEXT, 216)
 	if big != "":
 		var w: float = d._text_w(big) * 2
-		d._text_big(Vector2((d.W - w) / 2.0, 72), big, Color("#c03028"))
+		d._text_big(Vector2((d.W - w) / 2.0, 50), big, Color("#c03028"))

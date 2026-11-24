@@ -85,20 +85,22 @@ func _choose(season: int, upto: int) -> void:
 
 
 func draw() -> void:
-	d.draw_rect(Rect2(0, 0, d.W, d.H), d.C_BG)
-	# Encabezado
-	d._frame(Rect2(0, 0, d.W, 22))
-	d._text(Vector2(9, 5), "FORMAT", d.C_TEXT)
-	var right := "Fixed · for ranked play" if tab == 0 else "Free · for fun"
-	d._text(Vector2(d.W - 9 - d._text_w(right), 5), right, d.C_DIM)
-	var x := 2.0
+	# Estilo Pokémon Pinball (ver duel_titulo.gd): rayas rojas, barra de título y pestañas
+	var t = d.titulo
+	t._pb_bg(t.PB_RED)
+	t._pb_title(6, "FORMAT")
+	var x := 4.0
 	for i in TABS.size():
-		var w: float = d._text_w(TABS[i]) + 10
-		var r := Rect2(x, 21, w, 13)
-		d.draw_rect(r, d.C_FRAME_OUT)
-		d.draw_rect(r.grow(-1), d.C_PANEL if i == tab else d.C_FRAME_MID)
-		d._text(Vector2(x + 5, 22), TABS[i], d.C_TEXT if i == tab else d.C_LIGHT)
-		x += w + 1
+		var w: float = d._text_w(TABS[i]) + 12
+		var r := Rect2(x, 17, w, 12)
+		d.draw_rect(r.grow(1), t.PB_INK)
+		d.draw_rect(r, t.PB_YELLOW[0] if i == tab else Color("#e0e0e0"))
+		d._text(Vector2(x + 6, 18), TABS[i], t.PB_INK if i == tab else d.C_DIM)
+		x += w + 3
+	var right := "Fixed · for ranked play" if tab == 0 else "Free · for fun"
+	for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+		d._text(Vector2(d.W - 6 - d._text_w(right), 18) + o, right, t.PB_INK)
+	d._text(Vector2(d.W - 6 - d._text_w(right), 18), right, Color("#f8f8f8"))
 	if tab == 0:
 		_draw_official()
 	else:
@@ -126,9 +128,8 @@ var _list_t0 := 0
 
 
 func _draw_official() -> void:
-	var left := Rect2(0, 33, 120, 86)
-	d._frame(left)
-	d._frame(Rect2(118, 33, d.W - 118, 86))
+	d.titulo._pb_box(Rect2(3, 33, 115, 84))
+	d.titulo._pb_box(Rect2(121, 33, d.W - 124, 84))
 	var s: Dictionary = RuleSet.SEASONS[row]
 	# Arriba: ◀ Worlds 2005 ▶ (con ✓ si es el elegido)
 	d.draw_rect(Rect2(4, 37, 112, 12), Color("#d8e4f8"))
@@ -181,7 +182,7 @@ func _draw_official() -> void:
 			d._text(Vector2(d.W - 14, 45), "▲", d.C_DIM)
 		if off < extra:
 			d._text(Vector2(d.W - 14, 103), "▼", d.C_DIM)
-	d._frame(Rect2(0, 117, d.W, 43))
+	d.titulo._pb_box(Rect2(3, 119, d.W - 6, 39))
 	d._text_fit(Vector2(9, 121), "%s · %s" % [s["worlds"], s["where"]], d.C_TEXT, 222)
 	d._text_fit(Vector2(9, 132), "Season %s: %s." % [s["id"], str(s["name"]).split(" · ")[1]], d.C_DIM, 222)
 	d._text_fit(Vector2(9, 143), "◀▶ choose · Z select · Tab custom · X back", d.C_DIM, 222)
@@ -197,7 +198,7 @@ func _check(p: Vector2) -> void:
 
 
 func _draw_custom() -> void:
-	d._frame(Rect2(0, 33, d.W, 86))
+	d.titulo._pb_box(Rect2(3, 33, d.W - 6, 84))
 	var s: Dictionary = RuleSet.SEASONS[c_season]
 	var steps := _steps(c_season)
 	var mine: bool = c_season == d.season_idx       # la temporada del formato elegido
@@ -214,7 +215,6 @@ func _draw_custom() -> void:
 	for j in steps.size() + 1:
 		var yy := y0 + j * lh
 		var on := chosen >= j
-		d._stripe(Rect2(4, yy - 1, d.W - 8, lh), j + 1)
 		if row == j + 1:
 			d.draw_rect(Rect2(4, yy - 1, d.W - 8, lh), Color("#d8e4f8"))
 		d.draw_rect(Rect2(11, yy + 2, 5, 5), C_ON if on else d.C_DIM)
@@ -233,7 +233,7 @@ func _draw_custom() -> void:
 		d._text(Vector2(d.W - 9 - d._text_w(when), yy), when, d.C_DIM)
 	var yw := y0 + (steps.size() + 1) * lh + 1
 	d._text(Vector2(20, yw), "= %s card pool" % s["worlds"], C_WORLDS)
-	d._frame(Rect2(0, 117, d.W, 43))
+	d.titulo._pb_box(Rect2(3, 119, d.W - 6, 39))
 	var r := RuleSet.from_point(c_season, maxi(0, row - 1) if row > 0 else (chosen if chosen >= 0 else 0))
 	var top := r.name if not (row > 0 and row - 1 >= steps.size()) else "%s (same cards)" % s["worlds"]
 	d._text_fit(Vector2(9, 121), top, d.C_TEXT, 222)

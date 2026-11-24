@@ -18,18 +18,23 @@ func _title_input(k: int, accept: bool) -> void:
 		# Opciones: Animación, Efectos, Música y Mesa (las mismas de la pausa)
 		match k:
 			KEY_UP, KEY_DOWN:
-				d.opt_cursor = (d.opt_cursor + (1 if k == KEY_DOWN else 5)) % 6
+				d.opt_cursor = (d.opt_cursor + (1 if k == KEY_DOWN else 6)) % 7
 				d.snd.play("move")
 			KEY_LEFT, KEY_RIGHT:
 				if d.opt_cursor < 5:
 					d.paneles._pause_change(d.opt_cursor + 1, 1 if k == KEY_RIGHT else -1)
 					d.snd.play("ok")
+				elif d.opt_cursor == 5:
+					_toggle_border()
 			KEY_X, KEY_ESCAPE, KEY_BACKSPACE:
 				d.title_view = ""
 				d.snd.play("back")
 		if accept:
-			if d.opt_cursor == 5:         # Card art: bajar el arte de todas las cartas
+			if d.opt_cursor == 6:         # Card art: bajar el arte de todas las cartas
 				d.arte.download_all()
+			elif d.opt_cursor == 5:
+				_toggle_border()
+				return
 			else:
 				d.paneles._pause_change(d.opt_cursor + 1, 1)
 			d.snd.play("ok")
@@ -196,54 +201,46 @@ func _draw_duel_setup() -> void:
 	var r = d.format_rules()
 	d.my_deck = clampi(d.my_deck, 0, names.size() - 1)
 	d.opp_deck = clampi(d.opp_deck, 0, names.size() - 1)
-	var panel = Rect2(2, 40, d.W - 4, 107)
-	d._frame(panel)
-	d._text_center(42, "FREE DUEL", d.C_DIM)
-	var x1 := 110.0
-	var x2 := 174.0
-	var top := 53.0
-	d.draw_rect(Rect2(6, top - 1, d.W - 12, 1), C_FD_LINE)
-	d.draw_rect(Rect2(x1, top, 1, panel.end.y - top - 4), C_FD_LINE)
-	d.draw_rect(Rect2(x2, top, 1, panel.end.y - top - 4), C_FD_LINE)
+	# Estilo de la elección de mesa de Pokémon Pinball: rayas verdes, barra de título y cajas
+	_pb_bg(PB_GREEN)
+	_pb_title(8, "FREE DUEL")
+	var x1 := 108.0         # fin de la columna de los mazos
+	var x2 := 172.0         # fin de la columna del formato
+	var top := 20.0
+	var bot := 142.0
 	# Izquierda: los dos mazos (nombre, si es legal en el formato y su carta) y la dificultad
 	for i in 2:
-		var ry := top + 1 + i * 38
-		var cell := Rect2(5, ry, x1 - 7, 37)
-		if i == 1:
-			d.draw_rect(Rect2(6, ry - 1, x1 - 8, 1), C_FD_LINE)
+		var box := Rect2(4, top + i * 44, x1 - 4, 42)
+		var inn := _fd_box(box, "YOUR DECK" if i == 0 else "OPPONENT", i)
+		d.draw_rect(inn, Color(C_FD_ME if i == 0 else C_FD_OPP, 0.55))     # tu mazo en azul, el rival en rojo
 		var nm: String = names[d.my_deck if i == 0 else d.opp_deck]
-		d.draw_rect(cell, C_FD_ME if i == 0 else C_FD_OPP)       # tu mazo en azul, el del rival en rojo
-		_fd_cell_bg(cell, i)
-		d._text(Vector2(8, ry + 1), "Your deck" if i == 0 else "Opponent", d.C_DIM)
-		d._text_fit(Vector2(8, ry + 12), ("★ " if Decks.is_user(nm) else "") + nm, d.C_TEXT, 54)
+		d._text_fit(Vector2(inn.position.x + 2, inn.position.y + 1), ("★ " if Decks.is_user(nm) else "") + nm, d.C_TEXT, 62)
 		var legal = d._deck_legal(nm, r)
-		d.imagenes._draw_tiny(Vector2(8, ry + 30), "LEGAL TO USE" if legal else "NOT LEGAL IN THIS FORMAT",
+		d.imagenes._draw_tiny(Vector2(inn.position.x + 2, inn.end.y - 7), "LEGAL TO USE" if legal else "NOT LEGAL HERE",
 				Color("#388850") if legal else d.C_HP_LOW)
 		var cover := _deck_cover(nm)
-		var ir := Rect2(x1 - 34, ry + 2, 27, 26)
+		var ir := Rect2(inn.end.x - 27, inn.position.y + 1, 26, 26)
 		d.draw_rect(ir.grow(1), d.C_INK)
 		if cover != "":
-			d.imagenes._draw_card_image(Rect2(x1 - 33, ry + 2, 26, 26), cover)
-	var dy := top + 77
-	d.draw_rect(Rect2(6, dy - 1, x1 - 8, 1), C_FD_LINE)
-	_fd_cell_bg(Rect2(5, dy, x1 - 7, panel.end.y - dy - 4), 2)
-	d._text(Vector2(8, dy + 1), "Difficulty", d.C_DIM)
+			d.imagenes._draw_card_image(ir, cover)
+	var dbox := Rect2(4, top + 88, x1 - 4, bot - top - 88)
+	var din := _fd_box(dbox, "DIFFICULTY", 2)
 	var lv = "%d · %s" % [d.ai_level, SimpleAI.LEVEL_NAMES[d.ai_level - 1]]
-	d._text(Vector2(x1 - 4 - d._text_w(lv), dy + 1), lv, d.C_TEXT)
+	d._text(Vector2(din.get_center().x - d._text_w(lv) / 2.0, din.position.y + 3), lv, d.C_TEXT)
 	# Centro: el formato (con el logo del Mundial)
-	_fd_cell_bg(Rect2(x1 + 2, top, x2 - x1 - 3, panel.end.y - top - 4), 3)
-	d._text(Vector2((x1 + x2) / 2.0 - d._text_w("Format") / 2.0, top + 2), "Format", d.C_DIM)
+	var fin := _fd_box(Rect2(x1 + 4, top, x2 - x1 - 4, bot - top), "FORMAT", 3)
+	var fcx := fin.get_center().x
 	var fname: String = str(RuleSet.SEASONS[d.season_idx]["worlds"]).to_upper() if d.format_upto < 0 \
 			else "CUSTOM " + str(RuleSet.SEASONS[d.season_idx]["id"])
-	d.imagenes._draw_tiny(Vector2((x1 + x2) / 2.0 - fname.length() * 2.0, top + 14), fname, d.C_TEXT)
+	d.imagenes._draw_tiny(Vector2(roundf(fcx - fname.length() * 2.0), fin.position.y + 2), fname, d.C_TEXT)
 	var year = str(RuleSet.SEASONS[d.season_idx]["worlds"]).right(4)
 	var logo: Texture2D = d.fmt_menu._logo(year)
-	var lb = Rect2(x1 + 4, top + 22, x2 - x1 - 8, panel.end.y - top - 36)
+	var lb = Rect2(fin.position.x + 1, fin.position.y + 10, fin.size.x - 2, fin.size.y - 22)
 	# Abajo, chiquito: con cuántos sets se juega (los POP aparte; las promos no cuentan)
 	var ls: Array = r.legal_sets.filter(func(c): return not str(c).begins_with("np"))
 	var n_pop := ls.filter(func(c): return str(c).begins_with("pop")).size()
 	var cnt = "%d SETS" % (ls.size() - n_pop) + (" + %d POP" % n_pop if n_pop > 0 else "")
-	d.imagenes._draw_tiny(Vector2(roundf((x1 + x2) / 2.0 - cnt.length() * 2.0), panel.end.y - 11), cnt, d.C_DIM)
+	d.imagenes._draw_tiny(Vector2(roundf(fcx - cnt.length() * 2.0), fin.end.y - 8), cnt, d.C_DIM)
 	if d.format_upto >= 0:
 		# Custom: del set más viejo (arriba) al último que entra (abajo), con una flecha
 		var rng := _fd_set_range()
@@ -258,23 +255,15 @@ func _draw_duel_setup() -> void:
 		var sz = Vector2(logo.get_width(), logo.get_height()) * sc
 		d.draw_texture_rect(logo, Rect2(lb.position + (lb.size - sz) / 2.0, sz), false)
 	else:
-		d._text(Vector2((x1 + x2) / 2.0 - d._text_w(year) / 2.0, lb.get_center().y - 5), year, d.C_TEXT)
-	# Derecha: tipo de batalla (con su dibujo) y empezar
-	var by := top + 58
-	var bcell = Rect2(x2 + 2, top, panel.end.x - x2 - 6, by - top - 1)
-	d.draw_rect(bcell, C_FD_ME if d.doubles_mode else C_FD_OPP)     # simples rojo, dobles azul
-	_fd_cell_bg(bcell, 4)
-	var cx = (x2 + panel.end.x - 3) / 2.0
-	d._text(Vector2(cx - d._text_w("Battle") / 2.0, top + 2), "Battle", d.C_DIM)
+		d._text(Vector2(fcx - d._text_w(year) / 2.0, lb.get_center().y - 5), year, d.C_TEXT)
+	# Derecha: tipo de batalla (con su dibujo) y el botón de empezar (un recuadro naranja)
+	var bin := _fd_box(Rect2(x2 + 4, top, d.W - x2 - 8, 72), "BATTLE", 4)
+	d.draw_rect(bin, Color(C_FD_ME if d.doubles_mode else C_FD_OPP, 0.55))     # simples rojo, dobles azul
 	var bt = "Doubles" if d.doubles_mode else "Singles"
-	d._text(Vector2(cx - d._text_w(bt) / 2.0, top + 12), bt, d.C_TEXT)
-	_fd_battle_icon(Vector2(cx, top + 40), 14.0, d.doubles_mode)
-	d.draw_rect(Rect2(x2 + 2, by, panel.end.x - x2 - 6, 1), C_FD_LINE)
-	var sb = Rect2(x2 + 3, by + 10, panel.end.x - x2 - 8, 20)
-	_fd_cell_bg(Rect2(x2 + 2, by + 1, panel.end.x - x2 - 6, panel.end.y - by - 5), 5)
-	d._frame(sb)
-	d._text(Vector2(sb.get_center().x - d._text_w("Start duel!") / 2.0, sb.position.y + 5), "Start duel!",
-			C_FD_SEL if d.free_cell == 5 else d.C_TEXT)
+	d._text(Vector2(bin.get_center().x - d._text_w(bt) / 2.0, bin.position.y + 1), bt, d.C_TEXT)
+	_fd_battle_icon(Vector2(bin.get_center().x, bin.position.y + 34), 14.0, d.doubles_mode)
+	var sel_start: bool = d.free_cell == 5 and d.free_popup == ""
+	_fd_start_button(Rect2(x2 + 4, top + 78, d.W - x2 - 8, bot - top - 78), sel_start)
 	match d.free_popup:
 		"deck_me", "deck_opp":
 			_fd_deck_window(names, r)
@@ -282,6 +271,49 @@ func _draw_duel_setup() -> void:
 			_fd_diff_window()
 		"battle":
 			_fd_battle_window()
+
+
+## Botón de empezar: rojo en degradé como el OK de la elección de Pokémon iniciales
+## (ui/boton_ok.png), con "START" chiquito y "DUEL!" con las letras doradas del título
+## (ui/boton_duelo.png, de tools/logo_juego.py). Apagado si no está elegido.
+var _duel_btn: Texture2D
+
+
+func _fd_start_button(r: Rect2, sel: bool) -> void:
+	if _duel_btn == null:
+		var img := ImgLoad.load("res://ui/boton_duelo.png")
+		if img != null:
+			_duel_btn = ImageTexture.create_from_image(img)
+	var dim := 1.0 if sel or d.free_popup != "" else 0.78
+	var dc := Color(dim, dim, dim)
+	d.draw_rect(r.grow(1), PB_INK)
+	var h := int(r.size.y)
+	for y in h:
+		var k := y / float(h - 1)
+		d.draw_rect(Rect2(r.position.x, r.position.y + y, r.size.x, 1), Color8(int(240 - 90 * k), int(88 - 56 * k), int(64 - 32 * k)) * dc)
+	d.draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 1), Color8(255, 168, 136) * dc)
+	d.draw_rect(Rect2(r.position.x, r.end.y - 2, r.size.x, 2), Color8(96, 16, 24))
+	var label := "START"
+	var tx := roundf(r.get_center().x - (label.length() * 4 - 1) / 2.0)
+	for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+		d.imagenes._draw_tiny(Vector2(tx, r.position.y + 7) + o, label, Color8(96, 16, 24))
+	d.imagenes._draw_tiny(Vector2(tx, r.position.y + 7), label, Color("#f8f8f8") * dc)
+	if _duel_btn != null:
+		var p := (r.get_center() - _duel_btn.get_size() / 2.0 + Vector2(0, 5)).round()
+		d.draw_texture(_duel_btn, p, dc)
+	else:
+		d._text(Vector2(r.get_center().x - d._text_w("Start duel!") / 2.0, r.position.y + 20), "Start duel!", Color.WHITE)
+	if sel:
+		_pb_corners(r)
+
+
+## Caja del duelo libre: la de Pinball, con las esquinas rojas si es la elegida.
+func _fd_box(r: Rect2, header: String, cell: int) -> Rect2:
+	var sel: bool = cell == d.free_cell and d.free_popup == ""
+	var inner := _pb_box(r, header, sel)
+	if sel:
+		_pb_corners(r)
+	return inner
 
 
 ## Formato Custom: [el set más viejo, el último que entra] (sin POP ni promos).
@@ -359,17 +391,6 @@ func _fd_set_logo(r: Rect2, code: String) -> void:
 		d._text(Vector2(r.get_center().x - d._text_w(str(lines[k])) / 2.0, y0 + k * 10), str(lines[k]), d.C_TEXT)
 
 
-## Casilla del duelo libre: la elegida, con fondo y borde (los mazos ya tienen su color).
-func _fd_cell_bg(r: Rect2, cell: int) -> void:
-	if cell != d.free_cell or d.free_popup != "":
-		return
-	if cell in [2, 3, 5]:
-		d.draw_rect(r, Color("#d8e4f8"))
-	else:
-		d.draw_rect(r, Color(1, 1, 1, 0.25))
-	d._outline(r, C_FD_SEL)
-
-
 ## Imagen de la batalla (mundo/propios/ui/batalla_singles.png o batalla_dobles.png, propias del
 ## jugador), recortada al centro y achicada al rectángulo pedido. null si no está.
 var _fd_pics := {}
@@ -422,8 +443,8 @@ func _fd_battle_icon(c: Vector2, rad: float, doubles: bool) -> void:
 
 func _fd_window(r: Rect2, title: String) -> void:
 	d.draw_rect(Rect2(0, 0, d.W, d.H), Color(0, 0, 0, 0.35))
-	d._frame(r)
-	d._text(Vector2(r.position.x + 8, r.position.y + 4), title, d.C_DIM)
+	d.draw_rect(r.grow(1), PB_INK)
+	_pb_box(r, title, true)
 
 
 func _fd_deck_window(names: Array, r: RuleSet) -> void:
@@ -433,10 +454,9 @@ func _fd_deck_window(names: Array, r: RuleSet) -> void:
 	for i in range(d.popup_scroll, mini(d.popup_scroll + FD_LIST_ROWS, names.size())):
 		var y = win.position.y + 17 + (i - d.popup_scroll) * 11
 		var nm: String = names[i]
-		d._stripe(Rect2(win.position.x + 4, y - 1, lw, 11), i)
 		if i == d.popup_cursor:
-			d.draw_rect(Rect2(win.position.x + 4, y - 1, lw, 11), Color("#d8e4f8"))
-			d._text(Vector2(win.position.x + 6, y), "▶", d.C_TEXT)
+			d.draw_rect(Rect2(win.position.x + 4, y - 1, lw, 11), Color("#f8f0a0"))
+			_pb_corners(Rect2(win.position.x + 4, y - 1, lw, 11))
 		var legal = d._deck_legal(nm, r)
 		d._text_fit(Vector2(win.position.x + 15, y), ("★ " if Decks.is_user(nm) else "") + nm,
 				d.C_TEXT if legal else d.C_DIM, lw - 14)
@@ -468,36 +488,97 @@ func _fd_diff_window() -> void:
 	_fd_window(win, "DIFFICULTY")
 	for i in 5:
 		var y = win.position.y + 17 + i * 11
-		d._stripe(Rect2(win.position.x + 4, y - 1, win.size.x - 8, 11), i)
 		if i == d.popup_cursor:
-			d.draw_rect(Rect2(win.position.x + 4, y - 1, win.size.x - 8, 11), Color("#d8e4f8"))
-			d._text(Vector2(win.position.x + 7, y), "▶", d.C_TEXT)
+			d.draw_rect(Rect2(win.position.x + 4, y - 1, win.size.x - 8, 11), Color("#f8f0a0"))
+			_pb_corners(Rect2(win.position.x + 4, y - 1, win.size.x - 8, 11))
 		d._text(Vector2(win.position.x + 17, y), "%d · %s" % [i + 1, SimpleAI.LEVEL_NAMES[i]],
 				C_FD_SEL if i == d.ai_level - 1 else d.C_TEXT)
+
+
+## Opción "Border": el marco alrededor de la pantalla (ver scenes/marco_pantalla.gd).
+func _toggle_border() -> void:
+	d.border_on = not d.border_on
+	d._apply_border()
+	d._save_settings()
+	d.snd.play("ok")
 
 
 func _fd_battle_window() -> void:
 	var win := Rect2(28, 20, 184, 112)
 	d.draw_rect(Rect2(0, 0, d.W, d.H), Color(0, 0, 0, 0.35))
-	d._frame(win)
+	d.draw_rect(win.grow(1), PB_INK)
+	_pb_box(win)            # caja a rayitas blancas, como la elección de mesa de Pokémon Pinball
 	var half = win.size.x / 2.0
-	d.draw_rect(Rect2(win.position.x + half, win.position.y + 5, 1, win.size.y - 10), C_FD_LINE)
 	for i in 2:
 		var hx = win.position.x + i * half
 		var sel = i == d.popup_cursor
-		var cell = Rect2(hx + 4, win.position.y + 4, half - 8, win.size.y - 8)
-		d.draw_rect(cell, C_FD_ME if i == 1 else C_FD_OPP)
-		if sel:
-			d._outline(cell, C_FD_SEL)
-		else:
-			d.draw_rect(cell, Color(1, 1, 1, 0.35))
-		var lbl := "DOUBLES" if i == 1 else "SINGLES"
-		d._text(Vector2(hx + half / 2.0 - d._text_w(lbl) / 2.0, win.position.y + 9), lbl, C_FD_SEL if sel else d.C_TEXT)
-		_fd_battle_icon(Vector2(hx + half / 2.0, win.position.y + 54), 24.0, i == 1)
+		var card := Rect2(hx + 7, win.position.y + 8, half - 14, win.size.y - 16)
+		var ri := _pinball_card(card, sel)
+		d.draw_rect(ri, C_FD_ME if i == 1 else C_FD_OPP)
+		_fd_battle_icon(Vector2(ri.get_center().x, ri.position.y + 42), 19.0, i == 1)
 		var sub = "2 vs 2" if i == 1 else "1 vs 1"
-		d._text(Vector2(hx + half / 2.0 - d._text_w(sub) / 2.0, win.position.y + 90), sub, d.C_DIM)
+		d._text(Vector2(ri.get_center().x - d._text_w(sub) / 2.0, ri.end.y - 15), sub, C_FD_SEL if sel else d.C_DIM)
+		if not sel:
+			d.draw_rect(ri, Color(1, 1, 1, 0.4))
+		_pinball_tab(card, "DOUBLES" if i == 1 else "SINGLES", sel)
 	d._text(Vector2(win.position.x - 9, win.get_center().y - 5), "◀", d.C_LIGHT)
 	d._text(Vector2(win.end.x + 3, win.get_center().y - 5), "▶", d.C_LIGHT)
+
+
+## Recuadro naranja con una pestaña arriba, como los de RUBY y SAPPHIRE de Pokémon Pinball.
+## Devuelve el rectángulo de adentro (para el dibujo); la pestaña va después, con
+## _pinball_tab. El que no está elegido va apagado.
+const C_PB_L := Color("#f8c888")
+const C_PB_M := Color("#d89030")
+const C_PB_D := Color("#805010")
+
+
+func _pinball_card(r: Rect2, sel: bool) -> Rect2:
+	var l := C_PB_L if sel else C_PB_L.darkened(0.25)
+	var m := C_PB_M if sel else C_PB_M.darkened(0.25)
+	var dk := C_PB_D if sel else C_PB_D.darkened(0.15)
+	var x := r.position.x
+	var y := r.position.y
+	var w := r.size.x
+	var h := r.size.y
+	d.draw_rect(r, m)
+	d.draw_rect(Rect2(x, y, w, 1), l)                  # luz arriba y a la izquierda
+	d.draw_rect(Rect2(x, y, 1, h), l)
+	d.draw_rect(Rect2(x + w - 1, y + 1, 1, h - 1), dk)  # sombra a la derecha y abajo
+	d.draw_rect(Rect2(x + 1, y + h - 1, w - 1, 1), dk)
+	var ri := Rect2(x + 3, y + 5, w - 6, h - 8)
+	d.draw_rect(Rect2(ri.position.x - 1, ri.position.y - 1, ri.size.x + 1, 1), dk)   # hundido
+	d.draw_rect(Rect2(ri.position.x - 1, ri.position.y - 1, 1, ri.size.y + 1), dk)
+	d.draw_rect(Rect2(ri.end.x, ri.position.y - 1, 1, ri.size.y + 2), l)
+	d.draw_rect(Rect2(ri.position.x - 1, ri.end.y, ri.size.x + 2, 1), l)
+	d.draw_rect(ri, Color("#f8f8f8"))
+	return ri
+
+
+## La pestaña del recuadro (va después del dibujo de adentro, que queda tapado arriba).
+func _pinball_tab(r: Rect2, label: String, sel: bool) -> void:
+	var m := C_PB_M if sel else C_PB_M.darkened(0.25)
+	var dk := C_PB_D if sel else C_PB_D.darkened(0.15)
+	var x := r.position.x
+	var w := r.size.x
+	var ri := Rect2(x + 3, r.position.y + 5, w - 6, r.size.y - 8)
+	# Pestaña: trapecio que baja desde el borde de arriba, con el nombre en blanco
+	var tw := label.length() * 4 + 9
+	var x0 := roundf(x + (w - tw) / 2.0) - 8
+	var x1 := x0 + tw + 16
+	for k in 8:
+		var ty := ri.position.y - 1 + k
+		d.draw_rect(Rect2(x0 + k, ty, x1 - x0 - 2 * k, 1), m)
+		d.draw_rect(Rect2(x0 + k, ty, 1, 1), dk)
+		d.draw_rect(Rect2(x1 - k - 1, ty, 1, 1), dk)
+	d.draw_rect(Rect2(x0 + 8, ri.position.y + 7, x1 - x0 - 16, 1), dk)
+	var tx := roundf(x + (w - (label.length() * 4 - 1)) / 2.0)
+	var ty0 := ri.position.y
+	for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+		d.imagenes._draw_tiny(Vector2(tx, ty0) + o, label, dk)
+	d.imagenes._draw_tiny(Vector2(tx, ty0), label, Color("#f8f8f8") if sel else Color("#e8e0d8"))
+
+
 ## Pantalla de título animada: la escena al azar de data/titulos.json, el logo y "PRESS START".
 func _draw_attract() -> void:
 	d.draw_rect(Rect2(0, 0, d.W, d.H), d.C_BG)
@@ -560,36 +641,40 @@ func _draw_title() -> void:
 	elif d.title_view == "online":
 		d.online.draw()
 	else:
-		# Menú principal: cuatro opciones
-		var panel := Rect2(64, 56, 112, 70)
-		d._frame(panel)
+		# Menú principal: caja de Pinball con su pestaña y la flechita amarilla
+		var panel := Rect2(62, 52, 116, 78)
+		d.draw_rect(panel.grow(2), Color(0, 0, 0, 0.25))
+		var inner := _pb_box(panel, "MENU", true)
 		for i in d.TITLE_ROWS:
-			var y = panel.position.y + 6 + i * 12
+			var y = inner.position.y + 2 + i * 12
 			var sel = i == d.title_row and d.title_view == ""
 			var label: String = d.TITLE_ITEMS[i]
 			var col: Color = Color("#c03028") if sel else d.C_TEXT
-			d._stripe(Rect2(panel.position.x + 4, y - 1, panel.size.x - 8, 12), i)
 			if i == 0 and not d.CAMPAIGN_ON:
 				label = "Campaign (soon)"
 				col = d.C_DIM
 			if sel:
-				d._text(Vector2(panel.position.x + 8, y), "▶", d.C_TEXT)
-			d._text(Vector2(panel.position.x + 18, y), label, col)
+				_pb_corners(Rect2(inner.position.x + 2, y - 1, inner.size.x - 4, 11))
+			d._text(Vector2(inner.position.x + 8, y), label, col)
 	if d.title_view == "options":
-		var o := Rect2(40, 40, 160, 84)
-		d._frame(o)
-		d._text(Vector2(o.position.x + 9, o.position.y + 4), "OPTIONS", d.C_DIM)
-		for i in 6:
-			var y := o.position.y + 16 + i * 11
+		# Pantalla de opciones de Pinball: rayas naranjas, barra de título y una caja
+		_pb_bg(PB_ORANGE)
+		_pb_title(12, "OPTIONS")
+		var o := Rect2(14, 28, d.W - 28, 108)
+		var oi := _pb_box(o, "SETTINGS", true)
+		for i in 7:
+			var y := oi.position.y + 3 + i * 12
 			var sel = i == d.opt_cursor
-			d._stripe(Rect2(o.position.x + 4, y - 1, o.size.x - 8, 11), i)
 			if sel:
-				d._text(Vector2(o.position.x + 8, y), "▶", d.C_TEXT)
-			var label: String = d.PAUSE_ITEMS[i + 1] if i < 5 else "Card art"
-			d._text(Vector2(o.position.x + 17, y), label, d.C_TEXT)
-			var v = d.paneles._pause_value(i + 1) if i < 5 else (d.arte.batch_text() if d.arte.batch_text() != "" else "Get all")
-			var vs = ("◀ " + v + " ▶") if sel and i < 5 else (("Z " + v) if sel else v)
+				_pb_corners(Rect2(o.position.x + 5, y - 1, o.size.x - 10, 11))
+			var label: String = d.PAUSE_ITEMS[i + 1] if i < 5 else ("Border" if i == 5 else "Card art")
+			d._text(Vector2(o.position.x + 10, y), label, d.C_TEXT)
+			var v = d.paneles._pause_value(i + 1) if i < 5 else (("On" if d.border_on else "Off") if i == 5 \
+					else (d.arte.batch_text() if d.arte.batch_text() != "" else "Get all"))
+			var vs = ("◀ " + v + " ▶") if sel and i < 6 else (("Z " + v) if sel else v)
 			d._text(Vector2(o.end.x - 8 - d._text_w(vs), y), vs, d.C_TEXT if sel else d.C_DIM)
+	if d.title_view in ["options", "duel", "online", "format"]:
+		d.draw_rect(Rect2(0, 146, d.W, 14), PB_INK)          # la ayuda va sobre una franja negra
 	if d.title_msg != "":
 		d._text_scroll(Vector2(6, 149), d.title_msg, Color("#f8a090"), 228, "title_msg")
 	elif d.title_view == "duel":
@@ -605,3 +690,82 @@ func _draw_title() -> void:
 		d._text_scroll(Vector2(6, 149), d.online.keys_text(), d.C_LIGHT, 228, "online_keys")
 	else:
 		d._text(Vector2(6, 149), "▲▼ select · Z accept", d.C_LIGHT)
+
+
+# ===========================================================================
+# Estilo Pokémon Pinball (menús principales)
+# ===========================================================================
+# Fondo a rayas de color (naranja en Options, verde en el duelo libre), barra de título negra
+# con una línea amarilla, cajas blancas a rayitas con la esquina redondeada y una pestaña
+# amarilla arriba a la izquierda, y de cursor cuatro esquinas rojas que se abren y se cierran.
+
+const PB_ORANGE := [Color("#f8a000"), Color("#f87000")]
+const PB_GREEN := [Color("#58d068"), Color("#38b048")]
+const PB_BLUE := [Color("#5890f0"), Color("#3870d8")]
+const PB_RED := [Color("#f06858"), Color("#d84838")]
+const PB_YELLOW := [Color("#f8e800"), Color("#f8d000")]
+const PB_INK := Color("#202020")
+
+
+func _pb_bg(cols: Array, r: Rect2 = Rect2()) -> void:
+	if r.size == Vector2.ZERO:
+		r = Rect2(0, 0, d.W, d.H)
+	for y in int(r.size.y):
+		d.draw_rect(Rect2(r.position.x, r.position.y + y, r.size.x, 1), cols[(y / 2) % 2])
+
+
+## Barra negra de lado a lado con una línea amarilla y el título en el medio.
+func _pb_title(y: float, title: String) -> void:
+	d.draw_rect(Rect2(0, y, d.W, 5), PB_INK)
+	d.draw_rect(Rect2(0, y + 2, d.W, 1), PB_YELLOW[0])
+	var w: float = d._text_w(title)
+	var bx := Rect2(floorf((d.W - w) / 2.0) - 6, y - 4, w + 12, 13)
+	d.draw_rect(bx, PB_INK)
+	d.draw_rect(bx.grow(-1), Color("#f8f8f8"))
+	d.draw_rect(bx.grow(-2), PB_INK)
+	d._text(Vector2(bx.position.x + 6, y - 3), title, Color("#f8f8f8"))
+
+
+## Caja blanca a rayitas con las esquinas redondeadas; con `header`, una pestaña amarilla
+## arriba a la izquierda (con el texto). Devuelve dónde empieza el contenido.
+func _pb_box(r: Rect2, header: String = "", sel: bool = false) -> Rect2:
+	var x := r.position.x
+	var w := r.size.x
+	for y in int(r.size.y):
+		var cut := 0
+		if y == 0 or y == int(r.size.y) - 1:
+			cut = 2
+		elif y == 1 or y == int(r.size.y) - 2:
+			cut = 1
+		d.draw_rect(Rect2(x + cut, r.position.y + y, w - 2 * cut, 1), Color("#f8f8f8") if y % 2 == 0 else Color("#e0e0e0"))
+	var top := r.position.y
+	if header != "":
+		var hw: float = d._text_w(header) + 14
+		for y in 10:
+			var cut := 2 if y == 0 else (1 if y == 1 else 0)
+			var slant := maxi(0, y - 1)       # la punta de la derecha baja en diagonal
+			d.draw_rect(Rect2(x + cut, top + y, hw + 9 - slant - cut, 1), PB_YELLOW[(y / 2) % 2])
+		d._text(Vector2(x + 5, top), header, PB_INK if sel else Color("#806000"))
+		top += 11
+	return Rect2(x + 3, top + 1, w - 6, r.end.y - top - 3)
+
+
+## Cursor de selección: cuatro esquinas rojas en L con borde blanco que se abren y se cierran
+## (tres cuadros: 0, 1 y 2 píxeles hacia afuera, y vuelta).
+const PB_CORNER := Color("#ff2129")
+
+
+func _pb_corners(r: Rect2) -> void:
+	var step: int = [0, 1, 2, 1][int(Clock.ms() / 160) % 4]
+	var a := r.grow(1 + step)
+	var arm := clampf(roundf(minf(a.size.x, a.size.y) / 2.6), 3.0, 7.0)     # en renglones chicos, más cortas
+	for cx in 2:
+		for cy in 2:
+			var x: float = a.position.x if cx == 0 else a.end.x - arm
+			var y: float = a.position.y if cy == 0 else a.end.y - arm
+			var vx: float = a.position.x if cx == 0 else a.end.x - 2     # brazo vertical
+			var hy: float = a.position.y if cy == 0 else a.end.y - 2     # brazo horizontal
+			d.draw_rect(Rect2(x - 1, hy - 1, arm + 2, 4), Color.WHITE)
+			d.draw_rect(Rect2(vx - 1, y - 1, 4, arm + 2), Color.WHITE)
+			d.draw_rect(Rect2(x, hy, arm, 2), PB_CORNER)
+			d.draw_rect(Rect2(vx, y, 2, arm), PB_CORNER)
