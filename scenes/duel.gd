@@ -738,6 +738,10 @@ func _do(action: Dictionary) -> void:
 		_apply_now(action)
 		return
 	var coins := _preview_coins(action)
+	if action["t"] == "attack":
+		# Los de la Banca que cambian el golpe se avisan después (los Activos ya tienen su salto)
+		_bodies_pending = game.bodies_for_action(action).filter(func(h): return h is String or not game.players.any(
+				func(pl): return pl.active == h or pl.active2 == h))
 	match action["t"]:
 		"attack":
 			# Ataques que no le hacen daño a nadie (buscar, robar, unir Energía...): como un
@@ -869,6 +873,9 @@ func _check_recovered(piles: Array) -> void:
 
 
 func _rebuild_menu() -> void:
+	paneles._atk_bodies.clear()
+	bodies_now = game.bodies_in_effect() if mode == "duel" and game != null and game.phase == "main" \
+			and game.actor() == human and animations_on else {}
 	menu_items.clear()
 	cursor = 0
 	scroll = 0
@@ -1280,6 +1287,7 @@ func _draw_screen() -> void:
 	anim_ataques._draw_moves()
 	anim_ataques._draw_anim()
 	mesa._draw_stadium_entry()
+	anim_pokemon._draw_body_marks()
 	anim_pokemon._draw_check()
 	anim_pokemon._draw_bench_fx()
 	anim_pokemon._draw_ko()
@@ -1712,6 +1720,8 @@ var _stage_cache := {}
 const TAB_COLORS := {"body": [Color("#3c9848"), Color("#78d080")], "power": [Color("#d03828"), Color("#f88868")],
 		"off": [Color("#8c8c94"), Color("#b0b0b8")]}
 var _body_pops: Array = []     # en cola: [jugador, nombre]
+var bodies_now := {}           # en tu turno: Pokémon cuyo Poké-Body cambia algo ahora (late su pestaña)
+var _bodies_pending: Array = []   # Pokémon de la Banca cuyo Poké-Body cambió el ataque en curso ("stadium": el Estadio)
 var _body_pop := {}            # el que se ve: {"p", "name", "t"}
 var _stadium_layout := {}
 var doubles_preview := false        # maqueta de la mesa doble (mientras se arma el modo)

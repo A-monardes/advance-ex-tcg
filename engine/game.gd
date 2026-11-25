@@ -39,6 +39,8 @@ var body_events: Array = []     # [PokemonInPlay, nombre]: Poké-Bodies que actu
 var coin_log: Array[bool] = []  # todas las monedas tiradas (para la animación)
 var coin_reasons: Array[String] = []
 var deck_log: Array = []        # [{"k": "shuffle"|"draw", "p", "ids"}] para las animaciones
+var stadium_muted := false     # el Estadio se apaga para la misma prueba
+var muted_bodies: Array = []   # Poké-Bodies que se apagan para probar si cambian algo (ver bodies_in_effect)
 var checkup_log: Array = []     # [{"p", "mon", "kind", "dmg"}] daño de veneno/quemadura entre turnos (para la mesa)
 var checkup_mark := -1           # cuántos body_events había al empezar el chequeo (los de antes son del ataque)
 var ko_log: Array = []          # [{"p", "slot", "id", "name"}] Pokémon fuera de combate, para la animación
@@ -219,6 +221,8 @@ func owner_of(mon: PokemonInPlay) -> PlayerState:
 
 
 func stadium_name() -> String:
+	if stadium_muted:
+		return ""        # prueba de "¿el Estadio cambia algo?" (ver bodies_in_effect)
 	return CardDB.card_name(stadium) if stadium != "" else ""
 
 
@@ -1535,6 +1539,24 @@ func _apply_weakness(attacker: PokemonInPlay, target: PokemonInPlay, dmg: int) -
 	return dmg * rules.weakness_multiplier
 
 
+## La Debilidad no se aplicó por una carta en juego (Dark Hole, Protective Orb...): queda en el
+## registro y en checkup_log ("kind": "body") para que la mesa muestre quién lo hizo.
+func _note_weakness_blocked(attacker: PokemonInPlay, target: PokemonInPlay) -> void:
+	var blk := Abilities.weakness_blocker(self, attacker, target)
+	if blk.is_empty():
+		return
+	var wt := ""
+	for t in attacker.types():
+		if t in target.data().get("weaknesses", []):
+			wt = t
+	var src: PokemonInPlay = blk["mon"]
+	log_msg("  %s%s: %s's %s Weakness doesn't apply." % [blk["name"], " (%s)" % src.display_name() if src != null and src != target else "",
+			target.display_name(), wt])
+	var who := owner_of(src if src != null else target)
+	checkup_log.append({"p": who.index if who != null else 0, "mon": src if src != null else target, "kind": "body",
+			"src": blk["name"], "bkind": blk["kind"], "target": target, "wtype": wt, "dmg": 0})
+
+
 ## Daño de un ataque. Devuelve el daño final hecho.
 func deal_attack_damage(attacker: PokemonInPlay, target: PokemonInPlay, base: int, is_active: bool, ignore: Dictionary) -> int:
 	if target == null or base <= 0:
@@ -1547,6 +1569,8 @@ func deal_attack_damage(attacker: PokemonInPlay, target: PokemonInPlay, base: in
 		if not ignore.get("w", false) and not Abilities.ignores_weakness(self, target) \
 				and attacker.types().any(func(t): return t in Abilities.weakness_types(self, target)):
 			dmg = _apply_weakness(attacker, target, dmg)
+		elif not ignore.get("w", false):
+			_note_weakness_blocked(attacker, target)
 		if not ignore.get("r", false) and not Abilities.ignores_resistance(self, attacker, target) \
 				and attacker.types().any(func(t): return t in target.data().get("resistances", [])):
 			dmg -= Abilities.resistance_value(self, rules.resistance_value)
@@ -1672,7 +1696,7 @@ func _describe_raw(a: Dictionary) -> String:
 				if p.has("e"):
 					s += " (" + CardDB.card_name(owner.slot(p["tg"]).energy[p["e"]]).replace(" Energy", "") + ")"
 			if p.has("b"):
-				s += " → " + slot_name(me, p["b"])
+				s += " → " + slot_name(opp if n in Trainers.OPP_BENCH else me, p["b"])
 			if p.has("ev"):
 				s += " → " + CardDB.card_name(p["ev"])
 			if p.has("to"):
@@ -1721,3 +1745,106 @@ func _describe_raw(a: Dictionary) -> String:
 			return s
 		"end": return "End turn"
 	return str(a)
+
+
+# ===========================================================================
+# Poké-Bodies que cambian algo en este momento (para mostrarlos en la mesa)
+# ===========================================================================
+# Se prueba con el Poké-Body apagado: si cambian las jugadas posibles o lo que haría un
+# ataque, ese Poké-Body está actuando. Solo para la pantalla: no toca la partida.
+
+## Los Pokémon en juego que tienen algún Poké-Body.
+func _body_holders() -> Array:
+	var out: Array = []
+	for pl in players:
+		for s in pl.slots():
+			var p := pl.slot(s)
+			if p != null and p.abilities().any(func(a): return a.get("kind", "") == "Poké-Body"):
+				out.append(p)
+	return out
+
+
+## [jugador, lugar] de un Pokémon en juego (para encontrarlo en una copia de la partida).
+func _where(p: PokemonInPlay) -> Array:
+	for pl in players:
+		for s in pl.slots():
+			if pl.slot(s) == p:
+				return [pl.index, s]
+	return []
+
+
+## Cómo quedó la mesa (daño, estados, Energías, manos, Premios): para comparar dos pruebas.
+func _outcome_print() -> String:
+	var out := ""
+	for pl in players:
+		out += "|%d,%d,%d,%d" % [pl.hand.size(), pl.prizes.size(), pl.discard.size(), pl.deck.size()]
+		for s in pl.slots():
+			var p := pl.slot(s)
+			if p != null:
+				out += ";%s,%d,%s,%d,%s,%d,%s" % [p.top(), p.damage, p.rotation, p.poison, p.burned, p.energy.size(), p.tool]
+	return out + "|%d|%s" % [winner, stadium]
+
+
+## Lo que deja un ataque (u otra jugada) en una copia de la partida, con `mute` apagado
+## (y el Estadio, si `mute_stadium`).
+func _probe(a: Dictionary, mute: Array, mute_stadium := false) -> String:
+	var c := clone(-1)
+	c.stadium_muted = mute_stadium
+	for w in mute:
+		var cp := c.players[w[0]].slot(w[1])
+		if cp != null:
+			c.muted_bodies.append(cp)
+	c.apply(a)
+	return c._outcome_print()
+
+
+## Los Pokémon cuyo Poké-Body cambia algo de lo que puede hacer ahora quien juega: las
+## jugadas posibles o el resultado de algún ataque. {Pokémon: true}; si el Estadio también
+## cambia algo, la clave "stadium".
+func bodies_in_effect() -> Dictionary:
+	var out := {}
+	if phase != "main":
+		return out
+	var base_actions := str(legal_actions())
+	var attacks := legal_actions().filter(func(x): return x["t"] == "attack")
+	var base_res := {}
+	for a in attacks:
+		base_res[str(a)] = _probe(a, [])
+	for h in _body_holders():
+		muted_bodies = [h]
+		var changed := str(legal_actions()) != base_actions
+		muted_bodies = []
+		if not changed:
+			var w := _where(h)
+			for a in attacks:
+				if _probe(a, [w]) != base_res[str(a)]:
+					changed = true
+					break
+		if changed:
+			out[h] = true
+	if stadium != "":
+		stadium_muted = true
+		var changed_st := str(legal_actions()) != base_actions
+		stadium_muted = false
+		if not changed_st:
+			for a in attacks:
+				if _probe(a, [], true) != base_res[str(a)]:
+					changed_st = true
+					break
+		if changed_st:
+			out["stadium"] = true
+	return out
+
+
+## Los Poké-Bodies que cambiaron el resultado de esta jugada (antes de hacerla).
+func bodies_for_action(a: Dictionary) -> Array:
+	var out: Array = []
+	if a.get("t", "") != "attack":
+		return out
+	var base := _probe(a, [])
+	for h in _body_holders():
+		if _probe(a, [_where(h)]) != base:
+			out.append(h)
+	if stadium != "" and _probe(a, [], true) != base:
+		out.append("stadium")
+	return out

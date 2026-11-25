@@ -529,6 +529,11 @@ func _draw_body_tab(r: Rect2, m: PokemonInPlay, below: bool) -> void:
 		d.draw_rect(Rect2(sx, tab.position.y + 1, seg_w, tab.size.y - 2), cols[0])
 		d.draw_rect(Rect2(sx, tab.position.y + 1, seg_w, 1), cols[1])
 		sx += seg_w
+	if d.bodies_now.has(m):
+		# En tu turno, si su Poké-Body cambia algo de lo que podés hacer, la pestaña late
+		var pulse := 0.5 + 0.5 * sin(Clock.ms() / 160.0)
+		d._outline(tab.grow(1), Color(d.anim_pokemon.C_BODY, 0.6 + 0.4 * pulse))
+		d.draw_rect(tab.grow(-1), Color(1, 1, 1, 0.45 * pulse))
 	var pk = _body_pop_k(d.game.owner_of(m).index) if bodies.any(func(b): return b[1] and b[2] == "body") else -1.0
 	if pk >= 0.0:              # el Poké-Body acaba de actuar: salta y se aclara
 		var e = 1.0 - pk

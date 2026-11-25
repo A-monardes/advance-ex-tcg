@@ -141,6 +141,24 @@ func _update_hp(delta: float) -> void:
 ## Daño de veneno y quemadura del chequeo entre turnos: se ve aparte, después del ataque
 ## (la barra de PS se queda donde la dejó el golpe hasta que le toca).
 func _collect_checkup() -> void:
+	if not d._bodies_pending.is_empty() and d.anim.is_empty() and d.coin_anim.is_empty():
+		# Poké-Bodies de la Banca que cambiaron el ataque: un aviso por cada uno (salvo que ya
+		# tenga el de la Debilidad)
+		for h in d._bodies_pending:
+			if h is String:
+				# El Estadio cambió el golpe: brilla su cartel y se explica con su texto
+				if d.game.stadium != "" and not d.check_anim.any(func(c): return c["kind"] == "body" and c["bkind"] == "stadium"):
+					d.check_anim.append({"kind": "body", "bkind": "stadium", "p": d.game.stadium_owner, "mon": null, "target": null,
+							"wtype": "", "dmg": 0, "src": d.game.stadium_name(), "text": _stadium_effect_text(d.game.stadium), "t": 0.0})
+				continue
+			var pl: PlayerState = d.game.owner_of(h)
+			if not pl.bench.has(h) or d.check_anim.any(func(c): return c["kind"] == "body" and c["mon"] == h) \
+					or d.game.checkup_log.slice(d.checkup_seen).any(func(c): return c["kind"] == "body" and c["mon"] == h):
+				continue
+			var names: Array = h.abilities().filter(func(ab): return ab.get("kind", "") == "Poké-Body")
+			d.check_anim.append({"kind": "body", "bkind": "generic", "p": pl.index, "mon": h, "target": null, "wtype": "", "dmg": 0,
+					"src": " / ".join(names.map(func(ab): return ab["name"])), "text": str(names[0].get("text", "")) if not names.is_empty() else "", "t": 0.0})
+		d._bodies_pending = []
 	if d.game.checkup_log.size() <= d.checkup_seen:
 		return
 	var batch: Array = d.game.checkup_log.slice(d.checkup_seen)
@@ -170,6 +188,8 @@ func _collect_checkup() -> void:
 
 const CHECK_TIME := 1.1
 const STADIUM_CHECK_TIME := 1.8
+const BODY_CHECK_TIME := 2.0      # aviso de un Poké-Body (o carta) que cambió el golpe
+const C_BODY := Color("#9058e0")
 
 ## Cómo se ve el daño de cada Estadio: color, efecto sobre cada Pokémon, partículas que
 ## cruzan la mesa (o "" si no hay) y sonido.
@@ -183,6 +203,16 @@ const STADIUM_FX := {
 func _update_check(delta: float) -> void:
 	var c: Dictionary = d.check_anim[0]
 	var stadium: bool = c["kind"] == "stadium"
+	if c["kind"] == "body":
+		if float(c["t"]) == 0.0:
+			d.snd.play("shine")
+		c["t"] = float(c["t"]) + delta / BODY_CHECK_TIME
+		if float(c["t"]) >= 1.0:
+			d.check_anim.pop_front()
+			if d.check_anim.is_empty():
+				d.ai_timer = d.AI_DELAY
+				d._rebuild_menu()
+		return
 	if float(c["t"]) == 0.0:
 		for e in (c["hits"] if stadium else [c]):
 			var m: PokemonInPlay = e["mon"]
@@ -220,6 +250,9 @@ func _draw_check() -> void:
 	var c: Dictionary = d.check_anim[0]
 	if c["kind"] == "stadium":
 		_draw_stadium_check(c)
+		return
+	if c["kind"] == "body":
+		_draw_body_check(c)
 		return
 	var m: PokemonInPlay = c["mon"]
 	var pl: PlayerState = d.game.players[c["p"]]
@@ -778,3 +811,94 @@ func _draw_bench_fx() -> void:
 			var al := clampf((1.0 - t) * 4.0, 0.0, 1.0)
 			d.draw_rect(Rect2(p2.round() + Vector2(-2, 1), Vector2(w + 4, 10)), Color(0.35, 0.05, 0.05, 0.75 * al))
 			d._text(p2.round(), txt, Color(1.0, 0.9, 0.85, al))
+
+
+# ===========================================================================
+# Poké-Bodies que cambian un golpe (Dark Hole, Dragon Veil...) y los que lo harían
+# ===========================================================================
+
+## Aviso después del golpe: el Pokémon que lo hizo brilla (aunque esté en la Banca), con el
+## nombre del Poké-Body arriba, y sobre el que recibió el golpe un "×2" tachado.
+func _draw_body_check(c: Dictionary) -> void:
+	var t: float = c["t"]
+	var env := clampf(t / 0.12, 0.0, 1.0) * clampf((1.0 - t) / 0.2, 0.0, 1.0)
+	var src: PokemonInPlay = c["mon"]
+	var pl: PlayerState = d.game.players[clampi(int(c["p"]), 0, 1)]
+	if src == null:
+		# Un Estadio: late su cartel
+		if not d._stadium_layout.is_empty():
+			var sr: Rect2 = d._stadium_layout["rect"]
+			var pulse0 := 0.5 + 0.5 * sin(t * 18.0)
+			d.draw_rect(sr.grow(-1), Color(C_BODY, (0.3 + 0.3 * pulse0) * env))
+			for k in 2:
+				d._outline(sr.grow(1 + k), Color(Color("#f8e8ff") if k == 0 else C_BODY, env))
+	elif pl.active == src or pl.bench.has(src) or pl.active2 == src:
+		var r := _check_rect(pl, src)
+		var pulse := 0.5 + 0.5 * sin(t * 18.0)
+		d.draw_rect(r, Color(C_BODY, (0.25 + 0.25 * pulse) * env))
+		for k in 2:
+			d._outline(r.grow(1 + k), Color(Color("#f8e8ff") if k == 0 else C_BODY, env))
+		_draw_body_tag(r, str(c["src"]), env)
+	var tg: PokemonInPlay = c.get("target", null)
+	if tg != null:
+		var tp: PlayerState = d.game.owner_of(tg)
+		if tp.active == tg or tp.active2 == tg:
+			var tr := _check_rect(tp, tg)
+			var p := tr.get_center() + Vector2(-9, -6)
+			var a := env
+			d.draw_rect(Rect2(p + Vector2(-3, -2), Vector2(24, 14)), Color(0.1, 0.05, 0.15, 0.75 * a))
+			d._text(p, "×2", Color(1, 1, 1, a))
+			d.draw_line(p + Vector2(-2, 11), p + Vector2(19, -1), Color(Color("#f04040"), a), 2.0)
+
+
+## Etiqueta con el nombre del Poké-Body arriba del Pokémon (corrida para que entre en la pantalla).
+func _draw_body_tag(r: Rect2, name: String, a: float) -> void:
+	var w: float = d._text_w(name) + 8
+	var x := clampf(r.get_center().x - w / 2.0, 1.0, d.W - w - 1)
+	var y := r.position.y - 13.0
+	if y < 1.0:
+		y = r.end.y + 1.0
+	var tag := Rect2(roundf(x), y, w, 12)
+	d.draw_rect(tag.grow(1), Color(0.1, 0.05, 0.15, a))
+	d.draw_rect(tag, Color(C_BODY, a))
+	d._text(Vector2(tag.position.x + 4, tag.position.y), name, Color(1, 1, 1, a))
+
+
+## Marca en la mesa durante tu turno: el Pokémon de la Banca cuyo Poké-Body cambia algo de lo
+## que podés hacer ahora (Game.bodies_in_effect) lleva un contorno y una pastillita violeta.
+func _draw_body_marks() -> void:
+	if d.mode != "duel" or d.game == null or not d.anim.is_empty() or not d.check_anim.is_empty():
+		return
+	if d.bodies_now.has("stadium") and not d._stadium_layout.is_empty():
+		# El Estadio cambia algo de lo que podés hacer: su cartel late
+		var sr: Rect2 = d._stadium_layout["rect"]
+		var g2 := 0.55 + 0.45 * sin(Clock.ms() / 160.0)
+		d._outline(sr.grow(1), Color(C_BODY, g2))
+		d.draw_rect(sr.grow(-1), Color(1, 1, 1, 0.35 * g2))
+	for src in d.bodies_now:
+		if src is String:
+			continue
+		var me: PlayerState = d.game.owner_of(src)
+		if not me.bench.has(src):
+			continue
+		var r := _check_rect(me, src)
+		var glow := 0.55 + 0.45 * sin(Clock.ms() / 250.0)
+		d._outline(r.grow(1), Color(C_BODY, glow))
+		var tag := Rect2(r.end.x - 9, r.position.y - 3, 11, 9)
+		d.draw_rect(tag.grow(1), Color("#201030"))
+		d.draw_rect(tag, C_BODY)
+		d.imagenes._draw_tiny(Vector2(tag.position.x + 2, tag.position.y + 2), "B", Color.WHITE)
+		d.draw_rect(Rect2(tag.position.x + 7, tag.position.y + 2, 2, 5), Color.WHITE)     # B + "!" chiquito
+
+
+## El efecto de un Estadio: su texto sin la parte de las reglas de siempre ("This card stays
+## in play...", "Discard this card if...", "If another card with the same name...").
+func _stadium_effect_text(id: String) -> String:
+	var txt := str(CardDB.get_card(id).get("text", ""))
+	var out: Array = []
+	for sent in txt.split(". "):
+		var ss := sent.strip_edges()
+		if ss.begins_with("This card stays in play") or ss.begins_with("Discard this card") or ss.begins_with("If another card with the same name"):
+			continue
+		out.append(ss.trim_suffix("."))
+	return ". ".join(out) + "."

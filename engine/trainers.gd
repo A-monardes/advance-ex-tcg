@@ -6,6 +6,9 @@ extends RefCounted
 ## Las decisiones que dependen de algo oculto (monedas, robar, mirar el mazo)
 ## se piden después con g.ask(...).
 
+## Entrenadores cuyo "b" es un Pokémon de la Banca del rival (no de la propia).
+const OPP_BENCH := ["Pokémon Reversal", "Pow! Hand Extension"]
+
 const TOOLS := ["Lum Berry", "Oran Berry", "Balloon Berry", "Buffer Piece", "Strength Charm",
 		"Team Aqua Belt", "Team Magma Belt", "Weakness Guard",
 		"Healing Berry", "Memory Berry", "Time Shard", "Crystal Shard", "Star Piece", "EXP.ALL",

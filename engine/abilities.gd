@@ -154,6 +154,8 @@ static func fired_pl(g: Game, pl: PlayerState, ability_name: String) -> bool:
 static func body(g: Game, p: PokemonInPlay, ability_name: String) -> bool:
 	if p == null or not p.has_ability(ability_name):
 		return false
+	if not g.muted_bodies.is_empty() and g.muted_bodies.has(p):     # prueba de "¿esto cambia algo?"
+		return false
 	if g.players.any(func(pl): return pl.flags.get("no_bodies", -1) >= g.turn_number):   # Ancient Wind
 		return false
 	if _stadium_silences(g, p):
@@ -1945,6 +1947,42 @@ static func weakness_types(g: Game, target: PokemonInPlay) -> Array:
 	if body(g, target, "Electro-guard") and Energy.count_type(target, "Lightning") > 0:
 		return []
 	return w
+
+
+## Por qué no se aplica la Debilidad de `target` contra `attacker` (para mostrarlo en pantalla):
+## {} si se aplica (o si no la tenía contra ese tipo); si no, {"name": la carta o el Poké-Body,
+## "mon": el Pokémon en juego que lo hace (o null si es un Estadio), "kind": "body", "tool",
+## "stadium", "energy" o "attack"}. Sigue el mismo orden que weakness_types / ignores_weakness.
+static func weakness_blocker(g: Game, attacker: PokemonInPlay, target: PokemonInPlay) -> Dictionary:
+	if attacker == null or target == null:
+		return {}
+	var raw: Array = target.data().get("weaknesses", [])
+	if not attacker.types().any(func(t): return t in raw):
+		return {}
+	if attacker.types().any(func(t): return t in weakness_types(g, target)) and not ignores_weakness(g, target):
+		return {}
+	if CardDB.card_name(target.tool) in ["Weakness Guard", "Protective Orb"]:
+		return {"name": CardDB.card_name(target.tool), "mon": target, "kind": "tool"}
+	if g.stadium_name() in ["Holon Legacy", "Glacia's Stadium", "Ancient Tomb"]:
+		return {"name": g.stadium_name(), "mon": null, "kind": "stadium"}
+	if target.flags.get("no_weakness", -1) >= g.turn_number:
+		return {"name": "No Weakness", "mon": target, "kind": "attack"}
+	if stages(g, target, "Jynx", "no Weakness"):
+		return {"name": "Stages of Evolution", "mon": target, "kind": "body"}
+	if holon(target, "Holon Energy FF", "Fire"):
+		return {"name": "Holon Energy FF", "mon": target, "kind": "energy"}
+	for nm in ["Dark Condition", "Electro-guard"]:
+		if body(g, target, nm):
+			return {"name": nm, "mon": target, "kind": "body"}
+	var owner := g.owner_of(target)
+	if owner != null:
+		for x in owner.all_in_play():
+			for nm in ["Hydro Barrier", "Ancient Protection", "Dragon Veil", "Shield Veil"]:
+				if body(g, x, nm):
+					return {"name": nm, "mon": x, "kind": "body"}
+			if owner.bench.has(x) and body(g, x, "Dark Hole"):
+				return {"name": "Dark Hole", "mon": x, "kind": "body"}
+	return {"name": "No Weakness", "mon": null, "kind": "other"}
 
 
 static func ignores_weakness(g: Game, target: PokemonInPlay) -> bool:

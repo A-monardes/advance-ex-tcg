@@ -60,6 +60,24 @@ func _draw_textbox() -> void:
 		return
 	if not d.check_anim.is_empty() and d.anim.is_empty() and d.coin_anim.is_empty() and d.evo_anim.is_empty():
 		var ck: Dictionary = d.check_anim[0]
+		if ck["kind"] == "body":
+			var src: PokemonInPlay = ck["mon"]
+			var tg: PokemonInPlay = ck["target"]
+			if ck["bkind"] == "stadium" and src == null:
+				d._text_scroll(Vector2(x, y), "%s!" % ck["src"], d.C_TEXT, tw, "chk")
+				d._text_scroll(Vector2(x, y + d.LINE), str(ck.get("text", "")), d.C_DIM, tw, "chk2")
+				return
+			if ck["bkind"] == "generic":
+				var who2 := ("" if ck["p"] == d.human else "Foe ") + src.display_name()
+				d._text_scroll(Vector2(x, y), "%s on the Bench: %s!" % [who2, ck["src"]], d.C_TEXT, tw, "chk")
+				d._text_scroll(Vector2(x, y + d.LINE), str(ck["text"]), d.C_DIM, tw, "chk2")
+				return
+			var who := ("" if ck["p"] == d.human else "Foe ") + src.display_name()
+			var where := "" if src == tg or d.game.players[ck["p"]].active == src else " on the Bench"
+			var head := "%s%s: %s!" % [who, where, ck["src"]] if ck["bkind"] in ["body", "tool"] else "%s!" % ck["src"]
+			d._text_scroll(Vector2(x, y), head, d.C_TEXT, tw, "chk")
+			d._text_scroll(Vector2(x, y + d.LINE), "%s Weakness doesn't apply to %s." % [ck["wtype"], tg.display_name()], d.C_DIM, tw, "chk2")
+			return
 		if ck["kind"] == "stadium":
 			var why := {"Desert Ruins": "The desert sands wear down Pokémon-ex with 100 HP or more!",
 					"Cursed Stone": "The Cursed Stone hurts Pokémon with Poké-Powers!",
@@ -168,6 +186,9 @@ func _draw_command_menu() -> void:
 
 
 ## Listas (ataques, cartas, elecciones): opciones a la izquierda y detalles a la derecha.
+var _atk_bodies := {}      # ataque -> Pokémon cuyo Poké-Body cambia su resultado (se borra en cada menú)
+
+
 func _draw_list_menu() -> void:
 	var img_id := _menu_card_id()
 	var split := 136 if img_id != "" else 150
@@ -199,7 +220,30 @@ func _draw_list_menu() -> void:
 		var atks: Array = box[0]
 		if act["a"] < atks.size():
 			var atk: Dictionary = atks[act["a"]]
-			d._text_scroll(Vector2(rx, y), title, d.C_DIM, rw, "mtitle")
+			# Si algo en juego le saca la Debilidad al rival, se avisa antes de atacar
+			var blk := {}
+			if str(atk.get("damage_text", "")) != "":
+				blk = Abilities.weakness_blocker(d.game, d.game.current_player().active, d.game.other(d.game.current_player()).active)
+			# Y si algún otro Poké-Body cambia lo que haría este ataque (reduce el daño, lo evita...)
+			var others: Array = []
+			if blk.is_empty():
+				var key := str(act)
+				if not _atk_bodies.has(key):
+					_atk_bodies[key] = d.game.bodies_for_action(act)
+				for h in _atk_bodies[key]:
+					if h is String:
+						if not others.has(d.game.stadium_name()):
+							others.append(d.game.stadium_name())
+						continue
+					for ab in h.abilities():
+						if ab.get("kind", "") == "Poké-Body" and not others.has(ab["name"]):
+							others.append(ab["name"])
+			if not blk.is_empty():
+				d._text_scroll(Vector2(rx, y), "%s · no Weakness: %s" % [title, blk["name"]], d.C_DIM, rw, "mtitle")
+			elif not others.is_empty():
+				d._text_scroll(Vector2(rx, y), "%s · changed by %s" % [title, " / ".join(others)], d.C_DIM, rw, "mtitle")
+			else:
+				d._text_scroll(Vector2(rx, y), title, d.C_DIM, rw, "mtitle")
 			var cx = rx
 			for t in atk.get("cost", []):
 				d.imagenes._draw_energy_icon(Vector2(cx + 4.5, y + d.LINE + 5), 9, t)
@@ -208,7 +252,14 @@ func _draw_list_menu() -> void:
 				d._text(Vector2(rx, y + d.LINE), "No cost", d.C_TEXT)
 			var dmg: String = atk.get("damage_text", "")
 			d._text(Vector2(rx, y + d.LINE * 2), "Damage", d.C_TEXT)
-			d._text(Vector2(rx + d._text_w("Damage") + 4, y + d.LINE * 2), dmg if dmg != "" else "—", Color("#c03028"))
+			var dx: float = rx + d._text_w("Damage") + 4
+			d._text(Vector2(dx, y + d.LINE * 2), dmg if dmg != "" else "—", Color("#c03028"))
+			if not blk.is_empty() or not others.is_empty():
+				var only_stadium: bool = blk.is_empty() and _atk_bodies.get(str(act), []).all(func(h): return h is String)
+				var lt := "NO X2" if not blk.is_empty() else ("STADIUM" if only_stadium else "BODY")
+				var tag := Rect2(dx + d._text_w(dmg if dmg != "" else "—") + 4, y + d.LINE * 2 + 1, lt.length() * 4 + 3, 9)
+				d.draw_rect(tag, d.anim_pokemon.C_BODY)
+				d.imagenes._draw_tiny(Vector2(tag.position.x + 2, tag.position.y + 2), lt, Color.WHITE)
 			return
 	if img_id != "":
 		# Imagen a la derecha (40x40, como en la ficha) y, al lado, la pregunta o el tipo de carta
@@ -526,6 +577,8 @@ func _menu_targets() -> Array:
 			if p.has("mb"):
 				return [[me, p["mb"], "target"]]
 			if p.has("b"):
+				if name in Trainers.OPP_BENCH:
+					return [[opp, op_act, "source"], [opp, p["b"], "target"]]   # Pokémon Reversal: la Banca del rival
 				if power:
 					return [[opp if vs_opp else me, p["b"], "target"]]          # Dragon Wind
 				return [[me, -1, "source"], [me, p["b"], "target"]]   # Switch
